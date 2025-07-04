@@ -1,0 +1,161 @@
+import React from 'react';
+import { render, screen, waitFor, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { BrowserRouter as Router, MemoryRouter, Routes, Route } from 'react-router-dom';
+import { axe } from 'jest-axe';
+import App from './App'; // Your main App component that includes routing
+import AssistantPage from './pages/AssistantPage';
+import DoctorPage from './pages/DoctorPage';
+import PublicDisplayPage from './pages/PublicDisplayPage';
+// server and resetMswData are now global, set up in jest.setup.js
+import { http, HttpResponse } from 'msw'; // Update to http and HttpResponse
+
+
+// Helper function to render with Router
+const renderWithRouter = (ui, { route = '/' } = {}) => {
+  window.history.pushState({}, 'Test page', route);
+  return render(ui, { wrapper: BrowserRouter });
+};
+
+describe('Page Smoke Tests and Basic Accessibility', () => {
+  const pages = [
+    { name: 'Assistant Page', path: '/assistant', Component: AssistantPage },
+    { name: 'Doctor Page', path: '/doctor', Component: DoctorPage },
+    { name: 'Public Display Page', path: '/display', Component: PublicDisplayPage },
+  ];
+
+  pages.forEach(page => {
+    test(`${page.name} renders without crashing and has no basic a11y violations`, async () => {
+      const { container } = render(
+        <MemoryRouter initialEntries={[page.path]}>
+          <Routes>
+            <Route path={page.path} element={<page.Component />} />
+          </Routes>
+        </MemoryRouter>
+      );
+      expect(container).toBeInTheDocument();
+
+      // Perform accessibility check
+      // Wrap in act if there are state updates causing a11y issues after initial render
+      let results;
+      await act(async () => {
+        results = await axe(container);
+      });
+      expect(results).toHaveNoViolations();
+    });
+  });
+});
+
+describe('Clinic Queue Full Workflow Test', () => {
+  beforeEach(() => {
+    // global.resetMswData is from jest.setup.js
+    if (global.resetMswData) global.resetMswData(); // Ensure clean mock data
+  });
+
+  test('issues a token, doctor marks it done, and public display updates', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    // --- 1. Navigate to Assistant Page and Issue Token ---
+    await user.click(screen.getByRole('link', { name: /Assistant Portal/i }));
+    expect(screen.getByRole('heading', { name: /Assistant Portal/i })).toBeInTheDocument();
+
+    const patientNameInput = screen.getByLabelText(/Patient Name/i);
+    await user.type(patientNameInput, 'Happy Path User'); // Reverted to Happy Path User
+    await waitFor(() => expect(patientNameInput).toHaveValue('Happy Path User')); // Reverted to Happy Path User
+    await user.selectOptions(screen.getByLabelText(/Patient Gender/i), 'FEMALE');
+    // Try wrapping the click/submit in act
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /Generate Token/i }));
+    });
+
+    // Wait for token generation success
+    const generatedTokenElement = await screen.findByText(/Token Generated Successfully!/i);
+    expect(generatedTokenElement).toBeInTheDocument();
+    const tokenNumberElement = await screen.findByText('1'); // MSW mock will generate token 1
+    expect(tokenNumberElement).toBeInTheDocument();
+    const patientNameInTokenDisplay = await screen.findByText('1'); // Assuming token number is displayed
+    expect(patientNameInTokenDisplay).toBeVisible();
+
+
+    // --- 2. Navigate to Doctor Page and Verify Token ---
+    // First, go back "home" to click the next link, or directly navigate if your app structure allows
+    await user.click(screen.getByRole('link', { name: /Back to Home/i }));
+    await user.click(screen.getByRole('link', { name: /Doctor Dashboard/i }));
+
+    expect(screen.getByRole('heading', { name: /Doctor Dashboard/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/Token: 1/i)).toBeInTheDocument();
+      expect(screen.getByText(/Patient: Happy Path User/i)).toBeInTheDocument();
+    });
+
+    // --- 3. Doctor Marks Token as Done ---
+    const markDoneButton = screen.getByRole('button', { name: /Mark as Done/i });
+    await user.click(markDoneButton);
+
+    // Wait for the list to update (item should be removed)
+    await waitFor(() => {
+      expect(screen.queryByText(/Token: 1/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Patient: Happy Path User/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/No patients currently waiting./i)).toBeInTheDocument();
+    });
+
+    // --- 4. Navigate to Public Display Page and Verify Update ---
+    // Go back "home"
+    await user.click(screen.getByRole('link', { name: /Back to Home/i }));
+    await user.click(screen.getByRole('link', { name: /Public Queue Display/i }));
+
+    expect(screen.getByRole('heading', { name: /Now Serving/i })).toBeInTheDocument();
+
+    // Wait for the display to settle (it might initially show old data then refresh)
+    // The MSW handler for GET /api/visits/?status=WAITING should now return an empty list
+    await waitFor(() => {
+        expect(screen.getByText(/No patients currently waiting./i)).toBeInTheDocument();
+    }, { timeout: 6000 }); // Public display refreshes every 5s, give it time
+
+    // Accessibility check for the final state of public display
+    let publicDisplayContainer = screen.getByText(/Now Serving/i).closest('div.container');
+    if (!publicDisplayContainer) publicDisplayContainer = document.body; // fallback
+    let axeResults;
+    await act(async () => {
+        axeResults = await axe(publicDisplayContainer);
+    });
+    expect(axeResults).toHaveNoViolations();
+  });
+
+
+  test('displays network error if API fails on Assistant Page', async () => {
+    // global.mswServer is the server instance from jest.setup.js
+    global.mswServer.use(
+      http.post('/api/visits/', () => {
+        return HttpResponse.error(); // Simulate network error
+      })
+    );
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+    // Ensure HomePage is rendered before trying to click the link
+    await screen.findByRole('heading', { name: /ClinicQ/i, level: 1 });
+    await user.click(screen.getByRole('link', { name: /Assistant Portal/i }));
+
+    const patientNameInput = screen.getByLabelText(/Patient Name/i);
+    await user.type(patientNameInput, 'Error Test User');
+    await waitFor(() => expect(patientNameInput).toHaveValue('Error Test User')); // Corrected this line
+    await user.selectOptions(screen.getByLabelText(/Patient Gender/i), 'MALE');
+    // Try wrapping the click/submit in act
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /Generate Token/i }));
+    });
+
+    expect(await screen.findByText(/Failed to generate token/i)).toBeInTheDocument();
+  });
+
+});

@@ -1,0 +1,121 @@
+# /etc/nginx/sites-available/clinicq
+# Remember to create a symlink in /etc/nginx/sites-enabled/
+# sudo ln -s /etc/nginx/sites-available/clinicq /etc/nginx/sites-enabled/clinicq
+
+server {
+    listen 80;
+    listen [::]:80; # For IPv6
+    server_name your_domain.com www.your_domain.com; # Replace with your actual domain
+
+    # Redirect HTTP to HTTPS (optional, but recommended for production)
+    # location / {
+    #     return 301 https://$host$request_uri;
+    # }
+
+    # For HTTPS (requires SSL certificate - e.g., from Let's Encrypt)
+    # listen 443 ssl http2;
+    # listen [::]:443 ssl http2;
+    # server_name your_domain.com www.your_domain.com;
+    # ssl_certificate /etc/letsencrypt/live/your_domain.com/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/your_domain.com/privkey.pem;
+    # include /etc/letsencrypt/options-ssl-nginx.conf;
+    # ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+
+    # Paths to your project files
+    # These should match your actual deployment structure
+    set $project_root /srv/clinicq;
+    set $django_static_root $project_root/clinicq_backend_static_collected; # Django's collectstatic output
+    set $django_media_root $project_root/clinicq_backend_media; # Django's media files
+    set $react_app_root $project_root/clinicq_frontend/dist; # React build output
+
+    # Access and error logs
+    access_log /var/log/nginx/clinicq_access.log;
+    error_log /var/log/nginx/clinicq_error.log;
+
+    # Max file upload size (adjust as needed)
+    client_max_body_size 20M;
+
+    # Django Admin static files (if not handled by collectstatic into $django_static_root)
+    # location /static/admin {
+    #     alias /srv/clinicq/venv/lib/python3.12/site-packages/django/contrib/admin/static/admin/;
+    #     expires 1y;
+    #     access_log off;
+    #     add_header Cache-Control "public";
+    # }
+
+    # Django static files (collected by collectstatic)
+    location /static/ {
+        alias $django_static_root/;
+        expires 1y; # Cache static files for a long time
+        access_log off;
+        add_header Cache-Control "public";
+    }
+
+    # Django media files (user-uploaded content)
+    location /media/ {
+        alias $django_media_root/;
+        expires 7d; # Cache media files for a shorter period
+        access_log off;
+        add_header Cache-Control "public";
+    }
+
+    # Django API and Admin interface (proxied to Gunicorn)
+    location ~ ^/(api|admin)/ {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_buffering on; # Can be off for streaming responses
+        proxy_pass http://unix:/run/clinicq/gunicorn.sock; # Must match Gunicorn socket
+    }
+
+    # React Frontend (served as static SPA)
+    # This should be the last location block to act as a catch-all for frontend routes
+    location / {
+        root $react_app_root;
+        try_files $uri $uri/ /index.html; # Important for SPAs using client-side routing
+        expires -1; # Do not cache index.html to ensure users get the latest version
+        add_header Cache-Control "no-cache";
+    }
+
+    # Optional: Security headers (uncomment and customize)
+    # add_header X-Frame-Options "SAMEORIGIN" always;
+    # add_header X-XSS-Protection "1; mode=block" always;
+    # add_header X-Content-Type-Options "nosniff" always;
+    # add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    # add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://your_api_domain_if_different.com;" always;
+    # add_header Permissions-Policy "geolocation=(), midi=(), sync-xhr=(), microphone=(), camera=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=(), payment=()" always;
+    # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always; # If using HTTPS
+
+    # Optional: Favicon and robots.txt (if served from React app's public folder)
+    # location = /favicon.ico {
+    #     alias $react_app_root/favicon.ico;
+    #     log_not_found off;
+    #     access_log off;
+    # }
+    # location = /robots.txt {
+    #     alias $react_app_root/robots.txt;
+    #     log_not_found off;
+    #     access_log off;
+    # }
+}
+
+# Instructions:
+# 1. Replace `your_domain.com` with your actual domain.
+# 2. Adjust paths like `/srv/clinicq` to your actual deployment directory.
+# 3. Ensure the Gunicorn socket path `unix:/run/clinicq/gunicorn.sock` matches the one in `clinicq.service`.
+# 4. If using HTTPS (recommended), uncomment the HTTPS block and configure SSL certificates (e.g., using Certbot for Let's Encrypt).
+# 5. Copy this file to `/etc/nginx/sites-available/clinicq`.
+# 6. Create a symbolic link: `sudo ln -s /etc/nginx/sites-available/clinicq /etc/nginx/sites-enabled/clinicq`.
+# 7. Test Nginx configuration: `sudo nginx -t`.
+# 8. Reload Nginx: `sudo systemctl reload nginx`.
+# 9. Ensure Django's `ALLOWED_HOSTS` includes your domain.
+# 10. Ensure Django's `STATIC_ROOT` (for `collectstatic`) is set to `$django_static_root`.
+#     And `MEDIA_ROOT` to `$django_media_root`.
+# 11. The React app should be built into `$react_app_root` (e.g., `clinicq_frontend/dist`).
+# 12. Ensure Nginx has permissions to read from these directories and the Gunicorn socket.
+#     Often, adding the `nginx` user (or `www-data`) to the group of `clinicq_service_user` helps:
+#     `sudo usermod -aG clinicq_service_user www-data` (if clinicq_service_user is the group)
+#     Or `sudo usermod -aG www-data clinicq_service_user` (if www-data is the group)
+#     And ensure socket parent directory `/run/clinicq` is accessible by `www-data` group.

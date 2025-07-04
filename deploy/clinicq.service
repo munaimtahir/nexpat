@@ -1,0 +1,61 @@
+[Unit]
+Description=ClinicQ Gunicorn Daemon
+Documentation=https://github.com/<your_username>/<your_repo_name> # Replace with your repo URL
+After=network.target # Ensure network is up before starting
+
+[Service]
+User=clinicq_service_user # Replace with the user you want to run Gunicorn as
+Group=www-data # Or the group for your service user
+WorkingDirectory=/srv/clinicq/clinicq_backend
+# Path to .env file. Gunicorn will not automatically load it.
+# Systemd's EnvironmentFile directive is one way to load it.
+EnvironmentFile=/srv/clinicq/.env # Ensure this .env file exists and has correct permissions
+# Path to Gunicorn executable in your virtual environment
+ExecStart=/srv/clinicq/venv/bin/gunicorn \
+    --access-logfile - \
+    --error-logfile - \
+    --workers 3 \
+    --bind unix:/run/clinicq/gunicorn.sock \
+    clinicq_backend.wsgi:application
+
+# Alternatively, if you prefer to load .env variables within Gunicorn/Django (e.g. using python-dotenv in wsgi.py or manage.py)
+# then you might not need EnvironmentFile here, but ensure your app loads them.
+# ExecStart=/srv/clinicq/venv/bin/gunicorn \
+#     --access-logfile /var/log/clinicq/access.log \ # Ensure log directory exists and has perms
+#     --error-logfile /var/log/clinicq/error.log \
+#     --workers 3 \
+#     --bind unix:/run/clinicq/gunicorn.sock \
+#     clinicq_backend.wsgi:application
+
+# Directory for the Gunicorn socket file
+# Ensure this directory exists and the User/Group has write permissions
+RuntimeDirectory=clinicq
+RuntimeDirectoryMode=0755
+
+Restart=always
+RestartSec=5s # Restart service after 5 seconds if it crashes
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=clinicq
+
+[Install]
+WantedBy=multi-user.target
+
+# Instructions:
+# 1. Replace placeholders like 'clinicq_service_user', '/srv/clinicq', etc.
+# 2. Ensure the user 'clinicq_service_user' exists: `sudo adduser --system --no-create-home --group clinicq_service_user` (example)
+#    Or use an existing user. Add this user to the 'www-data' group if Nginx needs to access socket/static files owned by this user.
+# 3. Create the virtual environment at /srv/clinicq/venv.
+# 4. Create /srv/clinicq/.env from deploy/.env.example and fill it. Ensure 'clinicq_service_user' can read it.
+# 5. Create the RuntimeDirectory for the socket:
+#    `sudo mkdir -p /run/clinicq`
+#    `sudo chown clinicq_service_user:www-data /run/clinicq`
+#    `sudo chmod 0755 /run/clinicq`
+#    (This might be better handled by systemd itself if configured via tmpfiles.d)
+# 6. Copy this file to /etc/systemd/system/clinicq.service
+# 7. Reload systemd: `sudo systemctl daemon-reload`
+# 8. Start the service: `sudo systemctl start clinicq`
+# 9. Enable on boot: `sudo systemctl enable clinicq`
+# 10. Check status: `sudo systemctl status clinicq`
+# 11. Check logs: `sudo journalctl -u clinicq -f`

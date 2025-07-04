@@ -1,0 +1,10 @@
+# requirements-dev.txt
+# For testing and linting
+pytest==8.2.*
+pytest-cov==4.1.*
+importlib-metadata>=7.0 # For Python 3.12 compatibility with some plugins
+pytest-django
+flake8
+black
+freezegun
+# coverage is a dependency of pytest-cov

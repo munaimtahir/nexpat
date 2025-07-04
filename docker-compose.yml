@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: clinicq_db
+    volumes:
+      - clinicq_postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=clinicq_dev_db
+      - POSTGRES_USER=clinicq_dev_user
+      - POSTGRES_PASSWORD=clinicq_dev_password
+    ports:
+      - "54320:5432" # Expose on host port 54320 to avoid conflict
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinicq_dev_user -d clinicq_dev_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./clinicq_backend
+      dockerfile: Dockerfile
+    container_name: clinicq_backend
+    # Command is now executed by entrypoint.sh, which handles migrations.
+    # The default CMD in Dockerfile is gunicorn, but for dev we want runserver.
+    # The entrypoint script will receive this as "$@"
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./clinicq_backend:/app/backend # Mount code for hot-reloading
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=django_insecure_local_dev_secret_key_!@#%^&*()
+      - DEBUG=True
+      - DATABASE_URL=postgresql://clinicq_dev_user:clinicq_dev_password@db:5432/clinicq_dev_db
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_EMAIL=admin@example.com
+      - DJANGO_SUPERUSER_PASSWORD=adminpass
+      # Add other necessary env vars for local dev
+    depends_on:
+      db:
+        condition: service_healthy
+    # user: "${UID_GID}" # For Linux hosts to avoid permission issues with mounted volumes
+
+  frontend:
+    build:
+      context: ./clinicq_frontend
+      dockerfile: Dockerfile # This Dockerfile is for production; for dev, we override command
+    container_name: clinicq_frontend
+    command: npm run dev -- --host # Runs Vite dev server, accessible externally
+    volumes:
+      - ./clinicq_frontend:/app/frontend # Mount code for hot-reloading
+      - /app/frontend/node_modules # Don't mount over node_modules from host
+    ports:
+      - "5173:5173" # Default Vite port
+    environment:
+      - CHOKIDAR_USEPOLLING=true # For better hot-reloading in some Docker environments
+      - WDS_SOCKET_PORT=5173 # For Vite HMR proxying if needed
+      # Vite specific env vars can be prefixed with VITE_
+      - VITE_API_BASE_URL=http://localhost:8000/api # So frontend knows where backend is
+    depends_on:
+      - backend
+
+volumes:
+  clinicq_postgres_data:
+
+# Note for Linux users regarding file permissions on mounted volumes:
+# You might want to uncomment the 'user: "${UID_GID}"' line in the backend service
+# and run docker-compose with UID_GID=$(id -u):$(id -g) docker-compose up
+# Or ensure your Dockerfile's user setup aligns with your host user.
+# Alternatively, manage file ownership within the container entrypoint script.
