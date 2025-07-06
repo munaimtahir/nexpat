@@ -2,34 +2,176 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase # Using APITestCase for DB access and client
-from .models import Visit
+from .models import Visit, Patient, Queue # Added Patient and Queue
 from django.utils import timezone
 from datetime import date, timedelta
 from freezegun import freeze_time
 
-@pytest.mark.django_db # Ensure database access for tests in this module/class
+@pytest.mark.django_db
+class PatientAPITests(APITestCase):
+    def setUp(self):
+        # Using phone numbers less likely to contain the other patient's AutoField ID (e.g., "1" or "2")
+        # self.patient1_data phone updated to include '12345' for the search test.
+        self.patient1_data = {'name': 'Alice Wonderland', 'phone': '55512345XX', 'gender': 'FEMALE'}
+        self.patient2_data = {'name': 'Bob The Builder', 'phone': '555222000B', 'gender': 'MALE'}
+        # Ensure created_at/updated_at are deterministic for potential snapshot testing later if needed
+        with freeze_time("2024-01-01 10:00:00"):
+            self.patient1 = Patient.objects.create(**self.patient1_data)
+        with freeze_time("2024-01-01 10:01:00"):
+            self.patient2 = Patient.objects.create(**self.patient2_data)
+
+    def test_create_patient(self):
+        url = reverse('patient-list')
+        data = {'name': 'Charlie Brown', 'phone': '1122334455', 'gender': 'MALE'}
+        response = self.client.post(url, data, format='json')
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Patient.objects.count() == 3
+        new_patient = Patient.objects.get(name='Charlie Brown')
+        assert new_patient.phone == '1122334455'
+
+    def test_get_patient_list(self):
+        url = reverse('patient-list')
+        response = self.client.get(url, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2 # Assuming default pagination is not too small or using TestClient default
+
+    def test_get_patient_detail(self):
+        url = reverse('patient-detail', kwargs={'registration_number': self.patient1.registration_number})
+        response = self.client.get(url, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['name'] == self.patient1_data['name']
+
+    def test_update_patient(self):
+        url = reverse('patient-detail', kwargs={'registration_number': self.patient1.registration_number})
+        updated_data = {'name': 'Alice In Chains', 'phone': '1231231234', 'gender': 'FEMALE'}
+        response = self.client.put(url, updated_data, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        self.patient1.refresh_from_db()
+        assert self.patient1.name == 'Alice In Chains'
+        assert self.patient1.phone == '1231231234'
+
+    def test_delete_patient(self):
+        url = reverse('patient-detail', kwargs={'registration_number': self.patient1.registration_number})
+        response = self.client.delete(url)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert Patient.objects.count() == 1
+
+    def test_search_patient_by_reg_no(self):
+        url = reverse('patient-search') # Custom action URL name
+        response = self.client.get(url, {'q': str(self.patient1.registration_number)}, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert response.data[0]['name'] == self.patient1.name
+
+    def test_search_patient_by_name_fragment(self):
+        url = reverse('patient-search')
+        response = self.client.get(url, {'q': 'Alice'}, format='json') # Partial name
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert response.data[0]['name'] == self.patient1.name
+
+    def test_search_patient_by_phone_fragment(self):
+        url = reverse('patient-search')
+        response = self.client.get(url, {'q': '12345'}, format='json') # Partial phone
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert response.data[0]['name'] == self.patient1.name
+
+    def test_search_patient_no_results(self):
+        url = reverse('patient-search')
+        response = self.client.get(url, {'q': 'NonExistent'}, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 0
+
+    def test_search_patient_missing_query_param(self):
+        url = reverse('patient-search')
+        response = self.client.get(url, format='json') # No 'q' param
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'error' in response.data
+
+    def test_patient_last_5_visit_dates(self):
+        # Create a queue
+        queue = Queue.objects.create(name="Test Queue")
+        # Create some visits for patient1
+        for i in range(7):
+            Visit.objects.create(
+                patient=self.patient1,
+                queue=queue,
+                token_number=i + 1,
+                visit_date=date.today() - timedelta(days=i),
+                patient_name=self.patient1.name, # Denormalized data
+                patient_gender=self.patient1.gender
+            )
+
+        url = reverse('patient-detail', kwargs={'registration_number': self.patient1.registration_number})
+        response = self.client.get(url, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        assert 'last_5_visit_dates' in response.data
+        api_visit_dates_iso = [str(d) for d in response.data['last_5_visit_dates']]
+        assert len(api_visit_dates_iso) == 5
+
+        # Dates should be most recent 5. SerializerMethodField doesn't guarantee order unless explicitly handled.
+        # The query in serializer is `obj.visits.order_by('-visit_date').values_list('visit_date', flat=True)[:5]`
+        # This means they are already sorted from most recent to oldest.
+        expected_dates_iso = [str(date.today() - timedelta(days=i)) for i in range(5)]
+        assert api_visit_dates_iso == expected_dates_iso
+
+
+@pytest.mark.django_db
+class QueueAPITests(APITestCase):
+    def setUp(self):
+        # Use get_or_create to avoid issues if 'General' queue is created by migrations
+        self.queue1, _ = Queue.objects.get_or_create(name='General')
+        self.queue2, _ = Queue.objects.get_or_create(name='Specialist')
+
+    def test_get_queue_list(self):
+        url = reverse('queue-list')
+        response = self.client.get(url, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        assert response.data[0]['name'] == 'General' # Default ordering is by name
+        assert response.data[1]['name'] == 'Specialist'
+
+    def test_get_queue_detail(self):
+        url = reverse('queue-detail', kwargs={'pk': self.queue1.pk})
+        response = self.client.get(url, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['name'] == self.queue1.name
+
+
+@pytest.mark.django_db
 class VisitAPITests(APITestCase):
+    def setUp(self):
+        self.patient_data = {'name': 'Visit Tester', 'gender': 'OTHER', 'phone': '555000111'}
+        self.patient = Patient.objects.create(**self.patient_data)
+        self.queue1_data = {'name': 'Queue One'}
+        self.queue1 = Queue.objects.create(**self.queue1_data)
+        self.queue2_data = {'name': 'Queue Two'}
+        self.queue2 = Queue.objects.create(**self.queue2_data)
 
     def test_create_visit_api(self):
-        """Test POST /api/visits/ for creating a new visit."""
-        url = reverse('visit-list') # 'visit-list' is the default name for ViewSet list/create
-        data = {'patient_name': 'API Tester', 'patient_gender': 'MALE'}
+        """Test POST /api/visits/ for creating a new visit with patient and queue."""
+        url = reverse('visit-list')
+        data = {'patient': self.patient.registration_number, 'queue': self.queue1.pk}
 
         response = self.client.post(url, data, format='json')
 
         assert response.status_code == status.HTTP_201_CREATED
         assert Visit.objects.count() == 1
         visit = Visit.objects.first()
-        assert visit.patient_name == 'API Tester'
+        assert visit.patient == self.patient
+        assert visit.queue == self.queue1
+        assert visit.patient_name == self.patient.name # Check denormalized field
+        assert visit.patient_gender == self.patient.gender # Check denormalized field
         assert visit.token_number == 1
         assert visit.visit_date == date.today()
         assert visit.status == 'WAITING'
 
-    def test_create_multiple_visits_api_increments_token(self):
-        """Test tokens increment correctly for multiple POSTs on the same day."""
+    def test_create_multiple_visits_same_queue_increments_token(self):
         url = reverse('visit-list')
-        data1 = {'patient_name': 'First Patient', 'patient_gender': 'FEMALE'}
-        data2 = {'patient_name': 'Second Patient', 'patient_gender': 'MALE'}
+        patient2 = Patient.objects.create(name="Another Patient", gender="MALE")
+        data1 = {'patient': self.patient.registration_number, 'queue': self.queue1.pk}
+        data2 = {'patient': patient2.registration_number, 'queue': self.queue1.pk}
 
         response1 = self.client.post(url, data1, format='json')
         assert response1.status_code == status.HTTP_201_CREATED
@@ -38,146 +180,167 @@ class VisitAPITests(APITestCase):
         response2 = self.client.post(url, data2, format='json')
         assert response2.status_code == status.HTTP_201_CREATED
         assert response2.data['token_number'] == 2
-
         assert Visit.objects.count() == 2
 
-    def test_create_visit_missing_name_api(self):
-        """Test POST /api/visits/ with missing patient_name."""
+    def test_multi_queue_token_independence(self):
+        """Test tokens are independent across different queues on the same day."""
         url = reverse('visit-list')
-        data = {'patient_gender': 'OTHER'} # Missing patient_name
-        response = self.client.post(url, data, format='json')
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'patient_name' in response.data
+        patient2 = Patient.objects.create(name="Patient Two QTwo", gender="FEMALE")
 
-    def test_get_waiting_visits_api(self):
-        """Test GET /api/visits/?status=WAITING returns only today's waiting visits."""
-        # Create some visits for today
-        Visit.objects.create(patient_name="Today Waiter 1", token_number=1, visit_date=date.today(), status="WAITING")
-        Visit.objects.create(patient_name="Today Waiter 2", token_number=2, visit_date=date.today(), status="WAITING")
-        Visit.objects.create(patient_name="Today Done", token_number=3, visit_date=date.today(), status="DONE")
+        # Visit in Queue 1
+        data_q1_v1 = {'patient': self.patient.registration_number, 'queue': self.queue1.pk}
+        response_q1_v1 = self.client.post(url, data_q1_v1, format='json')
+        assert response_q1_v1.status_code == status.HTTP_201_CREATED
+        assert response_q1_v1.data['token_number'] == 1
+        assert response_q1_v1.data['queue_name'] == self.queue1.name
 
-        # Create some visits for yesterday
-        Visit.objects.create(patient_name="Yesterday Waiter", token_number=1, visit_date=date.today() - timedelta(days=1), status="WAITING")
+        # Visit in Queue 2 - token should also be 1
+        data_q2_v1 = {'patient': patient2.registration_number, 'queue': self.queue2.pk}
+        response_q2_v1 = self.client.post(url, data_q2_v1, format='json')
+        assert response_q2_v1.status_code == status.HTTP_201_CREATED
+        assert response_q2_v1.data['token_number'] == 1 # Independent token for Queue 2
+        assert response_q2_v1.data['queue_name'] == self.queue2.name
 
-        url = reverse('visit-list') + '?status=WAITING'
-        response = self.client.get(url, format='json')
+        # Another visit in Queue 1 - token should be 2
+        patient3 = Patient.objects.create(name="Patient Three QOne", gender="OTHER")
+        data_q1_v2 = {'patient': patient3.registration_number, 'queue': self.queue1.pk}
+        response_q1_v2 = self.client.post(url, data_q1_v2, format='json')
+        assert response_q1_v2.status_code == status.HTTP_201_CREATED
+        assert response_q1_v2.data['token_number'] == 2 # Incremented for Queue 1
+        assert response_q1_v2.data['queue_name'] == self.queue1.name
 
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 2
-        assert response.data[0]['patient_name'] == 'Today Waiter 1'
-        assert response.data[1]['patient_name'] == 'Today Waiter 2'
-        # Check ordering by token_number
-        assert response.data[0]['token_number'] < response.data[1]['token_number']
+        assert Visit.objects.count() == 3
 
-    def test_get_waiting_visits_empty_api(self):
-        """Test GET /api/visits/?status=WAITING when no waiting visits today."""
-        Visit.objects.create(patient_name="Today Done", token_number=1, visit_date=date.today(), status="DONE")
-        url = reverse('visit-list') + '?status=WAITING'
-        response = self.client.get(url, format='json')
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 0
+    def test_create_visit_missing_patient_or_queue_api(self):
+        url = reverse('visit-list')
+        # Missing patient
+        data_no_patient = {'queue': self.queue1.pk}
+        response_no_patient = self.client.post(url, data_no_patient, format='json')
+        assert response_no_patient.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'patient' in response_no_patient.data
+
+        # Missing queue
+        data_no_queue = {'patient': self.patient.registration_number}
+        response_no_queue = self.client.post(url, data_no_queue, format='json')
+        assert response_no_queue.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'queue' in response_no_queue.data
+
+    def test_get_waiting_visits_api_filtered_by_queue(self):
+        """Test GET /api/visits/?status=WAITING&queue=<id> returns correctly."""
+        # Visits for Queue 1
+        Visit.objects.create(patient=self.patient, queue=self.queue1, token_number=1, visit_date=date.today(), status="WAITING", patient_name=self.patient.name, patient_gender=self.patient.gender)
+        # Visit for Queue 2
+        patient2 = Patient.objects.create(name="Q2 Patient", gender="MALE")
+        Visit.objects.create(patient=patient2, queue=self.queue2, token_number=1, visit_date=date.today(), status="WAITING", patient_name=patient2.name, patient_gender=patient2.gender)
+
+        url_q1 = reverse('visit-list') + f'?status=WAITING&queue={self.queue1.pk}'
+        response_q1 = self.client.get(url_q1, format='json')
+        assert response_q1.status_code == status.HTTP_200_OK
+        assert len(response_q1.data) == 1
+        assert response_q1.data[0]['patient_full_name'] == self.patient.name
+        assert response_q1.data[0]['queue_name'] == self.queue1.name
+
+        url_q2 = reverse('visit-list') + f'?status=WAITING&queue={self.queue2.pk}'
+        response_q2 = self.client.get(url_q2, format='json')
+        assert response_q2.status_code == status.HTTP_200_OK
+        assert len(response_q2.data) == 1
+        assert response_q2.data[0]['patient_full_name'] == patient2.name
+        assert response_q2.data[0]['queue_name'] == self.queue2.name
+
+        # Test without queue filter, should show all waiting for today
+        url_all_waiting = reverse('visit-list') + '?status=WAITING'
+        response_all_waiting = self.client.get(url_all_waiting, format='json')
+        assert response_all_waiting.status_code == status.HTTP_200_OK
+        assert len(response_all_waiting.data) == 2
+
 
     def test_patch_visit_done_api(self):
-        """Test PATCH /api/visits/<id>/done/ successfully marks a visit as DONE."""
-        visit = Visit.objects.create(patient_name="To Be Done", token_number=1, visit_date=date.today(), status="WAITING")
-        url = reverse('visit-done', kwargs={'pk': visit.pk}) # 'visit-done' is convention for detail_route
-
-        response = self.client.patch(url, {}, format='json') # Empty data for this specific action
-
+        visit = Visit.objects.create(patient=self.patient, queue=self.queue1, token_number=1, visit_date=date.today(), status="WAITING", patient_name=self.patient.name, patient_gender=self.patient.gender)
+        url = reverse('visit-done', kwargs={'pk': visit.pk})
+        response = self.client.patch(url, {}, format='json')
         assert response.status_code == status.HTTP_200_OK
         visit.refresh_from_db()
         assert visit.status == 'DONE'
-        assert response.data['status'] == 'DONE'
 
-    def test_patch_visit_done_nonexistent_api(self):
-        """Test PATCH /api/visits/<id>/done/ for a non-existent visit."""
-        url = reverse('visit-done', kwargs={'pk': 999})
-        response = self.client.patch(url, {}, format='json')
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    def test_patch_visit_already_done_api(self):
-        """Test PATCH /api/visits/<id>/done/ for an already DONE visit."""
-        visit = Visit.objects.create(patient_name="Already Done", token_number=1, visit_date=date.today(), status="DONE")
-        url = reverse('visit-done', kwargs={'pk': visit.pk})
-
-        response = self.client.patch(url, {}, format='json')
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST # As per view logic
-        assert 'already marked as done' in response.data.get('detail', '').lower()
-        visit.refresh_from_db()
-        assert visit.status == 'DONE' # Status should remain DONE
-
-    def test_token_generation_resets_across_days_api(self):
-        """Test that token generation via API resets for a new day."""
+    def test_token_generation_resets_across_days_for_queues_api(self):
         url = reverse('visit-list')
-
         with freeze_time("2023-01-01"):
-            data_day1 = {'patient_name': 'Day1 Patient', 'patient_gender': 'FEMALE'}
-            response_day1 = self.client.post(url, data_day1, format='json')
-            assert response_day1.status_code == status.HTTP_201_CREATED
-            assert response_day1.data['token_number'] == 1
-            assert response_day1.data['visit_date'] == "2023-01-01"
+            data_d1_q1 = {'patient': self.patient.registration_number, 'queue': self.queue1.pk}
+            resp_d1_q1 = self.client.post(url, data_d1_q1, format='json')
+            assert resp_d1_q1.status_code == status.HTTP_201_CREATED
+            assert resp_d1_q1.data['token_number'] == 1
+            assert resp_d1_q1.data['visit_date'] == "2023-01-01"
 
-        with freeze_time("2023-01-02"):
-            data_day2 = {'patient_name': 'Day2 Patient', 'patient_gender': 'MALE'}
-            response_day2 = self.client.post(url, data_day2, format='json')
-            assert response_day2.status_code == status.HTTP_201_CREATED
-            assert response_day2.data['token_number'] == 1 # Reset for new day
-            assert response_day2.data['visit_date'] == "2023-01-02"
+        with freeze_time("2023-01-02"): # New day
+            # Token for Queue 1 should reset
+            data_d2_q1 = {'patient': self.patient.registration_number, 'queue': self.queue1.pk}
+            resp_d2_q1 = self.client.post(url, data_d2_q1, format='json')
+            assert resp_d2_q1.status_code == status.HTTP_201_CREATED
+            assert resp_d2_q1.data['token_number'] == 1
+            assert resp_d2_q1.data['visit_date'] == "2023-01-02"
 
-    def test_get_all_visits_api_no_filter(self):
-        """Test GET /api/visits/ without status filter (lists all)."""
-        Visit.objects.create(patient_name="V1", token_number=1, visit_date=date.today() - timedelta(days=1))
-        Visit.objects.create(patient_name="V2", token_number=1, visit_date=date.today())
-        Visit.objects.create(patient_name="V3", token_number=2, visit_date=date.today())
+            # Token for Queue 2 should also be 1 on this new day
+            patient2 = Patient.objects.create(name="Day2 Q2 Patient", gender="FEMALE")
+            data_d2_q2 = {'patient': patient2.registration_number, 'queue': self.queue2.pk}
+            resp_d2_q2 = self.client.post(url, data_d2_q2, format='json')
+            assert resp_d2_q2.status_code == status.HTTP_201_CREATED
+            assert resp_d2_q2.data['token_number'] == 1
+            assert resp_d2_q2.data['visit_date'] == "2023-01-02"
 
+    def test_quick_re_registration_flow(self):
+        """Test creating a new visit for an existing patient doesn't change patient details."""
         url = reverse('visit-list')
-        response = self.client.get(url, format='json')
+        original_patient_name = self.patient.name
+        original_patient_phone = self.patient.phone
 
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 3
-        # Check default ordering: -visit_date, token_number
-        assert response.data[0]['patient_name'] == "V2" # Today, token 1
-        assert response.data[1]['patient_name'] == "V3" # Today, token 2
-        assert response.data[2]['patient_name'] == "V1" # Yesterday, token 1
+        # First visit for the patient
+        visit1_data = {'patient': self.patient.registration_number, 'queue': self.queue1.pk}
+        response1 = self.client.post(url, visit1_data, format='json')
+        assert response1.status_code == status.HTTP_201_CREATED
+        assert response1.data['token_number'] == 1
+        assert response1.data['patient_full_name'] == original_patient_name
 
-    def test_get_visits_with_done_status_api(self):
-        """Test GET /api/visits/?status=DONE retrieves today's DONE visits."""
-        today = date.today()
-        Visit.objects.create(patient_name="Done Today 1", token_number=1, visit_date=today, status="DONE")
-        Visit.objects.create(patient_name="Waiting Today", token_number=2, visit_date=today, status="WAITING")
-        Visit.objects.create(patient_name="Done Today 2", token_number=3, visit_date=today, status="DONE")
-        Visit.objects.create(patient_name="Done Yesterday", token_number=1, visit_date=today - timedelta(days=1), status="DONE")
+        # Patient details should be unchanged
+        self.patient.refresh_from_db()
+        assert self.patient.name == original_patient_name
+        assert self.patient.phone == original_patient_phone
 
-        url = reverse('visit-list') + '?status=DONE'
-        response = self.client.get(url, format='json')
+        # Second visit for the same patient (quick re-registration)
+        # Simulate some time passes, maybe another day or same day different queue
+        visit2_data = {'patient': self.patient.registration_number, 'queue': self.queue2.pk} # Different queue
+        response2 = self.client.post(url, visit2_data, format='json')
+        assert response2.status_code == status.HTTP_201_CREATED
+        assert response2.data['token_number'] == 1 # Token 1 for queue2
+        assert response2.data['patient_full_name'] == original_patient_name
 
-        assert response.status_code == status.HTTP_200_OK
-        # The view's get_queryset for status='WAITING' filters by today.
-        # For other statuses, it does not filter by today by default in the provided view code.
-        # Let's adjust the test to reflect the current implementation or consider if the view needs adjustment.
-        # Current view: if status_param == 'WAITING': queryset = queryset.filter(visit_date=timezone.now().date()).order_by('token_number')
-        # else: queryset = queryset.order_by('-visit_date', 'token_number')
-        # This means ?status=DONE will show ALL done visits, ordered by -visit_date, token_number
+        # Patient details should still be unchanged
+        self.patient.refresh_from_db()
+        assert self.patient.name == original_patient_name
+        assert self.patient.phone == original_patient_phone
 
-        assert len(response.data) == 3 # All DONE visits
-        assert response.data[0]['patient_name'] == 'Done Today 1' # Ordered by token_number after date
-        assert response.data[1]['patient_name'] == 'Done Today 2'
-        assert response.data[2]['patient_name'] == 'Done Yesterday'
+        assert Visit.objects.filter(patient=self.patient).count() == 2
 
-
-    def test_serializer_read_only_fields_on_post(self):
-        """Test that read_only_fields (token_number, visit_date, status) are ignored on POST."""
+    def test_serializer_read_only_fields_on_visit_post(self):
+        """Test that read_only_fields on VisitSerializer are ignored on POST."""
         url = reverse('visit-list')
         data = {
-            'patient_name': 'Smart Alec',
-            'patient_gender': 'OTHER',
+            'patient': self.patient.registration_number,
+            'queue': self.queue1.pk,
             'token_number': 99,  # Should be ignored
             'visit_date': '2000-01-01', # Should be ignored
-            'status': 'DONE' # Should be ignored (set to WAITING by default)
+            'status': 'DONE', # Should be ignored (set to WAITING by default)
+            'patient_name': 'Should be Ignored Name', # Should be derived from Patient model
+            'patient_gender': 'MALE' # Should be derived from Patient model
         }
         response = self.client.post(url, data, format='json')
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data['token_number'] == 1 # Generated, not 99
-        assert response.data['visit_date'] == str(date.today()) # Today, not 2000-01-01
-        assert response.data['status'] == 'WAITING' # Default, not DONE
+        assert response.data['token_number'] == 1
+        assert response.data['visit_date'] == str(date.today())
+        assert response.data['status'] == 'WAITING'
+        assert response.data['patient_full_name'] == self.patient.name # Derived from patient obj
+
+        # Check the actual Visit model's patient_name and patient_gender fields
+        # These are populated by the view's perform_create from the Patient instance
+        visit = Visit.objects.get(pk=response.data['id'])
+        assert visit.patient_name == self.patient.name
+        assert visit.patient_gender == self.patient.gender

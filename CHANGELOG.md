@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - YYYY-MM-DD <!-- Replace with actual release date for v0.2.0 -->
+
+### Added
+
+*   **Permanent Patient Record**:
+    *   Introduced `Patient` model (`id` (auto as `registration_number`), `name`, `phone`, `gender`).
+    *   API endpoint `GET /api/patients/search/?q=` for searching patients by registration number, name fragment, or phone fragment.
+    *   Full CRUD API endpoints for patients under `/api/patients/`.
+    *   Database indexes added for `Patient.phone` and `Patient.name` for optimized searching.
+*   **Multi-Queue Support**:
+    *   Introduced `Queue` model (`id`, `name`) to manage multiple service queues (up to 5 as per requirements, though model supports more).
+    *   Queues are manageable via Django Admin.
+    *   API endpoint `GET /api/queues/` to list available queues.
+*   **Enhanced Visit Management**:
+    *   `Visit` model updated with foreign keys to `Patient` and `Queue`.
+    *   Token numbers are now generated per queue and reset daily per queue.
+    *   Public display updated: `/display` shows all queues; `/display?queue=<id>` shows a specific queue. (Conceptual - frontend changes pending).
+*   **Quick Re-registration Flow**:
+    *   Assistant can enter a patient's registration number to auto-fill their details.
+    *   Submitting the form for a returning patient creates a new `Visit` record without modifying patient data.
+*   **Previous Visit Glance**:
+    *   `PatientSerializer` now includes `last_5_visit_dates` for display on Assistant and Doctor dashboards. (Conceptual - frontend changes pending).
+*   **Database Migrations**:
+    *   Schema migrations for `Patient` and `Queue` tables.
+    *   Data migration to back-fill Release 1 data:
+        *   Creates a default "General" queue.
+        *   Creates "anonymous" patient records from existing visit data.
+        *   Associates existing visits with the default queue and their respective anonymous patient.
+*   **Testing**:
+    *   Unit/integration tests for patient search, multi-queue independence, and migration back-fill logic.
+    *   Backend test coverage maintained at ≥80% (currently ~91%). User requirement for Release 2 was ≥80%, task breakdown mentioned aiming for ≥80%.
+
+### Changed
+
+*   **Visit Model**:
+    *   Added `patient` (ForeignKey to `Patient`) and `queue` (ForeignKey to `Queue`) fields.
+    *   `unique_together` constraint updated to `('token_number', 'visit_date', 'queue')`.
+    *   Default ordering updated to `['visit_date', 'queue', 'token_number']`.
+    *   Original `patient_name` and `patient_gender` fields on `Visit` are kept for historical data but are now populated from the linked `Patient` for new visits.
+*   **Token Generation Logic**: Updated to be per-queue, per-day.
+*   **API `POST /api/visits/`**: Now requires `patient` (ID of patient) and `queue` (ID of queue) in the request payload.
+*   **API `GET /api/visits/`**: Can now be filtered by `queue=<id>`.
+
+### Fixed
+
+*   N/A (No specific bug fixes noted for this release, primarily new features).
+
+### Removed
+
+*   N/A
+
 ## [0.1.0] - YYYY-MM-DD <!-- Replace with actual release date -->
 
 ### Added

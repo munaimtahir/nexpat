@@ -4,13 +4,49 @@ ClinicQ is a browser-based token queue system designed for clinics. It allows as
 
 This project is built with Django (backend API) and React (frontend).
 
-## Features (Release 1 - v0.1.0)
+## Features
 
-*   **Token Generation (Assistant)**: Input patient name and gender to generate a unique token for the day.
-*   **Public Queue Display (`/display`)**: Shows all waiting tokens, highlights the first in line, and auto-refreshes every 5 seconds.
+### Release 2 - v0.2.0 (Current)
+
+*   **Permanent Patient Records**:
+    *   Patients (`registration_number`, `name`, `phone`, `gender`) are stored permanently.
+    *   Search for patients by registration number, name fragment, or phone fragment via `GET /api/patients/search/?q=`.
+    *   Full CRUD for patient records available via `/api/patients/`.
+*   **Multi-Queue Support (up to 5 queues)**:
+    *   Clinics can define multiple service queues (e.g., "General", "Specialist") via the Django admin interface (`Queue` model).
+    *   Token numbers are generated per queue and reset daily for each queue independently.
+    *   Assistants select a queue when issuing a token.
+    *   Public display can show all queues (`/display`) or a specific queue (`/display?queue=<id>`).
+*   **Quick Re-registration**:
+    *   Assistants can quickly re-register returning patients by entering their registration number.
+    *   Patient details are auto-filled in the form.
+    *   A new token is generated and a new visit record is created without altering existing patient data.
+*   **Previous Visit Glance**:
+    *   Assistant and Doctor dashboards now show the last 5 visit dates for a selected patient, providing a quick medical history glance.
+*   **Enhanced Visit Model**: The `Visit` model now links to `Patient` and `Queue` records.
+*   **Data Back-fill**: Existing visit data from Release 1 is automatically migrated to use the new patient and queue structures (default "General" queue and "anonymous" patient records).
+
+### Release 1 - v0.1.0
+
+*   **Token Generation (Assistant)**: Input patient name and gender to generate a unique token for the day (single queue).
+*   **Public Queue Display (`/display`)**: Shows all waiting tokens for the single queue, highlights the first in line, and auto-refreshes every 5 seconds.
 *   **Doctor Dashboard (`/doctor`)**: Lists waiting tokens; allows doctors to mark patients as "Done", removing them from the active queue.
-*   **Persistence**: Visit data (token, patient info, date, status) stored in a PostgreSQL database.
-*   **Admin Interface**: Django admin enabled for data management and initial user (doctor) account creation by a superuser.
+*   **Persistence**: Visit data (token, patient info, date, status) stored in a PostgreSQL database. Release 2 introduces `Patient` and `Queue` tables and links `Visit` to them.
+*   **Admin Interface**: Django admin enabled for data management. In Release 2, this includes managing `Patient` and `Queue` records.
+
+## API Endpoints
+
+Key API endpoints include:
+
+*   `POST /api/visits/`: Create a new visit (token). Requires `patient` (ID) and `queue` (ID).
+*   `GET /api/visits/?status=WAITING[&queue=<id>]`: List waiting visits, optionally filtered by queue.
+*   `PATCH /api/visits/<id>/done/`: Mark a visit as done.
+*   `GET /api/patients/`: List patients or retrieve a specific patient by registration number (`/api/patients/<reg_no>/`).
+*   `POST /api/patients/`: Create a new patient.
+*   `PUT/PATCH /api/patients/<reg_no>/`: Update patient details.
+*   `DELETE /api/patients/<reg_no>/`: Delete a patient.
+*   `GET /api/patients/search/?q=<query>`: Search for patients.
+*   `GET /api/queues/`: List available service queues.
 
 ## Technology Stack
 
