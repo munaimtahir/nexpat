@@ -64,17 +64,23 @@ const resetMswData = () => {
 
 const server = setupServer(
   http.post('/api/visits/', async ({ request }) => {
-    const body = await request.json(); // Restore body parsing
+    const body = await request.json();
     if (!body.patient_name) {
       return HttpResponse.json({ patient_name: ['This field is required.'] }, { status: 400 });
     }
+    const currentToken = nextToken;
+    nextToken++;
     const newVisit = {
-      id: mockVisits.length + 1, token_number: nextToken++, patient_name: body.patient_name,
-      patient_gender: body.patient_gender, visit_date: todayDateStr, status: 'WAITING',
+      id: mockVisits.length + 1, 
+      token_number: currentToken, 
+      patient_name: body.patient_name,
+      patient_gender: body.patient_gender, 
+      visit_date: todayDateStr, 
+      status: 'WAITING',
       created_at: new Date().toISOString(),
     };
-    mockVisits.push(newVisit); // Add to mockVisits so GET can find it
-    return HttpResponse.json(newVisit, { status: 201 });
+    mockVisits.push(newVisit);
+    return HttpResponse.json(newVisit);
   }),
   http.get('/api/visits/', ({ request }) => {
     const url = new URL(request.url);

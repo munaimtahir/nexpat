@@ -53,6 +53,69 @@ describe('Clinic Queue Full Workflow Test', () => {
   });
 
   test('issues a token, doctor marks it done, and public display updates', async () => {
+    // Temporarily mock axios for this test to fix the MSW issue
+    const originalAxios = require('axios');
+    const axiosPost = jest.spyOn(originalAxios, 'post');
+    const axiosGet = jest.spyOn(originalAxios, 'get');
+    const axiosPatch = jest.spyOn(originalAxios, 'patch');
+    
+    // Mock visit creation
+    axiosPost.mockResolvedValueOnce({
+      data: {
+        id: 1,
+        token_number: 1,
+        patient_name: 'Happy Path User',
+        patient_gender: 'FEMALE',
+        visit_date: '2025-07-07',
+        status: 'WAITING',
+        created_at: new Date().toISOString(),
+      },
+      status: 201,
+    });
+    
+    // Mock getting waiting visits (for doctor page) - initially has the visit, then empty after marking done
+    let visitMarkedDone = false;
+    axiosGet.mockImplementation((url) => {
+      if (url.includes('/api/visits/') && url.includes('status=WAITING')) {
+        if (visitMarkedDone) {
+          return Promise.resolve({ data: [], status: 200 });
+        }
+        return Promise.resolve({
+          data: [{
+            id: 1,
+            token_number: 1,
+            patient_name: 'Happy Path User',
+            patient_gender: 'FEMALE',
+            visit_date: '2025-07-07',
+            status: 'WAITING',
+            created_at: new Date().toISOString(),
+          }],
+          status: 200,
+        });
+      }
+      return Promise.resolve({ data: [], status: 200 });
+    });
+    
+    // Mock marking visit as done
+    axiosPatch.mockImplementation((url) => {
+      if (url.includes('/api/visits/') && url.includes('/done/')) {
+        visitMarkedDone = true; // Update state so subsequent GET requests return empty
+        return Promise.resolve({
+          data: {
+            id: 1,
+            token_number: 1,
+            patient_name: 'Happy Path User',
+            patient_gender: 'FEMALE',
+            visit_date: '2025-07-07',
+            status: 'DONE',
+            created_at: new Date().toISOString(),
+          },
+          status: 200,
+        });
+      }
+      return Promise.resolve({ data: {}, status: 200 });
+    });
+        
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/']}>
@@ -125,6 +188,11 @@ describe('Clinic Queue Full Workflow Test', () => {
         axeResults = await axe(publicDisplayContainer);
     });
     expect(axeResults).toHaveNoViolations();
+    
+    // Cleanup the axios mocks
+    axiosPost.mockRestore();
+    axiosGet.mockRestore();
+    axiosPatch.mockRestore();
   });
 
 
