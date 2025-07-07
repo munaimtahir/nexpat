@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1751670356071" clover="3.2.0">
-  <project timestamp="1751670356071" name="All files">
+<coverage generated="1751871103015" clover="3.2.0">
+  <project timestamp="1751871103015" name="All files">
     <metrics statements="87" coveredstatements="63" conditionals="67" coveredconditionals="37" methods="19" coveredmethods="13" elements="173" coveredelements="113" complexity="0" loc="87" ncloc="87" packages="2" files="4" classes="4"/>
     <package name="src">
       <metrics statements="3" coveredstatements="3" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
-      <file name="App.jsx" path="/app/clinicq_frontend/src/App.jsx">
+      <file name="App.jsx" path="/home/runner/work/nexpat/nexpat/clinicq_frontend/src/App.jsx">
         <metrics statements="3" coveredstatements="3" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
         <line num="9" count="1" type="stmt"/>
         <line num="10" count="2" type="stmt"/>
@@ -13,7 +13,7 @@
     </package>
     <package name="src.pages">
       <metrics statements="84" coveredstatements="60" conditionals="67" coveredconditionals="37" methods="17" coveredmethods="11"/>
-      <file name="AssistantPage.jsx" path="/app/clinicq_frontend/src/pages/AssistantPage.jsx">
+      <file name="AssistantPage.jsx" path="/home/runner/work/nexpat/nexpat/clinicq_frontend/src/pages/AssistantPage.jsx">
         <metrics statements="37" coveredstatements="28" conditionals="19" coveredconditionals="12" methods="4" coveredmethods="4"/>
         <line num="5" count="1" type="stmt"/>
         <line num="6" count="39" type="stmt"/>
@@ -53,7 +53,7 @@
         <line num="74" count="30" type="stmt"/>
         <line num="87" count="2" type="stmt"/>
       </file>
-      <file name="DoctorPage.jsx" path="/app/clinicq_frontend/src/pages/DoctorPage.jsx">
+      <file name="DoctorPage.jsx" path="/home/runner/work/nexpat/nexpat/clinicq_frontend/src/pages/DoctorPage.jsx">
         <metrics statements="24" coveredstatements="15" conditionals="18" coveredconditionals="12" methods="6" coveredmethods="3"/>
         <line num="5" count="1" type="stmt"/>
         <line num="6" count="3" type="stmt"/>
@@ -80,7 +80,7 @@
         <line num="54" count="0" type="stmt"/>
         <line num="64" count="0" type="stmt"/>
       </file>
-      <file name="PublicDisplayPage.jsx" path="/app/clinicq_frontend/src/pages/PublicDisplayPage.jsx">
+      <file name="PublicDisplayPage.jsx" path="/home/runner/work/nexpat/nexpat/clinicq_frontend/src/pages/PublicDisplayPage.jsx">
         <metrics statements="23" coveredstatements="17" conditionals="30" coveredconditionals="13" methods="7" coveredmethods="4"/>
         <line num="5" count="1" type="stmt"/>
         <line num="7" count="1" type="stmt"/>
