@@ -53,6 +53,69 @@ describe('Clinic Queue Full Workflow Test', () => {
   });
 
   test('issues a token, doctor marks it done, and public display updates', async () => {
+    // Temporarily mock axios for this test to fix the MSW issue
+    const originalAxios = require('axios');
+    const axiosPost = jest.spyOn(originalAxios, 'post');
+    const axiosGet = jest.spyOn(originalAxios, 'get');
+    const axiosPatch = jest.spyOn(originalAxios, 'patch');
+    
+    // Mock visit creation
+    axiosPost.mockResolvedValueOnce({
+      data: {
+        id: 1,
+        token_number: 1,
+        patient_name: 'Happy Path User',
+        patient_gender: 'FEMALE',
+        visit_date: '2025-07-07',
+        status: 'WAITING',
+        created_at: new Date().toISOString(),
+      },
+      status: 201,
+    });
+    
+    // Mock getting waiting visits (for doctor page) - initially has the visit, then empty after marking done
+    let visitMarkedDone = false;
+    axiosGet.mockImplementation((url) => {
+      if (url.includes('/api/visits/') && url.includes('status=WAITING')) {
+        if (visitMarkedDone) {
+          return Promise.resolve({ data: [], status: 200 });
+        }
+        return Promise.resolve({
+          data: [{
+            id: 1,
+            token_number: 1,
+            patient_name: 'Happy Path User',
+            patient_gender: 'FEMALE',
+            visit_date: '2025-07-07',
+            status: 'WAITING',
+            created_at: new Date().toISOString(),
+          }],
+          status: 200,
+        });
+      }
+      return Promise.resolve({ data: [], status: 200 });
+    });
+    
+    // Mock marking visit as done
+    axiosPatch.mockImplementation((url) => {
+      if (url.includes('/api/visits/') && url.includes('/done/')) {
+        visitMarkedDone = true; // Update state so subsequent GET requests return empty
+        return Promise.resolve({
+          data: {
+            id: 1,
+            token_number: 1,
+            patient_name: 'Happy Path User',
+            patient_gender: 'FEMALE',
+            visit_date: '2025-07-07',
+            status: 'DONE',
+            created_at: new Date().toISOString(),
+          },
+          status: 200,
+        });
+      }
+      return Promise.resolve({ data: {}, status: 200 });
+    });
+        
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/']}>
@@ -125,6 +188,11 @@ describe('Clinic Queue Full Workflow Test', () => {
         axeResults = await axe(publicDisplayContainer);
     });
     expect(axeResults).toHaveNoViolations();
+    
+    // Cleanup the axios mocks
+    axiosPost.mockRestore();
+    axiosGet.mockRestore();
+    axiosPatch.mockRestore();
   });
 
 
@@ -156,6 +224,184 @@ describe('Clinic Queue Full Workflow Test', () => {
     });
 
     expect(await screen.findByText(/Failed to generate token/i)).toBeInTheDocument();
+  });
+
+  // Additional focused tests to improve coverage
+  test('shows validation error when patient name is empty', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+    
+    await user.click(screen.getByRole('link', { name: /Assistant Portal/i }));
+    
+    // Leave patient name empty and try to submit
+    await user.selectOptions(screen.getByLabelText(/Patient Gender/i), 'MALE');
+    await user.click(screen.getByRole('button', { name: /Generate Token/i }));
+    
+    // Should show validation error
+    expect(await screen.findByText(/Patient name cannot be empty/i)).toBeInTheDocument();
+  });
+
+  test('handles invalid token response gracefully', async () => {
+    // Mock axios to return invalid token
+    const originalAxios = require('axios');
+    const axiosPost = jest.spyOn(originalAxios, 'post');
+    axiosPost.mockResolvedValueOnce({
+      data: { token_number: null }, // Invalid token
+      status: 201,
+    });
+    
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+    
+    await user.click(screen.getByRole('link', { name: /Assistant Portal/i }));
+    
+    const patientNameInput = screen.getByLabelText(/Patient Name/i);
+    await user.type(patientNameInput, 'Test User');
+    await user.click(screen.getByRole('button', { name: /Generate Token/i }));
+    
+    // Should show error for invalid token format
+    expect(await screen.findByText(/Received invalid token format from server/i)).toBeInTheDocument();
+    expect(await screen.findByText(/N\/A/i)).toBeInTheDocument(); // Should show N/A
+    
+    axiosPost.mockRestore();
+  });
+
+  test('displays server validation errors correctly', async () => {
+    // Mock axios to return server validation errors
+    const originalAxios = require('axios');
+    const axiosPost = jest.spyOn(originalAxios, 'post');
+    axiosPost.mockRejectedValueOnce({
+      response: {
+        data: {
+          patient_name: ['This field is required.'],
+          patient_gender: ['Invalid choice.']
+        }
+      }
+    });
+    
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+    
+    await user.click(screen.getByRole('link', { name: /Assistant Portal/i }));
+    
+    const patientNameInput = screen.getByLabelText(/Patient Name/i);
+    await user.type(patientNameInput, 'Test User');
+    await user.click(screen.getByRole('button', { name: /Generate Token/i }));
+    
+    // Should show parsed server errors
+    expect(await screen.findByText(/Failed to generate token.*patient_name.*patient_gender/i)).toBeInTheDocument();
+    
+    axiosPost.mockRestore();
+  });
+
+  test('doctor page handles API errors gracefully', async () => {
+    // Mock axios to simulate fetch error  
+    const originalAxios = require('axios');
+    const axiosGet = jest.spyOn(originalAxios, 'get');
+    axiosGet.mockRejectedValueOnce(new Error('Network error'));
+    
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+    
+    await user.click(screen.getByRole('link', { name: /Doctor Dashboard/i }));
+    
+    // Should show error message
+    expect(await screen.findByText(/Failed to fetch waiting visits/i)).toBeInTheDocument();
+    
+    axiosGet.mockRestore();
+  });
+
+  test('doctor page handles mark as done API errors', async () => {
+    // First mock successful fetch, then failed mark as done
+    const originalAxios = require('axios');
+    const axiosGet = jest.spyOn(originalAxios, 'get');
+    const axiosPatch = jest.spyOn(originalAxios, 'patch');
+    
+    axiosGet.mockResolvedValue({
+      data: [{
+        id: 1,
+        token_number: 1,
+        patient_name: 'Test Patient',
+        patient_gender: 'MALE',
+        visit_date: '2025-07-07',
+        status: 'WAITING',
+      }],
+      status: 200,
+    });
+    
+    axiosPatch.mockRejectedValueOnce({
+      response: { data: { detail: 'Visit already marked as done.' } }
+    });
+    
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+    
+    await user.click(screen.getByRole('link', { name: /Doctor Dashboard/i }));
+    
+    // Wait for visit to load, then try to mark as done
+    await waitFor(() => {
+      expect(screen.getByText(/Token: 1/i)).toBeInTheDocument();
+    });
+    
+    await user.click(screen.getByRole('button', { name: /Mark as Done/i }));
+    
+    // Should show error message
+    expect(await screen.findByText(/Failed to mark token as done.*Visit already marked as done/i)).toBeInTheDocument();
+    
+    axiosGet.mockRestore();
+    axiosPatch.mockRestore();
+  });
+
+  test('public display page shows multiple visits correctly', async () => {
+    // Mock axios to return multiple visits
+    const originalAxios = require('axios');
+    const axiosGet = jest.spyOn(originalAxios, 'get');
+    
+    // Return multiple visits for all GET requests
+    axiosGet.mockResolvedValue({
+      data: [
+        { id: 1, token_number: 1, patient_name: 'First Patient', patient_gender: 'MALE' },
+        { id: 2, token_number: 2, patient_name: 'Second Patient', patient_gender: 'FEMALE' },
+        { id: 3, token_number: 3, patient_name: 'Third Patient', patient_gender: 'OTHER' },
+      ],
+      status: 200,
+    });
+    
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/display']}>
+        <App />
+      </MemoryRouter>
+    );
+    
+    // Should show multiple visits and "Next in Queue" section
+    await waitFor(() => {
+      expect(screen.getByText(/First Patient/)).toBeInTheDocument();
+      expect(screen.getByText(/Second Patient/)).toBeInTheDocument();
+      expect(screen.getByText(/Third Patient/)).toBeInTheDocument();
+    }, { timeout: 3000 });
+    
+    axiosGet.mockRestore();
   });
 
 });
