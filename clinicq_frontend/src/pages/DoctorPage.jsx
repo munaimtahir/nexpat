@@ -12,7 +12,20 @@ const DoctorPage = () => {
     setError('');
     try {
       const response = await axios.get('/api/visits/?status=WAITING');
-      setWaitingVisits(response.data || []); // Ensure response.data is not undefined
+      const visits = response.data || [];
+      const detailedVisits = await Promise.all(
+        visits.map(async (visit) => {
+          try {
+            const patientResp = await axios.get(
+              `/api/patients/${visit.patient_registration_number}/`
+            );
+            return { ...visit, patient_details: patientResp.data };
+          } catch {
+            return { ...visit, patient_details: null };
+          }
+        })
+      );
+      setWaitingVisits(detailedVisits);
     } catch (err) {
       console.error("Error fetching waiting visits:", err);
       setError('Failed to fetch waiting visits. Please try again.');
@@ -59,6 +72,13 @@ const DoctorPage = () => {
                 <p className="text-2xl font-bold text-blue-600">Token: {visit.token_number}</p>
                 <p className="text-gray-700">Patient: {visit.patient_name}</p>
                 <p className="text-sm text-gray-500">Gender: {visit.patient_gender}</p>
+                {visit.patient_details &&
+                  visit.patient_details.last_5_visit_dates &&
+                  visit.patient_details.last_5_visit_dates.length > 0 && (
+                    <p className="text-xs text-gray-500">
+                      Last Visits: {visit.patient_details.last_5_visit_dates.join(', ')}
+                    </p>
+                  )}
               </div>
               <button
                 onClick={() => handleMarkDone(visit.id)}

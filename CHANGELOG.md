@@ -28,7 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     *   Assistant can enter a patient's registration number to auto-fill their details.
     *   Submitting the form for a returning patient creates a new `Visit` record without modifying patient data.
 *   **Previous Visit Glance**:
-    *   `PatientSerializer` now includes `last_5_visit_dates` for display on Assistant and Doctor dashboards. (Conceptual - frontend changes pending).
+    *   `PatientSerializer` now includes `last_5_visit_dates` for display on Assistant and Doctor dashboards.
+    *   Assistant and Doctor views now fetch full patient records and render the last five visit dates.
 *   **Database Migrations**:
     *   Schema migrations for `Patient` and `Queue` tables.
     *   Data migration to back-fill Release 1 data:
