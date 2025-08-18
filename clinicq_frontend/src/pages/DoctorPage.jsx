@@ -6,45 +6,52 @@ const DoctorPage = () => {
   const [waitingVisits, setWaitingVisits] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [queues, setQueues] = useState([]);
+  const [selectedQueue, setSelectedQueue] = useState('');
 
   const fetchWaitingVisits = useCallback(async () => {
     setIsLoading(true);
     setError('');
     try {
-      const response = await axios.get('/api/visits/?status=WAITING');
+      const queueParam = selectedQueue ? `&queue=${selectedQueue}` : '';
+      const response = await axios.get(`/api/visits/?status=WAITING${queueParam}`);
       const visits = response.data || [];
-      const detailedVisits = await Promise.all(
-        visits.map(async (visit) => {
-          try {
-            const patientResp = await axios.get(
-              `/api/patients/${visit.patient_registration_number}/`
-            );
-            return { ...visit, patient_details: patientResp.data };
-          } catch {
-            return { ...visit, patient_details: null };
-          }
-        })
-      // Batch fetch patient details
-      const registrationNumbers = [...new Set(visits.map(v => v.patient_registration_number))];
+
+      // Fetch patient details in batch if possible, otherwise one by one
+      const registrationNumbers = [
+        ...new Set(visits.map((v) => v.patient_registration_number)),
+      ];
       let patientsByRegNum = {};
+
       if (registrationNumbers.length > 0) {
         try {
           const patientsResp = await axios.get(
             `/api/patients/?registration_numbers=${registrationNumbers.join(',')}`
           );
-          // Assume the response is an array of patient objects with registration_number field
           patientsByRegNum = (patientsResp.data || []).reduce((acc, patient) => {
             acc[patient.registration_number] = patient;
             return acc;
           }, {});
         } catch {
-          // If batch fetch fails, leave patientsByRegNum empty
+          // If batch fetch fails, fallback to individual requests
+          await Promise.all(
+            registrationNumbers.map(async (regNum) => {
+              try {
+                const resp = await axios.get(`/api/patients/${regNum}/`);
+                patientsByRegNum[regNum] = resp.data;
+              } catch {
+                patientsByRegNum[regNum] = null;
+              }
+            })
+          );
         }
       }
-      const detailedVisits = visits.map(visit => ({
+
+      const detailedVisits = visits.map((visit) => ({
         ...visit,
-        patient_details: patientsByRegNum[visit.patient_registration_number] || null
+        patient_details: patientsByRegNum[visit.patient_registration_number] || null,
       }));
+
       setWaitingVisits(detailedVisits);
     } catch (err) {
       console.error("Error fetching waiting visits:", err);
@@ -52,6 +59,18 @@ const DoctorPage = () => {
     } finally {
       setIsLoading(false);
     }
+  }, [selectedQueue]);
+
+  useEffect(() => {
+    const fetchQueues = async () => {
+      try {
+        const response = await axios.get('/api/queues/');
+        setQueues(response.data || []);
+      } catch (err) {
+        console.error('Error fetching queues:', err);
+      }
+    };
+    fetchQueues();
   }, []);
 
   useEffect(() => {
@@ -61,7 +80,6 @@ const DoctorPage = () => {
   const handleMarkDone = async (visitId) => {
     try {
       await axios.patch(`/api/visits/${visitId}/done/`);
-      // Refresh the list after marking done
       fetchWaitingVisits();
     } catch (err) {
       console.error("Error marking visit as done:", err);
@@ -73,6 +91,25 @@ const DoctorPage = () => {
     <div className="container mx-auto p-6 bg-white shadow-md rounded-lg mt-10">
       <Link to="/" className="text-blue-500 hover:underline mb-4 block">&larr; Back to Home</Link>
       <h1 className="text-3xl font-bold mb-6 text-center text-gray-700">Doctor Dashboard</h1>
+
+      <div className="mb-4">
+        <label htmlFor="queue-select" className="block text-sm font-medium text-gray-700">
+          Select Queue
+        </label>
+        <select
+          id="queue-select"
+          value={selectedQueue}
+          onChange={(e) => setSelectedQueue(e.target.value)}
+          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All Queues</option>
+          {queues.map((queue) => (
+            <option key={queue.id} value={queue.id}>
+              {queue.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {isLoading && <p className="text-center text-gray-500">Loading waiting list...</p>}
       {error && <p className="text-red-500 text-sm bg-red-100 p-3 rounded-md mb-4">{error}</p>}
@@ -89,7 +126,12 @@ const DoctorPage = () => {
               className={`p-4 border rounded-lg shadow-sm flex justify-between items-center ${index === 0 ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'}`}
             >
               <div>
-                <p className="text-2xl font-bold text-blue-600">Token: {visit.token_number}</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  Token: {visit.token_number}{' '}
+                  {visit.queue_name && (
+                    <span className="text-base text-gray-500">({visit.queue_name})</span>
+                  )}
+                </p>
                 <p className="text-gray-700">Patient: {visit.patient_name}</p>
                 <p className="text-sm text-gray-500">Gender: {visit.patient_gender}</p>
                 {visit.patient_details &&
