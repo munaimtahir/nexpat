@@ -94,7 +94,6 @@ class VisitViewSet(viewsets.ModelViewSet):
         - Auto-assign token_number (per queue, per day).
         - Set visit_date to today.
         - Set status to 'WAITING'.
-        - Populate Visit.patient_name and Visit.patient_gender from the linked Patient instance.
         """
         today = datetime.date.today()
         queue_instance = serializer.validated_data['queue']
@@ -117,10 +116,6 @@ class VisitViewSet(viewsets.ModelViewSet):
             token_number=next_token_number,
             visit_date=today,
             status='WAITING',
-            # These fields on the Visit model are for historical/denormalized data.
-            # Populate them from the authoritative Patient record.
-            patient_name=patient_instance.name,
-            patient_gender=patient_instance.gender
         )
 
     @action(detail=True, methods=['patch'], serializer_class=VisitStatusUpdateSerializer)

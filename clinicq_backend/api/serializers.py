@@ -25,29 +25,20 @@ class QueueSerializer(serializers.ModelSerializer):
 
 class VisitSerializer(serializers.ModelSerializer):
     # Read-only fields for displaying related data
-    patient_registration_number = serializers.CharField(source='patient.registration_number', read_only=True, allow_null=True)
-    patient_full_name = serializers.CharField(source='patient.name', read_only=True, allow_null=True)
-    queue_name = serializers.CharField(source='queue.name', read_only=True, allow_null=True)
+    patient_registration_number = serializers.CharField(source='patient.registration_number', read_only=True)
+    patient_full_name = serializers.CharField(source='patient.name', read_only=True)
+    queue_name = serializers.CharField(source='queue.name', read_only=True)
 
     # Writeable fields for linking to Patient and Queue
     # The client will send 'patient' (registration_number) and 'queue' (id).
     patient = serializers.PrimaryKeyRelatedField(
         queryset=Patient.objects.all(),
-        # source='patient', # This is implied by the field name
-        # Not using registration_number as pk directly in DRF for relations by default,
-        # DRF uses actual PK of Patient model. Client will send Patient's PK (which is reg_number).
         required=True # A visit must be associated with a patient.
     )
     queue = serializers.PrimaryKeyRelatedField(
         queryset=Queue.objects.all(),
-        # source='queue', # Implied
         required=True # A visit must be associated with a queue.
     )
-
-    # The model fields patient_name and patient_gender are kept for historical data (see model definition comments)
-    # and are populated from the linked Patient object upon saving if not already there (e.g. via data migration).
-    # For new visits created via API, these fields on Visit model will be populated from the Patient instance.
-    # So, we make them read-only in the serializer to avoid confusion.
 
     class Meta:
         model = Visit
@@ -60,14 +51,11 @@ class VisitSerializer(serializers.ModelSerializer):
             'patient_registration_number', # read-only representation
             'patient_full_name', # read-only representation
             'queue_name', # read-only representation
-            'patient_name', # read-only (historical/derived)
-            'patient_gender' # read-only (historical/derived)
         ]
         read_only_fields = [
             'token_number', 'visit_date', 'status',
             'created_at', 'updated_at',
             'patient_registration_number', 'patient_full_name', 'queue_name',
-            'patient_name', 'patient_gender' # Explicitly make these read-only
         ]
 
     # The token generation logic from the old VisitSerializer.create method
