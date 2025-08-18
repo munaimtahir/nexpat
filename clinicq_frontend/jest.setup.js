@@ -55,6 +55,14 @@ const { http, HttpResponse } = require('msw'); // Use http and HttpResponse for 
 let mockVisits = [];
 let nextToken = 1;
 let todayDateStr = new Date().toISOString().split('T')[0];
+const mockQueues = [
+  { id: 1, name: 'General' },
+  { id: 2, name: 'Specialist' },
+];
+const mockPatients = [
+  { id: 1, registration_number: 'RN123', name: 'Happy Path User', gender: 'FEMALE' },
+  { id: 2, registration_number: 'RN999', name: 'Error Test User', gender: 'MALE' },
+];
 
 const resetMswData = () => {
   mockVisits = [];
@@ -65,22 +73,42 @@ const resetMswData = () => {
 const server = setupServer(
   http.post('/api/visits/', async ({ request }) => {
     const body = await request.json();
-    if (!body.patient_name) {
-      return HttpResponse.json({ patient_name: ['This field is required.'] }, { status: 400 });
+    if (!body.patient) {
+      return HttpResponse.json({ patient: ['This field is required.'] }, { status: 400 });
     }
+    if (!body.queue) {
+      return HttpResponse.json({ queue: ['This field is required.'] }, { status: 400 });
+    }
+    const patientObj = mockPatients.find((p) => p.id === body.patient);
+    const queueObj = mockQueues.find((q) => q.id === body.queue);
     const currentToken = nextToken;
     nextToken++;
     const newVisit = {
-      id: mockVisits.length + 1, 
-      token_number: currentToken, 
-      patient_name: body.patient_name,
-      patient_gender: body.patient_gender, 
-      visit_date: todayDateStr, 
+      id: mockVisits.length + 1,
+      token_number: currentToken,
+      patient: patientObj?.id || body.patient,
+      queue: queueObj?.id || body.queue,
+      patient_name: patientObj?.name || 'Unknown',
+      patient_gender: patientObj?.gender || 'OTHER',
+      visit_date: todayDateStr,
       status: 'WAITING',
       created_at: new Date().toISOString(),
     };
     mockVisits.push(newVisit);
     return HttpResponse.json(newVisit);
+  }),
+  http.get('/api/queues/', () => {
+    return HttpResponse.json(mockQueues);
+  }),
+  http.get('/api/patients/search/', ({ request }) => {
+    const url = new URL(request.url);
+    const query = url.searchParams.get('q') || '';
+    const results = mockPatients.filter(
+      (p) =>
+        p.registration_number === query ||
+        p.name.toLowerCase().includes(query.toLowerCase())
+    );
+    return HttpResponse.json(results);
   }),
   http.get('/api/visits/', ({ request }) => {
     const url = new URL(request.url);
