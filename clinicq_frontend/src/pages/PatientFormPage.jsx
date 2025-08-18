@@ -13,7 +13,8 @@ const PatientFormPage = () => {
   const isEdit = Boolean(registration_number);
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({ name: '', phone: '', gender: 'OTHER' });
+  // Optionally add age field for completeness (from v2.0 branch)
+  const [formData, setFormData] = useState({ name: '', phone: '', gender: 'OTHER', age: '' });
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -23,7 +24,8 @@ const PatientFormPage = () => {
         setFormData({
           name: response.data.name || '',
           phone: response.data.phone || '',
-          gender: response.data.gender || 'OTHER'
+          gender: response.data.gender || 'OTHER',
+          age: response.data.age || '',
         });
       } catch (err) {
         console.error('Failed to load patient', err);
@@ -92,6 +94,17 @@ const PatientFormPage = () => {
           />
         </div>
         <div>
+          <label htmlFor="age" className="block text-sm font-medium text-gray-700">Age</label>
+          <input
+            type="number"
+            id="age"
+            name="age"
+            value={formData.age}
+            onChange={handleChange}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+          />
+        </div>
+        <div>
           <label htmlFor="gender" className="block text-sm font-medium text-gray-700">Gender</label>
           <select
             id="gender"
@@ -118,4 +131,3 @@ const PatientFormPage = () => {
 };
 
 export default PatientFormPage;
-

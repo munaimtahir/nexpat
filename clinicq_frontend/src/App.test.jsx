@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { BrowserRouter as Router, MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { axe } from 'jest-axe';
 import App from './App'; // Your main App component that includes routing
 import AssistantPage from './pages/AssistantPage';
@@ -10,12 +10,6 @@ import PublicDisplayPage from './pages/PublicDisplayPage';
 // server and resetMswData are now global, set up in jest.setup.js
 import { http, HttpResponse } from 'msw'; // Update to http and HttpResponse
 
-
-// Helper function to render with Router
-const renderWithRouter = (ui, { route = '/' } = {}) => {
-  window.history.pushState({}, 'Test page', route);
-  return render(ui, { wrapper: BrowserRouter });
-};
 
 describe('Page Smoke Tests and Basic Accessibility', () => {
   const pages = [
@@ -387,7 +381,6 @@ describe('Clinic Queue Full Workflow Test', () => {
       status: 200,
     });
     
-    const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/display']}>
         <App />
@@ -396,9 +389,9 @@ describe('Clinic Queue Full Workflow Test', () => {
     
     // Should show multiple visits and "Next in Queue" section
     await waitFor(() => {
-      expect(screen.getByText(/First Patient/)).toBeInTheDocument();
-      expect(screen.getByText(/Second Patient/)).toBeInTheDocument();
-      expect(screen.getByText(/Third Patient/)).toBeInTheDocument();
+      expect(screen.getAllByText(/First Patient/)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/Second Patient/)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/Third Patient/)[0]).toBeInTheDocument();
     }, { timeout: 3000 });
     
     axiosGet.mockRestore();
