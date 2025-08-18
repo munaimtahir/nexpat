@@ -42,7 +42,7 @@ const AssistantPage = () => {
     } catch (err) {
       console.error("Error creating visit:", err);
       if (err.response && err.response.data) {
-        // Attempt to display server-side error messages
+        
         const serverErrors = err.response.data;
         let messages = [];
         for (const key in serverErrors) {
