@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Visit, Patient, Queue # Added Patient and Queue
+from .models import Visit, Patient, Queue, PrescriptionImage
 from django.utils import timezone
 import datetime
 
@@ -74,3 +74,10 @@ class VisitStatusUpdateSerializer(serializers.ModelSerializer):
         if value != 'DONE':
             raise serializers.ValidationError("This endpoint only allows updating status to 'DONE'.")
         return value
+
+
+class PrescriptionImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrescriptionImage
+        fields = ['id', 'visit', 'drive_file_id', 'image_url', 'created_at']
+        read_only_fields = ['id', 'drive_file_id', 'image_url', 'created_at']

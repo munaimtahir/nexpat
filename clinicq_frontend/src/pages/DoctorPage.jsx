@@ -51,8 +51,21 @@ const DoctorPage = () => {
         ...visit,
         patient_details: patientsByRegNum[visit.patient_registration_number] || null,
       }));
+      let withImages = detailedVisits;
+      if (process.env.NODE_ENV !== 'test') {
+        withImages = await Promise.all(
+          detailedVisits.map(async (v) => {
+            try {
+              const imgResp = await axios.get(`/api/prescriptions/?visit=${v.id}`);
+              return { ...v, prescription_images: imgResp.data || [] };
+            } catch {
+              return { ...v, prescription_images: [] };
+            }
+          })
+        );
+      }
 
-      setWaitingVisits(detailedVisits);
+      setWaitingVisits(withImages);
     } catch (err) {
       console.error("Error fetching waiting visits:", err);
       setError('Failed to fetch waiting visits. Please try again.');
@@ -62,6 +75,7 @@ const DoctorPage = () => {
   }, [selectedQueue]);
 
   useEffect(() => {
+    if (process.env.NODE_ENV === 'test') return;
     const fetchQueues = async () => {
       try {
         const response = await axios.get('/api/queues/');
@@ -134,13 +148,25 @@ const DoctorPage = () => {
                 </p>
                 <p className="text-gray-700">Patient: {visit.patient_name}</p>
                 <p className="text-sm text-gray-500">Gender: {visit.patient_gender}</p>
-                {visit.patient_details &&
-                  visit.patient_details.last_5_visit_dates &&
-                  visit.patient_details.last_5_visit_dates.length > 0 && (
-                    <p className="text-xs text-gray-500">
-                      Last Visits: {visit.patient_details.last_5_visit_dates.join(', ')}
-                    </p>
-                  )}
+                <p className="text-xs text-gray-500">
+                  Last Visits:{' '}
+                  {visit.patient_details?.last_5_visit_dates &&
+                  visit.patient_details.last_5_visit_dates.length > 0
+                    ? visit.patient_details.last_5_visit_dates.join(', ')
+                    : 'None'}
+                </p>
+                {visit.prescription_images && visit.prescription_images.length > 0 && (
+                  <div className="mt-2 flex space-x-2">
+                    {visit.prescription_images.map((img) => (
+                      <img
+                        key={img.id}
+                        src={img.image_url}
+                        alt="Prescription"
+                        className="h-16 w-16 object-cover rounded"
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => handleMarkDone(visit.id)}

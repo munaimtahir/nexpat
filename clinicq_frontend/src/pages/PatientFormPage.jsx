@@ -16,6 +16,7 @@ const PatientFormPage = () => {
   // Optionally add age field for completeness (from v2.0 branch)
   const [formData, setFormData] = useState({ name: '', phone: '', gender: 'OTHER', age: '' });
   const [error, setError] = useState('');
+  const [images, setImages] = useState([]);
 
   useEffect(() => {
     const fetchPatient = async () => {
@@ -27,6 +28,8 @@ const PatientFormPage = () => {
           gender: response.data.gender || 'OTHER',
           age: response.data.age || '',
         });
+        const imgResp = await axios.get(`/api/prescriptions/?patient=${registration_number}`);
+        setImages(imgResp.data || []);
       } catch (err) {
         console.error('Failed to load patient', err);
         setError('Failed to load patient');
@@ -126,6 +129,18 @@ const PatientFormPage = () => {
           {isEdit ? 'Update' : 'Create'}
         </button>
       </form>
+      {isEdit && images.length > 0 && (
+        <div className="mt-4 flex space-x-2 overflow-x-auto">
+          {images.map((img) => (
+            <img
+              key={img.id}
+              src={img.image_url}
+              alt="Prescription"
+              className="h-20 w-20 object-cover rounded"
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
