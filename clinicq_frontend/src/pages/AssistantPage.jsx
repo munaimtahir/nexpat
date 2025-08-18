@@ -10,6 +10,11 @@ const AssistantPage = () => {
   const [generatedToken, setGeneratedToken] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [visitId, setVisitId] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [existingImages, setExistingImages] = useState([]);
 
   useEffect(() => {
     const fetchQueues = async () => {
@@ -38,8 +43,11 @@ const AssistantPage = () => {
           const regNo = searchResp.data[0].registration_number;
           const detailResp = await axios.get(`/api/patients/${regNo}/`);
           setPatientInfo(detailResp.data);
+          const imgResp = await axios.get(`/api/prescriptions/?patient=${regNo}`);
+          setExistingImages(imgResp.data || []);
         } else {
           setPatientInfo(null);
+          setExistingImages([]);
         }
       } catch (err) {
         console.error('Error fetching patient:', err);
@@ -47,6 +55,7 @@ const AssistantPage = () => {
       }
     };
     const handler = setTimeout(() => {
+]
       fetchPatient();
     }, 500); // 500ms debounce
     return () => clearTimeout(handler);
@@ -85,7 +94,7 @@ const AssistantPage = () => {
         (typeof tokenValue === 'string' && tokenValue.trim() !== '')
       ) {
         setGeneratedToken(tokenValue);
-      } else {
+        } else {
         console.error(
           'Received invalid token_number type or empty string:',
           typeof tokenValue,
@@ -95,9 +104,10 @@ const AssistantPage = () => {
         setError('Received invalid token format from server.');
       }
 
+      setVisitId(response.data.id);
       setRegistrationNumber('');
       setSelectedQueue('');
-      setPatientInfo(null);
+      setPatientInfo(null); // Clear patient info after successful visit creation
     } catch (err) {
       console.error('Error creating visit:', err);
       if (err.response && err.response.data) {
@@ -116,6 +126,28 @@ const AssistantPage = () => {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedImage || !visitId) return;
+    setUploading(true);
+    setUploadError('');
+    try {
+      const form = new FormData();
+      form.append('visit', visitId);
+      form.append('image', selectedImage);
+      await axios.post('/api/prescriptions/', form);
+      setSelectedImage(null);
+      const imgResp = await axios.get(
+        `/api/prescriptions/?patient=${patientInfo.registration_number}`
+      );
+      setExistingImages(imgResp.data || []);
+    } catch (err) {
+      console.error('Upload failed', err);
+      setUploadError('Failed to upload image');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -174,6 +206,18 @@ const AssistantPage = () => {
                 Last Visits: {patientInfo.last_5_visit_dates.join(', ')}
               </div>
             )}
+            {existingImages.length > 0 && (
+              <div className="mt-2 flex space-x-2 overflow-x-auto">
+                {existingImages.map((img) => (
+                  <img
+                    key={img.id}
+                    src={img.image_url}
+                    alt="Prescription"
+                    className="h-16 w-16 object-cover rounded"
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -198,6 +242,27 @@ const AssistantPage = () => {
           <p className="text-4xl font-bold text-green-800 my-2">
             {generatedToken}
           </p>
+        </div>
+      )}
+
+      {visitId && (
+        <div className="mt-4 space-y-2">
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(e) => setSelectedImage(e.target.files[0])}
+          />
+          <button
+            onClick={handleUpload}
+            disabled={!selectedImage || uploading}
+            className="px-4 py-2 bg-indigo-600 text-white rounded disabled:bg-gray-400"
+          >
+            {uploading ? 'Uploading...' : 'Upload Prescription'}
+          </button>
+          {uploadError && (
+            <p className="text-red-500 text-sm">{uploadError}</p>
+          )}
         </div>
       )}
     </div>

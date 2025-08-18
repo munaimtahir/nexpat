@@ -1,14 +1,18 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Visit, Patient, Queue # Added Patient, Queue
+from .models import Visit, Patient, Queue, PrescriptionImage
 from .serializers import (
     VisitSerializer, VisitStatusUpdateSerializer,
-    PatientSerializer, QueueSerializer # Added PatientSerializer, QueueSerializer
+    PatientSerializer, QueueSerializer,
+    PrescriptionImageSerializer,
 )
 from django.utils import timezone
 import datetime # Required for date operations
 from django.db.models import Q # For complex lookups (patient search)
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.shortcuts import get_object_or_404
+from .google_drive import upload_prescription_image
 
 
 class QueueViewSet(viewsets.ReadOnlyModelViewSet):
@@ -132,3 +136,42 @@ class VisitViewSet(viewsets.ModelViewSet):
             full_visit_serializer = VisitSerializer(visit, context={'request': request}) # Add context for HATEOAS links if used
             return Response(full_visit_serializer.data)
         return Response(status_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PrescriptionImageViewSet(viewsets.ModelViewSet):
+    queryset = PrescriptionImage.objects.all().order_by('-created_at')
+    serializer_class = PrescriptionImageSerializer
+    parser_classes = (MultiPartParser, FormParser)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        visit_id = self.request.query_params.get('visit')
+        patient_reg = self.request.query_params.get('patient')
+        if visit_id:
+            queryset = queryset.filter(visit_id=visit_id)
+        if patient_reg:
+            queryset = queryset.filter(visit__patient__registration_number=patient_reg)
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        image_file = request.FILES.get('image')
+        visit_id = request.data.get('visit')
+        if not image_file or not visit_id:
+            return Response({'detail': 'visit and image are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        visit = get_object_or_404(Visit, pk=visit_id)
+        file_id = ''
+        file_url = ''
+        try:
+            file_id, file_url = upload_prescription_image(image_file)
+        except Exception:
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            if 'GoogleApiError' in globals() and GoogleApiError and isinstance(e, GoogleApiError):
+                logger.error(f"Google API error while uploading prescription image: {e}", exc_info=True)
+            else:
+                logger.error(f"Unexpected error while uploading prescription image: {e}", exc_info=True)
+        instance = PrescriptionImage.objects.create(
+            visit=visit, drive_file_id=file_id or '', image_url=file_url or ''
+        )
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
