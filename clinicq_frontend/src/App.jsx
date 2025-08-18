@@ -3,6 +3,8 @@ import { Routes, Route, Link } from 'react-router-dom'; // Removed BrowserRouter
 import AssistantPage from './pages/AssistantPage';
 import DoctorPage from './pages/DoctorPage'; // Placeholder for now
 import PublicDisplayPage from './pages/PublicDisplayPage'; // Placeholder for now
+import PatientsPage from './pages/PatientsPage';
+import PatientFormPage from './pages/PatientFormPage';
 import './App.css'; // Keep or modify as needed
 
 // Placeholder components
@@ -14,6 +16,7 @@ const HomePage = () => (
         <li><Link to="/assistant" className="text-blue-500 hover:underline">Assistant Portal</Link></li>
         <li><Link to="/doctor" className="text-blue-500 hover:underline">Doctor Dashboard</Link></li>
         <li><Link to="/display" className="text-blue-500 hover:underline">Public Queue Display</Link></li>
+        <li><Link to="/patients" className="text-blue-500 hover:underline">Manage Patients</Link></li>
       </ul>
     </nav>
   </div>
@@ -29,6 +32,9 @@ function App() {
         <Route path="/assistant" element={<AssistantPage />} />
         <Route path="/doctor" element={<DoctorPage />} />
         <Route path="/display" element={<PublicDisplayPage />} />
+        <Route path="/patients" element={<PatientsPage />} />
+        <Route path="/patients/new" element={<PatientFormPage />} />
+        <Route path="/patients/:registration_number/edit" element={<PatientFormPage />} />
       </Routes>
     </div>
     // </Router> component removed
