@@ -211,7 +211,7 @@ describe('Clinic Queue Full Workflow Test', () => {
 
     const patientNameInput = screen.getByLabelText(/Patient Name/i);
     await user.type(patientNameInput, 'Error Test User');
-    await waitFor(() => expect(patientNameInput).toHaveValue('Error Test User')); // Corrected this line
+    await waitFor(() => expect(patientNameInput).toHaveValue('Error Test User'));
     await user.selectOptions(screen.getByLabelText(/Patient Gender/i), 'MALE');
     // Try wrapping the click/submit in act
     await act(async () => {
