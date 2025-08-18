@@ -123,7 +123,8 @@ describe('Clinic Queue Full Workflow Test', () => {
 
     const patientNameInput = screen.getByLabelText(/Patient Name/i);
     await user.type(patientNameInput, 'Happy Path User'); // Reverted to Happy Path User
-    await waitFor(() => expect(patientNameInput).toHaveValue('Happy Path User')); // Reverted to Happy Path User
+    await user.type(patientNameInput, 'Happy Path User');
+    await waitFor(() => expect(patientNameInput).toHaveValue('Happy Path User'));
     await user.selectOptions(screen.getByLabelText(/Patient Gender/i), 'FEMALE');
     // Try wrapping the click/submit in act
     await act(async () => {
