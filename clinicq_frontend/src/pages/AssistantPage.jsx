@@ -46,10 +46,11 @@ const AssistantPage = () => {
         if (Array.isArray(patientResponse.data) && patientResponse.data.length > 0) {
           patient = patientResponse.data[0];
           setPatientInfo(patient);
-        } else {
+         } else {
           setError('Patient not found.');
+          setIsLoading(false);
           return;
-        }
+}
       }
 
       const response = await axios.post('/api/visits/', {
