@@ -24,6 +24,55 @@ const AssistantPage = () => {
     fetchQueues();
   }, []);
 
+  useEffect(() => {
+    const fetchPatient = async () => {
+      if (!registrationNumber.trim()) {
+        setPatientInfo(null);
+        return;
+      }
+      try {
+        const searchResp = await axios.get(
+          `/api/patients/search/?q=${encodeURIComponent(registrationNumber.trim())}`
+        );
+        if (Array.isArray(searchResp.data) && searchResp.data.length > 0) {
+          const regNo = searchResp.data[0].registration_number;
+          const detailResp = await axios.get(`/api/patients/${regNo}/`);
+          setPatientInfo(detailResp.data);
+        } else {
+          setPatientInfo(null);
+        }
+      } catch (err) {
+        console.error('Error fetching patient:', err);
+        setPatientInfo(null);
+      }
+    };
+    const handler = setTimeout(() => {
+      const fetchPatient = async () => {
+        if (!registrationNumber.trim()) {
+          setPatientInfo(null);
+          return;
+        }
+        try {
+          const searchResp = await axios.get(
+            `/api/patients/search/?q=${encodeURIComponent(registrationNumber.trim())}`
+          );
+          if (Array.isArray(searchResp.data) && searchResp.data.length > 0) {
+            const regNo = searchResp.data[0].registration_number;
+            const detailResp = await axios.get(`/api/patients/${regNo}/`);
+            setPatientInfo(detailResp.data);
+          } else {
+            setPatientInfo(null);
+          }
+        } catch (err) {
+          console.error('Error fetching patient:', err);
+          setPatientInfo(null);
+        }
+      };
+      fetchPatient();
+    }, 500); // 500ms debounce
+    return () => clearTimeout(handler);
+  }, [registrationNumber]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -39,22 +88,15 @@ const AssistantPage = () => {
     }
 
     setIsLoading(true);
-    try {
-      let patient = patientInfo;
-      if (!patient) {
-        const patientResponse = await axios.get(`/api/patients/search/?q=${encodeURIComponent(registrationNumber.trim())}`);
-        if (Array.isArray(patientResponse.data) && patientResponse.data.length > 0) {
-          patient = patientResponse.data[0];
-          setPatientInfo(patient);
-        } else {
-          setError('Patient not found.');
-          setIsLoading(false);
-          return;
-        }
-      }
+    if (!patientInfo) {
+      setError('Patient not found.');
+      setIsLoading(false);
+      return;
+    }
 
+    try {
       const response = await axios.post('/api/visits/', {
-        patient: patient.id,
+        patient: patientInfo.id,
         queue: selectedQueue,
       });
 
@@ -145,7 +187,14 @@ const AssistantPage = () => {
 
         {patientInfo && (
           <div className="text-sm text-gray-600">
-            Patient: {patientInfo.name} ({patientInfo.gender})
+            <div>
+              Patient: {patientInfo.name} ({patientInfo.gender})
+            </div>
+            {patientInfo.last_5_visit_dates && patientInfo.last_5_visit_dates.length > 0 && (
+              <div>
+                Last Visits: {patientInfo.last_5_visit_dates.join(', ')}
+              </div>
+            )}
           </div>
         )}
 

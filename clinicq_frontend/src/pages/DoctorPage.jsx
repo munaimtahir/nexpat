@@ -15,7 +15,44 @@ const DoctorPage = () => {
     try {
       const queueParam = selectedQueue ? `&queue=${selectedQueue}` : '';
       const response = await axios.get(`/api/visits/?status=WAITING${queueParam}`);
-      setWaitingVisits(response.data || []); // Ensure response.data is not undefined
+      const visits = response.data || [];
+
+      // Fetch patient details in batch if possible, otherwise one by one
+      const registrationNumbers = [
+        ...new Set(visits.map((v) => v.patient_registration_number)),
+      ];
+      let patientsByRegNum = {};
+
+      if (registrationNumbers.length > 0) {
+        try {
+          const patientsResp = await axios.get(
+            `/api/patients/?registration_numbers=${registrationNumbers.join(',')}`
+          );
+          patientsByRegNum = (patientsResp.data || []).reduce((acc, patient) => {
+            acc[patient.registration_number] = patient;
+            return acc;
+          }, {});
+        } catch {
+          // If batch fetch fails, fallback to individual requests
+          await Promise.all(
+            registrationNumbers.map(async (regNum) => {
+              try {
+                const resp = await axios.get(`/api/patients/${regNum}/`);
+                patientsByRegNum[regNum] = resp.data;
+              } catch {
+                patientsByRegNum[regNum] = null;
+              }
+            })
+          );
+        }
+      }
+
+      const detailedVisits = visits.map((visit) => ({
+        ...visit,
+        patient_details: patientsByRegNum[visit.patient_registration_number] || null,
+      }));
+
+      setWaitingVisits(detailedVisits);
     } catch (err) {
       console.error("Error fetching waiting visits:", err);
       setError('Failed to fetch waiting visits. Please try again.');
@@ -43,7 +80,6 @@ const DoctorPage = () => {
   const handleMarkDone = async (visitId) => {
     try {
       await axios.patch(`/api/visits/${visitId}/done/`);
-      // Refresh the list after marking done
       fetchWaitingVisits();
     } catch (err) {
       console.error("Error marking visit as done:", err);
@@ -98,6 +134,13 @@ const DoctorPage = () => {
                 </p>
                 <p className="text-gray-700">Patient: {visit.patient_name}</p>
                 <p className="text-sm text-gray-500">Gender: {visit.patient_gender}</p>
+                {visit.patient_details &&
+                  visit.patient_details.last_5_visit_dates &&
+                  visit.patient_details.last_5_visit_dates.length > 0 && (
+                    <p className="text-xs text-gray-500">
+                      Last Visits: {visit.patient_details.last_5_visit_dates.join(', ')}
+                    </p>
+                  )}
               </div>
               <button
                 onClick={() => handleMarkDone(visit.id)}
