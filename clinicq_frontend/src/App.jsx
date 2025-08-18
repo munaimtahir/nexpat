@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Link } from 'react-router-dom'; // Removed BrowserRouter as Router
+import { Routes, Route, Link, useSearchParams } from 'react-router-dom'; // Removed BrowserRouter as Router
 import AssistantPage from './pages/AssistantPage';
 import DoctorPage from './pages/DoctorPage'; // Placeholder for now
 import PublicDisplayPage from './pages/PublicDisplayPage'; // Placeholder for now
@@ -22,6 +22,12 @@ const HomePage = () => (
   </div>
 );
 
+const PublicDisplayRoute = () => {
+  const [searchParams] = useSearchParams();
+  const queue = searchParams.get('queue') || '';
+  return <PublicDisplayPage initialQueue={queue} />;
+};
+
 
 function App() {
   return (
@@ -31,7 +37,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/assistant" element={<AssistantPage />} />
         <Route path="/doctor" element={<DoctorPage />} />
-        <Route path="/display" element={<PublicDisplayPage />} />
+        <Route path="/display" element={<PublicDisplayRoute />} />
         <Route path="/patients" element={<PatientsPage />} />
         <Route path="/patients/new" element={<PatientFormPage />} />
         <Route path="/patients/:registration_number/edit" element={<PatientFormPage />} />
