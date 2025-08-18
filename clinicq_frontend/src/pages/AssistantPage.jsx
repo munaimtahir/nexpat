@@ -47,27 +47,6 @@ const AssistantPage = () => {
       }
     };
     const handler = setTimeout(() => {
-      const fetchPatient = async () => {
-        if (!registrationNumber.trim()) {
-          setPatientInfo(null);
-          return;
-        }
-        try {
-          const searchResp = await axios.get(
-            `/api/patients/search/?q=${encodeURIComponent(registrationNumber.trim())}`
-          );
-          if (Array.isArray(searchResp.data) && searchResp.data.length > 0) {
-            const regNo = searchResp.data[0].registration_number;
-            const detailResp = await axios.get(`/api/patients/${regNo}/`);
-            setPatientInfo(detailResp.data);
-          } else {
-            setPatientInfo(null);
-          }
-        } catch (err) {
-          console.error('Error fetching patient:', err);
-          setPatientInfo(null);
-        }
-      };
       fetchPatient();
     }, 500); // 500ms debounce
     return () => clearTimeout(handler);

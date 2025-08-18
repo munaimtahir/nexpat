@@ -32,6 +32,21 @@ const DoctorPage = () => {
             acc[patient.registration_number] = patient;
             return acc;
           }, {});
+          const missingRegs = registrationNumbers.filter(
+            (regNum) => !patientsByRegNum[regNum]
+          );
+          if (missingRegs.length > 0) {
+            await Promise.all(
+              missingRegs.map(async (regNum) => {
+                try {
+                  const resp = await axios.get(`/api/patients/${regNum}/`);
+                  patientsByRegNum[regNum] = resp.data;
+                } catch {
+                  patientsByRegNum[regNum] = null;
+                }
+              })
+            );
+          }
         } catch {
           // If batch fetch fails, fallback to individual requests
           await Promise.all(
