@@ -197,7 +197,6 @@ def test_0003_backfill_migrates_existing_visits(migrator):
     # Fetch the visit that was inserted via SQL and should have been updated by the migration
     migrated_sql_visit = RuntimeVisit.objects.get(
         token_number=101,
-        patient_name="Old SQL Patient", # This name is on the Visit model itself
         visit_date="2023-01-01"
     )
     
@@ -211,19 +210,7 @@ def test_0003_backfill_migrates_existing_visits(migrator):
     
     assert migrated_sql_visit.patient_id == anonymous_patient.pk
     assert migrated_sql_visit.queue_id == general_queue.pk
-    # The patient_name on the Visit model should remain what was inserted by SQL initially,
-    # even after being linked to an anonymous_patient.
-    # The migration copies visit.patient_name to Patient.name, but doesn't change visit.patient_name.
-    # However, the forwards_func in 0003 *does* `visit.save()` after setting `visit.patient` and `visit.queue`.
-    # The `VisitSerializer.perform_create` sets `patient_name` from `patient.name`.
-    # Let's check the `forwards_func` again for what it does to `visit.patient_name`.
-    # The `forwards_func` does:
-    #   visit.patient = anonymous_patient
-    #   visit.queue = general_queue
-    #   visit.save(using=db_alias)
-    # It does NOT explicitly update visit.patient_name from anonymous_patient.name during migration.
-    # So, it should still be "Old SQL Patient".
-    assert migrated_sql_visit.patient_name == "Old SQL Patient"
+    assert migrated_sql_visit.patient.name == "Old SQL Patient"
 
 
 @pytest.mark.django_db(transaction=True)
