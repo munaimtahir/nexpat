@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     *   API endpoint `GET /api/patients/search/?q=` for searching patients by registration number, name fragment, or phone fragment.
     *   Full CRUD API endpoints for patients under `/api/patients/`.
     *   Database indexes added for `Patient.phone` and `Patient.name` for optimized searching.
+*   **Patient Management Frontend**:
+    *   React pages to list, search, create, update, and delete patients, linked from the home page.
 *   **Multi-Queue Support**:
     *   Introduced `Queue` model (`id`, `name`) to manage multiple service queues (up to 5 as per requirements, though model supports more).
     *   Queues are manageable via Django Admin.
