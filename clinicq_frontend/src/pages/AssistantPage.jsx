@@ -1,52 +1,92 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
 const AssistantPage = () => {
-  const [patientName, setPatientName] = useState('');
-  const [patientGender, setPatientGender] = useState('OTHER'); // Default to 'OTHER'
+  const [registrationNumber, setRegistrationNumber] = useState('');
+  const [queues, setQueues] = useState([]);
+  const [selectedQueue, setSelectedQueue] = useState('');
+  const [patientInfo, setPatientInfo] = useState(null);
   const [generatedToken, setGeneratedToken] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchQueues = async () => {
+      try {
+        const response = await axios.get('/api/queues/');
+        setQueues(response.data || []);
+      } catch (err) {
+        console.error('Error fetching queues:', err);
+        setError('Failed to load queues.');
+      }
+    };
+    fetchQueues();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setGeneratedToken(null);
-    setIsLoading(true);
 
-    if (!patientName.trim()) {
-      setError('Patient name cannot be empty.');
-      setIsLoading(false);
+    if (!registrationNumber.trim()) {
+      setError('Registration number cannot be empty.');
+      return;
+    }
+    if (!selectedQueue) {
+      setError('Please select a queue.');
       return;
     }
 
+    setIsLoading(true);
     try {
-      // Note: Adjust API_BASE_URL if your Django server runs elsewhere during development
+      let patient = patientInfo;
+      if (!patient) {
+        const patientResponse = await axios.get(`/api/patients/search/?q=${encodeURIComponent(registrationNumber.trim())}`);
+        if (Array.isArray(patientResponse.data) && patientResponse.data.length > 0) {
+          patient = patientResponse.data[0];
+          setPatientInfo(patient);
+        } else {
+          setError('Patient not found.');
+          return;
+        }
+      }
+
       const response = await axios.post('/api/visits/', {
-        patient_name: patientName, // Corrected: remove duplicate
-        patient_gender: patientGender,
+        patient: patient.id,
+        queue: selectedQueue,
       });
 
       const tokenValue = response.data.token_number;
-      if (typeof tokenValue === 'number' || (typeof tokenValue === 'string' && tokenValue.trim() !== '')) {
+      if (
+        typeof tokenValue === 'number' ||
+        (typeof tokenValue === 'string' && tokenValue.trim() !== '')
+      ) {
         setGeneratedToken(tokenValue);
       } else {
-        console.error("Received invalid token_number type or empty string:", typeof tokenValue, tokenValue);
-        setGeneratedToken('N/A'); // Display a placeholder if token is not valid
+        console.error(
+          'Received invalid token_number type or empty string:',
+          typeof tokenValue,
+          tokenValue,
+        );
+        setGeneratedToken('N/A');
         setError('Received invalid token format from server.');
       }
 
-      setPatientName(''); // Clear form
-      setPatientGender('OTHER');
+      setRegistrationNumber('');
+      setSelectedQueue('');
+      setPatientInfo(null);
     } catch (err) {
-      console.error("Error creating visit:", err);
+      console.error('Error creating visit:', err);
       if (err.response && err.response.data) {
-        // Attempt to display server-side error messages
         const serverErrors = err.response.data;
-        let messages = [];
+        const messages = [];
         for (const key in serverErrors) {
-          messages.push(`${key}: ${serverErrors[key].join ? serverErrors[key].join(', ') : serverErrors[key]}`);
+          messages.push(
+            `${key}: ${
+              serverErrors[key].join ? serverErrors[key].join(', ') : serverErrors[key]
+            }`,
+          );
         }
         setError(`Failed to generate token: ${messages.join('; ')}`);
       } else {
@@ -59,39 +99,54 @@ const AssistantPage = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-md bg-white shadow-md rounded-lg mt-10">
-      <Link to="/" className="text-blue-500 hover:underline mb-4 block">&larr; Back to Home</Link>
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-700">Assistant Portal</h1>
+      <Link to="/" className="text-blue-500 hover:underline mb-4 block">
+        &larr; Back to Home
+      </Link>
+      <h1 className="text-3xl font-bold mb-6 text-center text-gray-700">
+        Assistant Portal
+      </h1>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <div>
-          <label htmlFor="patientName" className="block text-sm font-medium text-gray-700">
-            Patient Name
+          <label
+            htmlFor="registrationNumber"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Registration Number
           </label>
           <input
             type="text"
-            id="patientName"
-            value={patientName}
-            onChange={(e) => setPatientName(e.target.value)}
-            required
+            id="registrationNumber"
+            value={registrationNumber}
+            onChange={(e) => setRegistrationNumber(e.target.value)}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
         </div>
 
         <div>
-          <label htmlFor="patientGender" className="block text-sm font-medium text-gray-700">
-            Patient Gender
+          <label htmlFor="queueSelect" className="block text-sm font-medium text-gray-700">
+            Queue
           </label>
           <select
-            id="patientGender"
-            value={patientGender}
-            onChange={(e) => setPatientGender(e.target.value)}
+            id="queueSelect"
+            value={selectedQueue}
+            onChange={(e) => setSelectedQueue(e.target.value)}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           >
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-            <option value="OTHER">Other</option>
+            <option value="">Select a queue</option>
+            {queues.map((queue) => (
+              <option key={queue.id} value={queue.id}>
+                {queue.name}
+              </option>
+            ))}
           </select>
         </div>
+
+        {patientInfo && (
+          <div className="text-sm text-gray-600">
+            Patient: {patientInfo.name} ({patientInfo.gender})
+          </div>
+        )}
 
         <button
           type="submit"
@@ -108,8 +163,12 @@ const AssistantPage = () => {
 
       {generatedToken !== null && (
         <div className="mt-6 p-4 bg-green-100 rounded-md text-center">
-          <p className="text-lg font-semibold text-green-700">Token Generated Successfully!</p>
-          <p className="text-4xl font-bold text-green-800 my-2">{generatedToken}</p>
+          <p className="text-lg font-semibold text-green-700">
+            Token Generated Successfully!
+          </p>
+          <p className="text-4xl font-bold text-green-800 my-2">
+            {generatedToken}
+          </p>
         </div>
       )}
     </div>

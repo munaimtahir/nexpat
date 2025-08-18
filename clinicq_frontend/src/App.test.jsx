@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { axe } from 'jest-axe';
@@ -58,6 +58,8 @@ describe('Clinic Queue Full Workflow Test', () => {
       data: {
         id: 1,
         token_number: 1,
+        patient: 1,
+        queue: 1,
         patient_name: 'Happy Path User',
         patient_gender: 'FEMALE',
         visit_date: '2025-07-07',
@@ -86,6 +88,12 @@ describe('Clinic Queue Full Workflow Test', () => {
           }],
           status: 200,
         });
+      }
+      if (url.includes('/api/queues/')) {
+        return Promise.resolve({ data: [ { id: 1, name: 'General' } ], status: 200 });
+      }
+      if (url.includes('/api/patients/search/')) {
+        return Promise.resolve({ data: [ { id: 1, registration_number: 'RN123', name: 'Happy Path User', gender: 'FEMALE' } ], status: 200 });
       }
       return Promise.resolve({ data: [], status: 200 });
     });
@@ -121,10 +129,10 @@ describe('Clinic Queue Full Workflow Test', () => {
     await user.click(screen.getByRole('link', { name: /Assistant Portal/i }));
     expect(screen.getByRole('heading', { name: /Assistant Portal/i })).toBeInTheDocument();
 
-    const patientNameInput = screen.getByLabelText(/Patient Name/i);
-    await user.type(patientNameInput, 'Happy Path User'); // Reverted to Happy Path User
-    await waitFor(() => expect(patientNameInput).toHaveValue('Happy Path User')); // Reverted to Happy Path User
-    await user.selectOptions(screen.getByLabelText(/Patient Gender/i), 'FEMALE');
+    const regInput = screen.getByLabelText(/Registration Number/i);
+    await user.type(regInput, 'RN123');
+    await waitFor(() => expect(regInput).toHaveValue('RN123'));
+    await user.selectOptions(screen.getByLabelText(/Queue/i), '1');
     // Try wrapping the click/submit in act
     await act(async () => {
       await user.click(screen.getByRole('button', { name: /Generate Token/i }));
@@ -198,6 +206,18 @@ describe('Clinic Queue Full Workflow Test', () => {
       })
     );
 
+    const originalAxios = require('axios');
+    const axiosGet = jest.spyOn(originalAxios, 'get');
+    axiosGet.mockImplementation((url) => {
+      if (url.includes('/api/queues/')) {
+        return Promise.resolve({ data: [{ id: 1, name: 'General' }], status: 200 });
+      }
+      if (url.includes('/api/patients/search/')) {
+        return Promise.resolve({ data: [{ id: 2, registration_number: 'RN999', name: 'Error Test User', gender: 'MALE' }], status: 200 });
+      }
+      return Promise.resolve({ data: [], status: 200 });
+    });
+
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/']}>
@@ -208,20 +228,21 @@ describe('Clinic Queue Full Workflow Test', () => {
     await screen.findByRole('heading', { name: /ClinicQ/i, level: 1 });
     await user.click(screen.getByRole('link', { name: /Assistant Portal/i }));
 
-    const patientNameInput = screen.getByLabelText(/Patient Name/i);
-    await user.type(patientNameInput, 'Error Test User');
-    await waitFor(() => expect(patientNameInput).toHaveValue('Error Test User')); // Corrected this line
-    await user.selectOptions(screen.getByLabelText(/Patient Gender/i), 'MALE');
+    const regInput = screen.getByLabelText(/Registration Number/i);
+    await user.type(regInput, 'RN999');
+    await waitFor(() => expect(regInput).toHaveValue('RN999'));
+    fireEvent.change(screen.getByLabelText(/Queue/i), { target: { value: '1' } });
     // Try wrapping the click/submit in act
     await act(async () => {
       await user.click(screen.getByRole('button', { name: /Generate Token/i }));
     });
 
     expect(await screen.findByText(/Failed to generate token/i)).toBeInTheDocument();
+    axiosGet.mockRestore();
   });
 
   // Additional focused tests to improve coverage
-  test('shows validation error when patient name is empty', async () => {
+  test('shows validation error when registration number is empty', async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/']}>
@@ -231,12 +252,12 @@ describe('Clinic Queue Full Workflow Test', () => {
     
     await user.click(screen.getByRole('link', { name: /Assistant Portal/i }));
     
-    // Leave patient name empty and try to submit
-    await user.selectOptions(screen.getByLabelText(/Patient Gender/i), 'MALE');
+    // Leave registration number empty and try to submit
+    fireEvent.change(screen.getByLabelText(/Queue/i), { target: { value: '1' } });
     await user.click(screen.getByRole('button', { name: /Generate Token/i }));
-    
+
     // Should show validation error
-    expect(await screen.findByText(/Patient name cannot be empty/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Registration number cannot be empty/i)).toBeInTheDocument();
   });
 
   test('handles invalid token response gracefully', async () => {
@@ -247,38 +268,15 @@ describe('Clinic Queue Full Workflow Test', () => {
       data: { token_number: null }, // Invalid token
       status: 201,
     });
-    
-    const user = userEvent.setup();
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-      </MemoryRouter>
-    );
-    
-    await user.click(screen.getByRole('link', { name: /Assistant Portal/i }));
-    
-    const patientNameInput = screen.getByLabelText(/Patient Name/i);
-    await user.type(patientNameInput, 'Test User');
-    await user.click(screen.getByRole('button', { name: /Generate Token/i }));
-    
-    // Should show error for invalid token format
-    expect(await screen.findByText(/Received invalid token format from server/i)).toBeInTheDocument();
-    expect(await screen.findByText(/N\/A/i)).toBeInTheDocument(); // Should show N/A
-    
-    axiosPost.mockRestore();
-  });
-
-  test('displays server validation errors correctly', async () => {
-    // Mock axios to return server validation errors
-    const originalAxios = require('axios');
-    const axiosPost = jest.spyOn(originalAxios, 'post');
-    axiosPost.mockRejectedValueOnce({
-      response: {
-        data: {
-          patient_name: ['This field is required.'],
-          patient_gender: ['Invalid choice.']
-        }
+    const axiosGet = jest.spyOn(originalAxios, 'get');
+    axiosGet.mockImplementation((url) => {
+      if (url.includes('/api/queues/')) {
+        return Promise.resolve({ data: [{ id: 1, name: 'General' }], status: 200 });
       }
+      if (url.includes('/api/patients/search/')) {
+        return Promise.resolve({ data: [{ id: 1, registration_number: 'RN123', name: 'Test User', gender: 'MALE' }], status: 200 });
+      }
+      return Promise.resolve({ data: [], status: 200 });
     });
     
     const user = userEvent.setup();
@@ -290,14 +288,61 @@ describe('Clinic Queue Full Workflow Test', () => {
     
     await user.click(screen.getByRole('link', { name: /Assistant Portal/i }));
     
-    const patientNameInput = screen.getByLabelText(/Patient Name/i);
-    await user.type(patientNameInput, 'Test User');
+    const regInput = screen.getByLabelText(/Registration Number/i);
+    await user.type(regInput, 'RN123');
+    fireEvent.change(screen.getByLabelText(/Queue/i), { target: { value: '1' } });
     await user.click(screen.getByRole('button', { name: /Generate Token/i }));
     
-    // Should show parsed server errors
-    expect(await screen.findByText(/Failed to generate token.*patient_name.*patient_gender/i)).toBeInTheDocument();
-    
+    // Should show error for invalid token format
+    expect(await screen.findByText(/Received invalid token format from server/i)).toBeInTheDocument();
+    expect(await screen.findByText(/N\/A/i)).toBeInTheDocument(); // Should show N/A
+
     axiosPost.mockRestore();
+    axiosGet.mockRestore();
+  });
+
+  test('displays server validation errors correctly', async () => {
+    // Mock axios to return server validation errors
+    const originalAxios = require('axios');
+    const axiosPost = jest.spyOn(originalAxios, 'post');
+    axiosPost.mockRejectedValueOnce({
+      response: {
+        data: {
+          patient: ['This field is required.'],
+          queue: ['Invalid choice.']
+        }
+      }
+    });
+    const axiosGet = jest.spyOn(originalAxios, 'get');
+    axiosGet.mockImplementation((url) => {
+      if (url.includes('/api/queues/')) {
+        return Promise.resolve({ data: [{ id: 1, name: 'General' }], status: 200 });
+      }
+      if (url.includes('/api/patients/search/')) {
+        return Promise.resolve({ data: [{ id: 1, registration_number: 'RN123', name: 'Test User', gender: 'MALE' }], status: 200 });
+      }
+      return Promise.resolve({ data: [], status: 200 });
+    });
+    
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+    
+    await user.click(screen.getByRole('link', { name: /Assistant Portal/i }));
+    
+    const regInput = screen.getByLabelText(/Registration Number/i);
+    await user.type(regInput, 'RN123');
+    fireEvent.change(screen.getByLabelText(/Queue/i), { target: { value: '1' } });
+    await user.click(screen.getByRole('button', { name: /Generate Token/i }));
+
+    // Should show parsed server errors
+    expect(await screen.findByText(/Failed to generate token.*patient.*queue/i)).toBeInTheDocument();
+
+    axiosPost.mockRestore();
+    axiosGet.mockRestore();
   });
 
   test('doctor page handles API errors gracefully', async () => {
