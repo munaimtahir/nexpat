@@ -130,6 +130,7 @@ const AssistantPage = () => {
       setVisitId(response.data.id);
       setRegistrationNumber('');
       setSelectedQueue('');
+      setPatientInfo(null); // Clear patient info after successful visit creation
     } catch (err) {
       console.error('Error creating visit:', err);
       if (err.response && err.response.data) {
