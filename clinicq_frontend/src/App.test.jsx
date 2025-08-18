@@ -396,9 +396,9 @@ describe('Clinic Queue Full Workflow Test', () => {
     
     // Should show multiple visits and "Next in Queue" section
     await waitFor(() => {
-      expect(screen.getByText(/First Patient/)).toBeInTheDocument();
-      expect(screen.getByText(/Second Patient/)).toBeInTheDocument();
-      expect(screen.getByText(/Third Patient/)).toBeInTheDocument();
+      expect(screen.getAllByText(/First Patient/)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/Second Patient/)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/Third Patient/)[0]).toBeInTheDocument();
     }, { timeout: 3000 });
     
     axiosGet.mockRestore();
