@@ -62,7 +62,7 @@ const AssistantPage = () => {
       <Link to="/" className="text-blue-500 hover:underline mb-4 block">&larr; Back to Home</Link>
       <h1 className="text-3xl font-bold mb-6 text-center text-gray-700">Assistant Portal</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <div>
           <label htmlFor="patientName" className="block text-sm font-medium text-gray-700">
             Patient Name
