@@ -72,7 +72,7 @@ const AssistantPage = () => {
 
     try {
       const response = await axios.post('/api/visits/', {
-        patient: patientInfo.registration_number,
+        patient: patientInfo.id,
         queue: selectedQueue,
       });
 
