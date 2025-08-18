@@ -48,6 +48,7 @@ const AssistantPage = () => {
           setPatientInfo(patient);
         } else {
           setError('Patient not found.');
+          setIsLoading(false);
           return;
         }
       }
