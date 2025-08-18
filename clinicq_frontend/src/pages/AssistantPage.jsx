@@ -80,7 +80,7 @@ const AssistantPage = () => {
       console.error('Error creating visit:', err);
       if (err.response && err.response.data) {
         const serverErrors = err.response.data;
-        const messages = [];
+        let messages = [];
         for (const key in serverErrors) {
           messages.push(
             `${key}: ${
