@@ -4,12 +4,12 @@ import { Link } from 'react-router-dom';
 
 const REFRESH_INTERVAL = 5000; // 5 seconds
 
-const PublicDisplayPage = () => {
+const PublicDisplayPage = ({ initialQueue = '' }) => {
   const [waitingVisits, setWaitingVisits] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true); // Start loading initially
   const [queues, setQueues] = useState([]);
-  const [selectedQueue, setSelectedQueue] = useState('');
+  const [selectedQueue, setSelectedQueue] = useState(initialQueue);
 
   const fetchWaitingVisits = useCallback(
     async (isInitialLoad = false) => {
@@ -30,6 +30,10 @@ const PublicDisplayPage = () => {
     },
     [selectedQueue]
   );
+
+  useEffect(() => {
+    setSelectedQueue(initialQueue);
+  }, [initialQueue]);
 
   useEffect(() => {
     const fetchQueues = async () => {
