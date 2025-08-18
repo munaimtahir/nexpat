@@ -33,7 +33,7 @@ const AssistantPage = () => {
         setGeneratedToken(tokenValue);
       } else {
         console.error("Received invalid token_number type or empty string:", typeof tokenValue, tokenValue);
-        setGeneratedToken('N/A'); // Display a placeholder if token is not valid
+        setGeneratedToken('N/A'); /* Display a placeholder if token is not valid */
         setError('Received invalid token format from server.');
       }
 
