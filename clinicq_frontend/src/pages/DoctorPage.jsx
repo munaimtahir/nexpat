@@ -24,7 +24,27 @@ const DoctorPage = () => {
             return { ...visit, patient_details: null };
           }
         })
-      );
+      // Batch fetch patient details
+      const registrationNumbers = [...new Set(visits.map(v => v.patient_registration_number))];
+      let patientsByRegNum = {};
+      if (registrationNumbers.length > 0) {
+        try {
+          const patientsResp = await axios.get(
+            `/api/patients/?registration_numbers=${registrationNumbers.join(',')}`
+          );
+          // Assume the response is an array of patient objects with registration_number field
+          patientsByRegNum = (patientsResp.data || []).reduce((acc, patient) => {
+            acc[patient.registration_number] = patient;
+            return acc;
+          }, {});
+        } catch {
+          // If batch fetch fails, leave patientsByRegNum empty
+        }
+      }
+      const detailedVisits = visits.map(visit => ({
+        ...visit,
+        patient_details: patientsByRegNum[visit.patient_registration_number] || null
+      }));
       setWaitingVisits(detailedVisits);
     } catch (err) {
       console.error("Error fetching waiting visits:", err);
