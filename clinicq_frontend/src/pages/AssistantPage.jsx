@@ -24,7 +24,7 @@ const AssistantPage = () => {
     try {
       // Note: Adjust API_BASE_URL if your Django server runs elsewhere during development
       const response = await axios.post('/api/visits/', {
-        patient_name: patientName, // Corrected: remove duplicate
+        patient_name: patientName,
         patient_gender: patientGender,
       });
 
