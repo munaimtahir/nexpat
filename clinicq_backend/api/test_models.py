@@ -47,16 +47,11 @@ class TestVisitModel:
             patient=patient,
             queue=queue,
             token_number=1,
-            # patient_name and patient_gender are now populated by ViewSet or data migration
-            # If creating model directly, these should be supplied if needed for __str__ or other logic
-            patient_name=patient.name,
-            patient_gender=patient.gender
         )
         assert visit.status == "WAITING" # Default status
         assert visit.visit_date == date.today() # Default visit_date
         assert visit.patient == patient
         assert visit.queue == queue
-        assert visit.patient_name == patient.name # Check if it's correctly set
 
     def test_visit_string_representation(self):
         # Re-setup for this specific test method if setUp isn't standard unittest.TestCase
@@ -66,12 +61,9 @@ class TestVisitModel:
             patient=test_patient,
             queue=test_queue,
             token_number=10,
-            patient_name="String Rep Patient", # Usually set by ViewSet or data migration
             visit_date=date(2023, 5, 15)
         )
-        # The __str__ uses self.patient_name which might be from the old data.
-        # For new visits, it's populated from patient.name by the ViewSet.
-        # If patient_name is not explicitly set on Visit creation here, it might be blank.
+        # The __str__ uses self.patient.name.
         assert str(visit) == "Token 10 - String Rep Patient (2023-05-15)"
 
     def test_unique_token_per_day_per_queue_constraint(self):
@@ -82,12 +74,12 @@ class TestVisitModel:
 
         Visit.objects.create(
             token_number=1, patient=patient1, queue=queue1,
-            visit_date=date.today(), patient_name=patient1.name, patient_gender=patient1.gender
+            visit_date=date.today()
         )
         with pytest.raises(IntegrityError):
             Visit.objects.create(
                 token_number=1, patient=patient2, queue=queue1, # Same token, date, queue
-                visit_date=date.today(), patient_name=patient2.name, patient_gender=patient2.gender
+                visit_date=date.today()
             )
 
     def test_ordering(self):
@@ -105,12 +97,12 @@ class TestVisitModel:
         # This orders by queue PK by default for FK. If we want queue name, query needs .order_by('queue__name')
         # Let's assume test checks default model ordering.
 
-        v1_yesterday_q1_t1 = Visit.objects.create(patient=p, queue=q1, token_number=1, visit_date=date.today() - timedelta(days=1), patient_name=p.name, patient_gender=p.gender)
+        v1_yesterday_q1_t1 = Visit.objects.create(patient=p, queue=q1, token_number=1, visit_date=date.today() - timedelta(days=1))
 
-        v2_today_q1_t2 = Visit.objects.create(patient=p, queue=q1, token_number=2, visit_date=date.today(), patient_name=p.name, patient_gender=p.gender)
-        v3_today_q1_t1 = Visit.objects.create(patient=p, queue=q1, token_number=1, visit_date=date.today(), patient_name=p.name, patient_gender=p.gender)
+        v2_today_q1_t2 = Visit.objects.create(patient=p, queue=q1, token_number=2, visit_date=date.today())
+        v3_today_q1_t1 = Visit.objects.create(patient=p, queue=q1, token_number=1, visit_date=date.today())
 
-        v4_today_q2_t1 = Visit.objects.create(patient=p, queue=q2, token_number=1, visit_date=date.today(), patient_name=p.name, patient_gender=p.gender)
+        v4_today_q2_t1 = Visit.objects.create(patient=p, queue=q2, token_number=1, visit_date=date.today())
 
         visits = Visit.objects.all() # Meta ordering should apply
 
@@ -123,22 +115,13 @@ class TestVisitModel:
 
         assert list(visits) == [v1_yesterday_q1_t1, v3_today_q1_t1, v2_today_q1_t2, v4_today_q2_t1]
 
-    def test_visit_patient_gender_choices_on_patient_model(self):
-        """ patient_gender is now primarily on Patient model. Visit.patient_gender is for historical data."""
+    def test_patient_gender_choices_on_patient_model(self):
+        """ patient gender choices are defined on the Patient model."""
         patient_female = Patient.objects.create(name="Alex", gender="FEMALE")
         assert patient_female.get_gender_display() == "Female"
 
         patient_other = Patient.objects.create(name="Sam", gender="OTHER")
         assert patient_other.get_gender_display() == "Other"
-
-        # Test Visit's historical patient_gender field if needed, though it's less relevant now.
-        # For this, we'd create a Visit and manually set its patient_gender.
-        # q = Queue.objects.create(name="GenderTestQ")
-        # visit_with_hist_gender = Visit.objects.create(
-        #     patient=patient_female, queue=q, token_number=1,
-        #     patient_name="Legacy Alex", patient_gender="FEMALE" # Set legacy field
-        # )
-        # assert visit_with_hist_gender.patient_gender == "FEMALE"
         # This test might be redundant if the field is only for data migration.
 
     # Removed tests that directly tested VisitSerializer's old create() behavior for token/date generation
@@ -151,7 +134,6 @@ class TestVisitModel:
         with freeze_time("2023-10-26"):
             visit = Visit.objects.create(
                 token_number=5, patient=patient, queue=queue,
-                patient_name=patient.name, patient_gender=patient.gender
             )
             assert visit.visit_date == date(2023, 10, 26)
 
@@ -166,8 +148,6 @@ class TestVisitModel:
         visit_data = {
             "patient": patient.pk,
             "queue": queue.pk,
-            # patient_name & patient_gender are read_only in VisitSerializer now,
-            # they get populated from the Patient model in ViewSet.perform_create
         }
         serializer = VisitSerializer(data=visit_data)
         assert serializer.is_valid(), serializer.errors
@@ -182,7 +162,7 @@ class TestVisitModel:
 
         # If we wanted to test saving via serializer directly (outside viewset context):
         # validated_data = serializer.validated_data
-        # visit_instance = Visit.objects.create(**validated_data, token_number=1, patient_name=patient.name, patient_gender=patient.gender)
+        # visit_instance = Visit.objects.create(**validated_data, token_number=1)
         # assert visit_instance is not None
         # assert visit_instance.patient == patient
         # assert visit_instance.queue == queue

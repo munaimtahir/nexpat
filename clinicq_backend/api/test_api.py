@@ -98,9 +98,7 @@ class PatientAPITests(APITestCase):
                 patient=self.patient1,
                 queue=queue,
                 token_number=i + 1,
-                visit_date=date.today() - timedelta(days=i),
-                patient_name=self.patient1.name, # Denormalized data
-                patient_gender=self.patient1.gender
+                visit_date=date.today() - timedelta(days=i)
             )
 
         url = reverse('patient-detail', kwargs={'registration_number': self.patient1.registration_number})
@@ -161,8 +159,6 @@ class VisitAPITests(APITestCase):
         visit = Visit.objects.first()
         assert visit.patient == self.patient
         assert visit.queue == self.queue1
-        assert visit.patient_name == self.patient.name # Check denormalized field
-        assert visit.patient_gender == self.patient.gender # Check denormalized field
         assert visit.token_number == 1
         assert visit.visit_date == date.today()
         assert visit.status == 'WAITING'
@@ -228,10 +224,10 @@ class VisitAPITests(APITestCase):
     def test_get_waiting_visits_api_filtered_by_queue(self):
         """Test GET /api/visits/?status=WAITING&queue=<id> returns correctly."""
         # Visits for Queue 1
-        Visit.objects.create(patient=self.patient, queue=self.queue1, token_number=1, visit_date=date.today(), status="WAITING", patient_name=self.patient.name, patient_gender=self.patient.gender)
+        Visit.objects.create(patient=self.patient, queue=self.queue1, token_number=1, visit_date=date.today(), status="WAITING")
         # Visit for Queue 2
         patient2 = Patient.objects.create(name="Q2 Patient", gender="MALE")
-        Visit.objects.create(patient=patient2, queue=self.queue2, token_number=1, visit_date=date.today(), status="WAITING", patient_name=patient2.name, patient_gender=patient2.gender)
+        Visit.objects.create(patient=patient2, queue=self.queue2, token_number=1, visit_date=date.today(), status="WAITING")
 
         url_q1 = reverse('visit-list') + f'?status=WAITING&queue={self.queue1.pk}'
         response_q1 = self.client.get(url_q1, format='json')
@@ -255,7 +251,7 @@ class VisitAPITests(APITestCase):
 
 
     def test_patch_visit_done_api(self):
-        visit = Visit.objects.create(patient=self.patient, queue=self.queue1, token_number=1, visit_date=date.today(), status="WAITING", patient_name=self.patient.name, patient_gender=self.patient.gender)
+        visit = Visit.objects.create(patient=self.patient, queue=self.queue1, token_number=1, visit_date=date.today(), status="WAITING")
         url = reverse('visit-done', kwargs={'pk': visit.pk})
         response = self.client.patch(url, {}, format='json')
         assert response.status_code == status.HTTP_200_OK
@@ -329,8 +325,6 @@ class VisitAPITests(APITestCase):
             'token_number': 99,  # Should be ignored
             'visit_date': '2000-01-01', # Should be ignored
             'status': 'DONE', # Should be ignored (set to WAITING by default)
-            'patient_name': 'Should be Ignored Name', # Should be derived from Patient model
-            'patient_gender': 'MALE' # Should be derived from Patient model
         }
         response = self.client.post(url, data, format='json')
         assert response.status_code == status.HTTP_201_CREATED
@@ -339,8 +333,7 @@ class VisitAPITests(APITestCase):
         assert response.data['status'] == 'WAITING'
         assert response.data['patient_full_name'] == self.patient.name # Derived from patient obj
 
-        # Check the actual Visit model's patient_name and patient_gender fields
-        # These are populated by the view's perform_create from the Patient instance
+        # Check the Visit model's relationships
         visit = Visit.objects.get(pk=response.data['id'])
-        assert visit.patient_name == self.patient.name
-        assert visit.patient_gender == self.patient.gender
+        assert visit.patient == self.patient
+        assert visit.queue == self.queue1
