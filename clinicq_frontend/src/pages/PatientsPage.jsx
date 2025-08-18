@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 
 const PatientsPage = () => {
-  const [patients, setPatients] = useState([]);
+  const [_patients, setPatients] = useState([]);
 
   const fetchPatients = useCallback(async () => {
     // Fetch patients from your API
