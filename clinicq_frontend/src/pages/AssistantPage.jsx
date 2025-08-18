@@ -46,11 +46,11 @@ const AssistantPage = () => {
         if (Array.isArray(patientResponse.data) && patientResponse.data.length > 0) {
           patient = patientResponse.data[0];
           setPatientInfo(patient);
-         } else {
+        } else {
           setError('Patient not found.');
           setIsLoading(false);
           return;
-}
+        }
       }
 
       const response = await axios.post('/api/visits/', {
@@ -81,7 +81,7 @@ const AssistantPage = () => {
       console.error('Error creating visit:', err);
       if (err.response && err.response.data) {
         const serverErrors = err.response.data;
-        let messages = [];
+        const messages = [];
         for (const key in serverErrors) {
           messages.push(
             `${key}: ${
