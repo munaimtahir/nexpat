@@ -302,10 +302,18 @@ describe('Clinic Queue Full Workflow Test', () => {
   });
 
   test('doctor page handles API errors gracefully', async () => {
-    // Mock axios to simulate fetch error  
+    // Mock axios to simulate fetch error
     const originalAxios = require('axios');
     const axiosGet = jest.spyOn(originalAxios, 'get');
-    axiosGet.mockRejectedValueOnce(new Error('Network error'));
+    axiosGet.mockImplementation((url) => {
+      if (url.includes('/api/queues/')) {
+        return Promise.resolve({ data: [], status: 200 });
+      }
+      if (url.includes('/api/visits/')) {
+        return Promise.reject(new Error('Network error'));
+      }
+      return Promise.resolve({ data: [], status: 200 });
+    });
     
     const user = userEvent.setup();
     render(
@@ -327,17 +335,24 @@ describe('Clinic Queue Full Workflow Test', () => {
     const originalAxios = require('axios');
     const axiosGet = jest.spyOn(originalAxios, 'get');
     const axiosPatch = jest.spyOn(originalAxios, 'patch');
-    
-    axiosGet.mockResolvedValue({
-      data: [{
-        id: 1,
-        token_number: 1,
-        patient_name: 'Test Patient',
-        patient_gender: 'MALE',
-        visit_date: '2025-07-07',
-        status: 'WAITING',
-      }],
-      status: 200,
+
+    axiosGet.mockImplementation((url) => {
+      if (url.includes('/api/queues/')) {
+        return Promise.resolve({ data: [], status: 200 });
+      }
+      return Promise.resolve({
+        data: [
+          {
+            id: 1,
+            token_number: 1,
+            patient_name: 'Test Patient',
+            patient_gender: 'MALE',
+            visit_date: '2025-07-07',
+            status: 'WAITING',
+          },
+        ],
+        status: 200,
+      });
     });
     
     axiosPatch.mockRejectedValueOnce({
