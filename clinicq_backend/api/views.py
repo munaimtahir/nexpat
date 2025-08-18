@@ -164,7 +164,12 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         try:
             file_id, file_url = upload_prescription_image(image_file)
         except Exception:
-            pass
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            if 'GoogleApiError' in globals() and GoogleApiError and isinstance(e, GoogleApiError):
+                logger.error(f"Google API error while uploading prescription image: {e}", exc_info=True)
+            else:
+                logger.error(f"Unexpected error while uploading prescription image: {e}", exc_info=True)
         instance = PrescriptionImage.objects.create(
             visit=visit, drive_file_id=file_id or '', image_url=file_url or ''
         )
