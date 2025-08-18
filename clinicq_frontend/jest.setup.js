@@ -24,8 +24,8 @@ class MockBroadcastChannel {
     this.onmessageerror = null;
     // console.log(`MockBroadcastChannel '${name}' created`);
   }
-  postMessage(message) {
-    // console.log(`MockBroadcastChannel '${this.name}' postMessage:`, message);
+  postMessage() {
+    // console.log(`MockBroadcastChannel '${this.name}' postMessage`);
     // In a more complex mock, you might store messages or simulate cross-instance communication.
   }
   close() {

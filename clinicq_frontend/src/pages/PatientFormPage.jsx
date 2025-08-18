@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 
 const PatientFormPage = () => {
-  const [formData, setFormData] = useState({ name: '', age: '' });
+  const [formData, _setFormData] = useState({ name: '', age: '' });
 
   const handleSubmit = useCallback(
     async (event) => {
