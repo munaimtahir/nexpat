@@ -203,15 +203,23 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         visit = get_object_or_404(Visit, pk=visit_id)
         file_id = ""
         file_url = ""
-        try:
-            file_id, file_url = upload_prescription_image(image_file)
-        except Exception as e:
-            if GoogleApiError and isinstance(e, GoogleApiError):
+        if GoogleApiError:
+            try:
+                file_id, file_url = upload_prescription_image(image_file)
+            except GoogleApiError as e:
                 logger.error(
                     f"Google API error while uploading prescription image: {e}",
                     exc_info=True,
                 )
-            else:
+            except Exception as e:
+                logger.error(
+                    f"Unexpected error while uploading prescription image: {e}",
+                    exc_info=True,
+                )
+        else:
+            try:
+                file_id, file_url = upload_prescription_image(image_file)
+            except Exception as e:
                 logger.error(
                     f"Unexpected error while uploading prescription image: {e}",
                     exc_info=True,
