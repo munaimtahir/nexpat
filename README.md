@@ -4,6 +4,8 @@ ClinicQ is a browser-based token queue system designed for clinics. It allows as
 
 This project is built with Django (backend API) and React (frontend).
 
+The Django backend project resides in the `clinicq_backend/` directory; run management commands from there or via the `backend` Docker service.
+
 ## Features
 
 ### Release 2 - v0.2.0 (Current)
