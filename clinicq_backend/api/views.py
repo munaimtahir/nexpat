@@ -3,8 +3,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Visit, Patient, Queue, PrescriptionImage
 from .serializers import (
-    VisitSerializer, VisitStatusUpdateSerializer,
-    PatientSerializer, QueueSerializer,
+    VisitSerializer,
+    VisitStatusUpdateSerializer,
+    PatientSerializer,
+    QueueSerializer,
     PrescriptionImageSerializer,
 )
 from django.utils import timezone
@@ -13,8 +15,13 @@ from django.db.models import Q  # For complex lookups (patient search)
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 import logging
-from googleapiclient.errors import HttpError as GoogleApiError
+
 from .google_drive import upload_prescription_image
+
+try:
+    from googleapiclient.errors import GoogleApiError
+except Exception:  # pragma: no cover - optional dependency
+    GoogleApiError = None
 
 
 class QueueViewSet(viewsets.ReadOnlyModelViewSet):
@@ -22,8 +29,10 @@ class QueueViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint that allows queues to be viewed.
     Provides `list` and `retrieve` actions.
     """
-    queryset = Queue.objects.all().order_by('name')
+
+    queryset = Queue.objects.all().order_by("name")
     serializer_class = QueueSerializer
+
 
 class PatientViewSet(viewsets.ModelViewSet):
     """
@@ -31,19 +40,35 @@ class PatientViewSet(viewsets.ModelViewSet):
     Provides full CRUD operations.
     Search functionality is available via /api/patients/search/?q=
     """
-    queryset = Patient.objects.all().order_by('registration_number')
-    serializer_class = PatientSerializer
-    lookup_field = 'registration_number' # Use registration_number for single patient lookups (/api/patients/{registration_number}/)
 
-    @action(detail=False, methods=['get'], url_path='search')
+    queryset = Patient.objects.all().order_by("registration_number")
+    serializer_class = PatientSerializer
+    lookup_field = "registration_number"  # Use registration_number for single patient lookups (/api/patients/{registration_number}/)
+
+    def get_queryset(self):
+        """Optionally filter patients by a comma-separated list of registration numbers."""
+        queryset = super().get_queryset()
+        reg_nums = self.request.query_params.get("registration_numbers")
+        if reg_nums:
+            numbers = []
+            if numbers:
+                queryset = queryset.filter(registration_number__in=numbers)
+            else:
+                return Patient.objects.none()
+        return queryset
+
+    @action(detail=False, methods=["get"], url_path="search")
     def search(self, request):
         """
         Search for patients by registration number, name fragment, or phone fragment.
         Usage: GET /api/patients/search/?q=<query_term>
         """
-        query = request.query_params.get('q', None)
+        query = request.query_params.get("q", None)
         if not query:
-            return Response({"error": "Query parameter 'q' is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Query parameter 'q' is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Build Q objects for searching
         # registration_number: exact match (if query is numeric)
@@ -65,8 +90,9 @@ class PatientViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(patients, many=True)
         return Response(serializer.data)
 
+
 class VisitViewSet(viewsets.ModelViewSet):
-    queryset = Visit.objects.all() # Default queryset
+    queryset = Visit.objects.all()  # Default queryset
     serializer_class = VisitSerializer
 
     def get_queryset(self):
@@ -76,14 +102,16 @@ class VisitViewSet(viewsets.ModelViewSet):
         - By queue ID using `queue=<id>`.
         Ordering is based on queue name, then token number.
         """
-        queryset = Visit.objects.select_related('patient', 'queue').all() # Optimize by fetching related objects
+        queryset = Visit.objects.select_related(
+            "patient", "queue"
+        ).all()  # Optimize by fetching related objects
 
-        status_param = self.request.query_params.get('status')
-        queue_id_param = self.request.query_params.get('queue')
+        status_param = self.request.query_params.get("status")
+        queue_id_param = self.request.query_params.get("queue")
 
         if status_param:
             queryset = queryset.filter(status__iexact=status_param)
-            if status_param.upper() == 'WAITING':
+            if status_param.upper() == "WAITING":
                 # For WAITING status, always filter by today's date
                 queryset = queryset.filter(visit_date=timezone.now().date())
 
@@ -91,8 +119,7 @@ class VisitViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(queue__id=queue_id_param)
 
         # Default ordering
-        return queryset.order_by('visit_date', 'queue__name', 'token_number')
-
+        return queryset.order_by("visit_date", "queue__name", "token_number")
 
     def perform_create(self, serializer):
         """
@@ -102,14 +129,15 @@ class VisitViewSet(viewsets.ModelViewSet):
         - Set status to 'WAITING'.
         """
         today = datetime.date.today()
-        queue_instance = serializer.validated_data['queue']
-        patient_instance = serializer.validated_data['patient']
+        queue_instance = serializer.validated_data["queue"]
+        patient_instance = serializer.validated_data["patient"]
 
         # Determine next token number for this specific queue and date
-        last_visit_in_queue_today = Visit.objects.filter(
-            queue=queue_instance,
-            visit_date=today
-        ).order_by('-token_number').first()
+        last_visit_in_queue_today = (
+            Visit.objects.filter(queue=queue_instance, visit_date=today)
+            .order_by("-token_number")
+            .first()
+        )
 
         next_token_number = 1
         if last_visit_in_queue_today:
@@ -121,34 +149,43 @@ class VisitViewSet(viewsets.ModelViewSet):
         serializer.save(
             token_number=next_token_number,
             visit_date=today,
-            status='WAITING',
+            status="WAITING",
         )
 
-    @action(detail=True, methods=['patch'], serializer_class=VisitStatusUpdateSerializer)
+    @action(
+        detail=True, methods=["patch"], serializer_class=VisitStatusUpdateSerializer
+    )
     def done(self, request, pk=None):
         visit = self.get_object()
-        if visit.status == 'DONE':
-            return Response({'detail': 'Visit is already marked as done.'}, status=status.HTTP_400_BAD_REQUEST)
+        if visit.status == "DONE":
+            return Response(
+                {"detail": "Visit is already marked as done."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Use the specific serializer for status updates
-        status_serializer = VisitStatusUpdateSerializer(visit, data={'status': 'DONE'}, partial=True)
+        status_serializer = VisitStatusUpdateSerializer(
+            visit, data={"status": "DONE"}, partial=True
+        )
         if status_serializer.is_valid():
             status_serializer.save()
             # Return the full visit details using the main VisitSerializer
-            full_visit_serializer = VisitSerializer(visit, context={'request': request}) # Add context for HATEOAS links if used
+            full_visit_serializer = VisitSerializer(
+                visit, context={"request": request}
+            )  # Add context for HATEOAS links if used
             return Response(full_visit_serializer.data)
         return Response(status_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PrescriptionImageViewSet(viewsets.ModelViewSet):
-    queryset = PrescriptionImage.objects.all().order_by('-created_at')
+    queryset = PrescriptionImage.objects.all().order_by("-created_at")
     serializer_class = PrescriptionImageSerializer
     parser_classes = (MultiPartParser, FormParser)
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        visit_id = self.request.query_params.get('visit')
-        patient_reg = self.request.query_params.get('patient')
+        visit_id = self.request.query_params.get("visit")
+        patient_reg = self.request.query_params.get("patient")
         if visit_id:
             queryset = queryset.filter(visit_id=visit_id)
         if patient_reg:
@@ -156,17 +193,19 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request, *args, **kwargs):
-        image_file = request.FILES.get('image')
-        visit_id = request.data.get('visit')
+        image_file = request.FILES.get("image")
+        visit_id = request.data.get("visit")
         if not image_file or not visit_id:
-            return Response({'detail': 'visit and image are required.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "visit and image are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         visit = get_object_or_404(Visit, pk=visit_id)
-        file_id = ''
-        file_url = ''
+        file_id = ""
+        file_url = ""
         try:
             file_id, file_url = upload_prescription_image(image_file)
         except Exception as e:
-            if isinstance(e, GoogleApiError):
                 logger.error(
                     f"Google API error while uploading prescription image: {e}",
                     exc_info=True,
@@ -177,7 +216,7 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
                     exc_info=True,
                 )
         instance = PrescriptionImage.objects.create(
-            visit=visit, drive_file_id=file_id or '', image_url=file_url or ''
+            visit=visit, drive_file_id=file_id or "", image_url=file_url or ""
         )
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
