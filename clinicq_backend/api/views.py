@@ -15,6 +15,7 @@ from django.db.models import Q  # For complex lookups (patient search)
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 import logging
+
 from .google_drive import upload_prescription_image
 
 try:
@@ -205,12 +206,6 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         try:
             file_id, file_url = upload_prescription_image(image_file)
         except Exception as e:
-            logger = logging.getLogger(__name__)
-            if (
-                "GoogleApiError" in globals()
-                and GoogleApiError
-                and isinstance(e, GoogleApiError)
-            ):
                 logger.error(
                     f"Google API error while uploading prescription image: {e}",
                     exc_info=True,
