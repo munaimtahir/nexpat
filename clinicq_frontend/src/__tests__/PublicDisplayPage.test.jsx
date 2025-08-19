@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import PublicDisplayPage from '../pages/PublicDisplayPage';
-import axios from 'axios';
+import api from '../api';
 
-jest.mock('axios');
+jest.mock('../api');
 
 test('renders Public Display heading', async () => {
-  axios.get.mockResolvedValue({ data: [] });
+  api.get.mockResolvedValue({ data: [] });
   const { unmount } = render(
     <MemoryRouter>
       <PublicDisplayPage />

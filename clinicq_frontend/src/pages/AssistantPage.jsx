@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { Link } from 'react-router-dom';
 
 const AssistantPage = () => {
@@ -20,7 +20,7 @@ const AssistantPage = () => {
   useEffect(() => {
     const fetchQueues = async () => {
       try {
-        const response = await axios.get('/api/queues/');
+        const response = await api.get('/api/queues/');
         setQueues(response.data || []);
       } catch (err) {
         console.error('Error fetching queues:', err);
@@ -37,14 +37,14 @@ const AssistantPage = () => {
         return;
       }
       try {
-        const searchResp = await axios.get(
+        const searchResp = await api.get(
           `/api/patients/search/?q=${encodeURIComponent(registrationNumber.trim())}`
         );
         if (Array.isArray(searchResp.data) && searchResp.data.length > 0) {
           const regNo = searchResp.data[0].registration_number;
-          const detailResp = await axios.get(`/api/patients/${regNo}/`);
+          const detailResp = await api.get(`/api/patients/${regNo}/`);
           setPatientInfo(detailResp.data);
-          const imgResp = await axios.get(`/api/prescriptions/?patient=${regNo}`);
+          const imgResp = await api.get(`/api/prescriptions/?patient=${regNo}`);
           setExistingImages(imgResp.data || []);
         } else {
           setPatientInfo(null);
@@ -83,7 +83,7 @@ const AssistantPage = () => {
     }
 
     try {
-      const response = await axios.post('/api/visits/', {
+      const response = await api.post('/api/visits/', {
         patient: patientInfo.id,
         queue: selectedQueue,
       });
@@ -138,11 +138,11 @@ const AssistantPage = () => {
       const form = new FormData();
       form.append('visit', visitId);
       form.append('image', selectedImage);
-      await axios.post('/api/prescriptions/', form);
+      await api.post('/api/prescriptions/', form);
       setSelectedImage(null);
       const regNo = patientInfo?.registration_number || savedRegistrationNumber;
       if (regNo) {
-        const imgResp = await axios.get(
+        const imgResp = await api.get(
           `/api/prescriptions/?patient=${regNo}`
         );
         setExistingImages(imgResp.data || []);

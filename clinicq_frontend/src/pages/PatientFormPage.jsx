@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 const genders = [
@@ -21,14 +21,14 @@ const PatientFormPage = () => {
   useEffect(() => {
     const fetchPatient = async () => {
       try {
-        const response = await axios.get(`/api/patients/${registration_number}/`);
+        const response = await api.get(`/api/patients/${registration_number}/`);
         setFormData({
           name: response.data.name || '',
           phone: response.data.phone || '',
           gender: response.data.gender || 'OTHER',
           age: response.data.age || '',
         });
-        const imgResp = await axios.get(`/api/prescriptions/?patient=${registration_number}`);
+        const imgResp = await api.get(`/api/prescriptions/?patient=${registration_number}`);
         setImages(imgResp.data || []);
       } catch (err) {
         console.error('Failed to load patient', err);
@@ -50,9 +50,9 @@ const PatientFormPage = () => {
     setError('');
     try {
       if (isEdit) {
-        await axios.put(`/api/patients/${registration_number}/`, formData);
+        await api.put(`/api/patients/${registration_number}/`, formData);
       } else {
-        await axios.post('/api/patients/', formData);
+        await api.post('/api/patients/', formData);
       }
       navigate('/patients');
     } catch (err) {

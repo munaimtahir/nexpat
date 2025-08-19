@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Visit, Patient, Queue, PrescriptionImage
@@ -17,6 +17,7 @@ from django.shortcuts import get_object_or_404
 import logging
 
 from .google_drive import upload_prescription_image
+from .permissions import IsDoctor, IsAssistant
 
 try:
     from googleapiclient.errors import GoogleApiError
@@ -25,25 +26,27 @@ except Exception:  # pragma: no cover - optional dependency
 
 
 class QueueViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API endpoint that allows queues to be viewed.
-    Provides `list` and `retrieve` actions.
-    """
+    """API endpoint that allows queues to be viewed."""
 
     queryset = Queue.objects.all().order_by("name")
     serializer_class = QueueSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class PatientViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows patients to be viewed or edited.
-    Provides full CRUD operations.
-    Search functionality is available via /api/patients/search/?q=
-    """
+    """API endpoint that allows patients to be viewed or edited."""
 
     queryset = Patient.objects.all().order_by("registration_number")
     serializer_class = PatientSerializer
-    lookup_field = "registration_number"  # Use registration_number for single patient lookups (/api/patients/{registration_number}/)
+    lookup_field = "registration_number"  # Use registration_number for single patient lookups
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action == "destroy":
+            permission_classes = [IsDoctor]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [perm() for perm in permission_classes]
 
     def get_queryset(self):
         """Optionally filter patients by a comma-separated list of registration numbers."""
@@ -51,6 +54,12 @@ class PatientViewSet(viewsets.ModelViewSet):
         reg_nums = self.request.query_params.get("registration_numbers")
         if reg_nums:
             numbers = []
+            for n in reg_nums.split(","):
+                if n.isdigit():
+                    try:
+                        numbers.append(int(n))
+                    except (ValueError, OverflowError):
+                        continue
             if numbers:
                 queryset = queryset.filter(registration_number__in=numbers)
             else:
@@ -92,8 +101,18 @@ class PatientViewSet(viewsets.ModelViewSet):
 
 
 class VisitViewSet(viewsets.ModelViewSet):
-    queryset = Visit.objects.all()  # Default queryset
+    queryset = Visit.objects.all()
     serializer_class = VisitSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action == "create":
+            permission_classes = [IsAssistant]
+        elif self.action == "done":
+            permission_classes = [IsDoctor]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [perm() for perm in permission_classes]
 
     def get_queryset(self):
         """
@@ -181,6 +200,7 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
     queryset = PrescriptionImage.objects.all().order_by("-created_at")
     serializer_class = PrescriptionImageSerializer
     parser_classes = (MultiPartParser, FormParser)
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         queryset = super().get_queryset()
