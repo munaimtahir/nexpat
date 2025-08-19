@@ -206,6 +206,7 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         try:
             file_id, file_url = upload_prescription_image(image_file)
         except Exception as e:
+            if GoogleApiError and isinstance(e, GoogleApiError):
                 logger.error(
                     f"Google API error while uploading prescription image: {e}",
                     exc_info=True,

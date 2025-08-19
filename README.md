@@ -126,31 +126,33 @@ docker-compose down -v
 ## Running Tests
 
 ### Backend Tests
+Run the Django test suite using the built-in test runner:
+```bash
+cd clinicq_backend
+python manage.py test
+```
 
-Ensure Docker Compose services are running (or at least the `db` service if tests connect to it, though backend tests here use `APITestCase` which often sets up its own test DB).
-To run backend tests directly within the container:
+Alternatively, if you prefer `pytest` and have Docker running:
 ```bash
 docker-compose exec backend pytest
 ```
-Or, if your local Python environment is set up similarly to the Docker image and you have a local PostgreSQL instance or can configure tests to use SQLite:
+Or locally with a configured Python environment:
 ```bash
 cd clinicq_backend
 # Ensure virtualenv is active and dependencies installed
-# Set necessary environment variables (like DATABASE_URL if not using test DB settings)
 pytest
 ```
 
 ### Frontend Tests
-
-Frontend tests are currently configured but may face execution issues in some sandboxed environments. To run them:
-```bash
-docker-compose exec frontend npm test -- --watchAll=false
-```
-Or locally:
+Run the React test suite with:
 ```bash
 cd clinicq_frontend
-npm install # If not already done
-npm test -- --watchAll=false
+npm test
+```
+
+If you are running inside Docker or want to disable watch mode:
+```bash
+docker-compose exec frontend npm test -- --watchAll=false
 ```
 
 ## Project Structure
