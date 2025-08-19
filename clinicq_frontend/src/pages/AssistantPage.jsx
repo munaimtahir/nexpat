@@ -15,6 +15,7 @@ const AssistantPage = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [existingImages, setExistingImages] = useState([]);
+  const [savedRegistrationNumber, setSavedRegistrationNumber] = useState('');
 
   useEffect(() => {
     const fetchQueues = async () => {
@@ -55,7 +56,6 @@ const AssistantPage = () => {
       }
     };
     const handler = setTimeout(() => {
-]
       fetchPatient();
     }, 500); // 500ms debounce
     return () => clearTimeout(handler);
@@ -100,11 +100,12 @@ const AssistantPage = () => {
           typeof tokenValue,
           tokenValue,
         );
-        setGeneratedToken('N/A');
-        setError('Received invalid token format from server.');
-      }
+      setGeneratedToken('N/A');
+      setError('Received invalid token format from server.');
+    }
 
       setVisitId(response.data.id);
+      setSavedRegistrationNumber(patientInfo.registration_number);
       setRegistrationNumber('');
       setSelectedQueue('');
       setPatientInfo(null); // Clear patient info after successful visit creation
@@ -139,10 +140,13 @@ const AssistantPage = () => {
       form.append('image', selectedImage);
       await axios.post('/api/prescriptions/', form);
       setSelectedImage(null);
-      const imgResp = await axios.get(
-        `/api/prescriptions/?patient=${patientInfo.registration_number}`
-      );
-      setExistingImages(imgResp.data || []);
+      const regNo = patientInfo?.registration_number || savedRegistrationNumber;
+      if (regNo) {
+        const imgResp = await axios.get(
+          `/api/prescriptions/?patient=${regNo}`
+        );
+        setExistingImages(imgResp.data || []);
+      }
     } catch (err) {
       console.error('Upload failed', err);
       setUploadError('Failed to upload image');
