@@ -13,5 +13,4 @@ test('renders Public Display heading', async () => {
     </MemoryRouter>
   );
   expect(await screen.findByText(/Now Serving/i)).toBeInTheDocument();
-  unmount();
 });
