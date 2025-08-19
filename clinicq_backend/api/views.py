@@ -8,10 +8,12 @@ from .serializers import (
     PrescriptionImageSerializer,
 )
 from django.utils import timezone
-import datetime # Required for date operations
-from django.db.models import Q # For complex lookups (patient search)
+import datetime  # Required for date operations
+from django.db.models import Q  # For complex lookups (patient search)
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
+import logging
+from googleapiclient.errors import HttpError as GoogleApiError
 from .google_drive import upload_prescription_image
 
 
@@ -163,13 +165,17 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         file_url = ''
         try:
             file_id, file_url = upload_prescription_image(image_file)
-        except Exception:
         except Exception as e:
-            logger = logging.getLogger(__name__)
-            if 'GoogleApiError' in globals() and GoogleApiError and isinstance(e, GoogleApiError):
-                logger.error(f"Google API error while uploading prescription image: {e}", exc_info=True)
+            if isinstance(e, GoogleApiError):
+                logger.error(
+                    f"Google API error while uploading prescription image: {e}",
+                    exc_info=True,
+                )
             else:
-                logger.error(f"Unexpected error while uploading prescription image: {e}", exc_info=True)
+                logger.error(
+                    f"Unexpected error while uploading prescription image: {e}",
+                    exc_info=True,
+                )
         instance = PrescriptionImage.objects.create(
             visit=visit, drive_file_id=file_id or '', image_url=file_url or ''
         )
