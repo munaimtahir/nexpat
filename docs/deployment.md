@@ -18,7 +18,7 @@ Create a `.env` file based on [`deploy/.env.example`](../deploy/.env.example) an
 
 - `SECRET_KEY` – Django secret key
 - `DEBUG` – set to `False` in production
-- `ALLOWED_HOSTS` – comma‑separated hostnames that can serve the app
+- `ALLOWED_HOSTS` – comma-separated hostnames that can serve the app
 - `DATABASE_URL` – PostgreSQL connection string
 - `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` – optional initial superuser
 - `CORS_ALLOWED_ORIGINS` – allowed origins if backend and frontend are on different hosts
