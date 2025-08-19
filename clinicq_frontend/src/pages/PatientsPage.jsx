@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { Link, useNavigate } from 'react-router-dom';
 
 const PatientsPage = () => {
@@ -17,7 +17,7 @@ const PatientsPage = () => {
       if (term.trim()) {
         url = `/api/patients/search/?q=${encodeURIComponent(term.trim())}`;
       }
-      const response = await axios.get(url);
+      const response = await api.get(url);
       setPatients(response.data);
     } catch (err) {
       console.error('Failed to fetch patients', err);
@@ -34,7 +34,7 @@ const PatientsPage = () => {
   const handleDelete = async (regNum) => {
     if (!window.confirm('Are you sure you want to delete this patient?')) return;
     try {
-      await axios.delete(`/api/patients/${regNum}/`);
+      await api.delete(`/api/patients/${regNum}/`);
       setPatients((prev) => prev.filter((p) => p.registration_number !== regNum));
     } catch (err) {
       console.error('Delete failed', err);
