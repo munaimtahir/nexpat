@@ -41,6 +41,39 @@ class PatientCRUDTests(APITestCase):
         self.assertFalse(Patient.objects.filter(registration_number=reg_no).exists())
 
 
+class PatientFilterTests(APITestCase):
+    def setUp(self):
+        doctor_group, _ = Group.objects.get_or_create(name="doctor")
+        user = User.objects.create_user(username="docfilter", password="pass")
+        user.groups.add(doctor_group)
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+        self.p1 = Patient.objects.create(name="P1", gender="MALE")
+        self.p2 = Patient.objects.create(name="P2", gender="MALE")
+        self.p3 = Patient.objects.create(name="P3", gender="MALE")
+
+    def test_filter_valid_numbers(self):
+        resp = self.client.get(
+            f"/api/patients/?registration_numbers={self.p1.registration_number},{self.p3.registration_number}"
+        )
+        self.assertEqual(resp.status_code, 200)
+        numbers = [p["registration_number"] for p in resp.data]
+        self.assertEqual(numbers, [self.p1.registration_number, self.p3.registration_number])
+
+    def test_filter_mixed_numbers(self):
+        query = f"{self.p1.registration_number}, abc ,{self.p2.registration_number},xyz"
+        resp = self.client.get(f"/api/patients/?registration_numbers={query}")
+        self.assertEqual(resp.status_code, 200)
+        numbers = [p["registration_number"] for p in resp.data]
+        self.assertEqual(numbers, [self.p1.registration_number, self.p2.registration_number])
+
+    def test_filter_invalid_numbers(self):
+        resp = self.client.get("/api/patients/?registration_numbers=abc, xyz")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data), 0)
+
+
 class VisitTests(APITestCase):
     def setUp(self):
         assistant_group, _ = Group.objects.get_or_create(name="assistant")
