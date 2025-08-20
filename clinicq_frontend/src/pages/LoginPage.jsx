@@ -18,7 +18,7 @@ const LoginPage = () => {
       });
       const token = response.data.token;
       if (token) {
-        window.sessionStorage.setItem('token', token);
+        window.localStorage.setItem('token', token);
         navigate('/');
       } else {
         setError('No token returned');
