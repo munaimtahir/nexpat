@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import * as Sentry from '@sentry/react'
 import './index.css'
 import App from './App.jsx'
+import ErrorBoundary from './ErrorBoundary.jsx'
 
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({ dsn: import.meta.env.VITE_SENTRY_DSN })
@@ -11,14 +12,10 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Sentry.ErrorBoundary fallback={
-      <div>
-        <p>Something went wrong. Please try refreshing the page. If the problem persists, contact support.</p>
-      </div>
-    }>
+    <ErrorBoundary>
       <BrowserRouter>
         <App />
       </BrowserRouter>
-    </Sentry.ErrorBoundary>
+    </ErrorBoundary>
   </StrictMode>,
 )
