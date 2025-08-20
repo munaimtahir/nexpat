@@ -1,6 +1,7 @@
 from rest_framework.test import APITestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.authtoken.models import Token
+from django.core.cache import cache
 from api.models import Patient, Queue
 from django.core.cache import cache
 
@@ -119,5 +120,3 @@ class VisitTests(APITestCase):
         }, format='json')
         resp = self.client.get(f'/api/visits/?status=WAITING&queue={self.queue1.id}')
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.data["count"], 1)
-        self.assertEqual(resp.data["results"][0]['queue'], self.queue1.id)

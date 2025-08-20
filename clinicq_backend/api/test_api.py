@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.authtoken.models import Token
+from django.core.cache import cache
 from .models import Visit, Patient, Queue
 from django.utils import timezone
 from datetime import date, timedelta
@@ -69,6 +70,29 @@ class PatientAPITests(APITestCase):
             self.patient1.registration_number,
             self.patient2.registration_number,
         }
+
+    def test_get_patients_by_mixed_registration_numbers(self):
+        url = reverse("patient-list")
+        query = (
+            f"{self.patient1.registration_number}, abc ,{self.patient2.registration_number},xyz"
+        )
+        response = self.client.get(url, {"registration_numbers": query}, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        numbers = [p["registration_number"] for p in response.data]
+        assert numbers == [
+            self.patient1.registration_number,
+            self.patient2.registration_number,
+        ]
+
+    def test_get_patients_by_invalid_registration_numbers(self):
+        url = reverse("patient-list")
+        response = self.client.get(
+            url,
+            {"registration_numbers": "abc, xyz"},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == []
 
     def test_get_patient_detail(self):
         url = reverse(
