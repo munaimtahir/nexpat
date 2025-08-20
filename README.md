@@ -61,64 +61,67 @@ Key API endpoints include:
 *   **CI/CD**: GitHub Actions
 *   **Local Development**: Docker, Docker Compose
 
-## Getting Started (Local Development)
+## Local Setup
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+Follow these steps to run ClinicQ locally for development and testing.
 
 ### Prerequisites
 
-*   [Docker](https://www.docker.com/get-started)
-*   [Docker Compose](https://docs.docker.com/compose/install/) (usually included with Docker Desktop)
+* [Docker](https://www.docker.com/get-started)
+* [Docker Compose](https://docs.docker.com/compose/install/) (usually included with Docker Desktop)
 
-### One-Command Local Setup
+### Quick Start
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://your-repo-url-here/clinicq.git # Replace with actual repo URL
-    cd clinicq
-    ```
+1. **Clone the repository**
+   ```bash
+   git clone https://your-repo-url-here/clinicq.git  # Replace with actual repo URL
+   cd clinicq
+   ```
+2. **Start the stack**
+   ```bash
+   docker-compose up --build -d
+   ```
+   This builds images for the backend, frontend and database, applies database migrations and creates a default Django superuser using the credentials defined in `docker-compose.yml`.
+3. **Access the services**
+   * **Frontend (Vite dev server)** – [http://localhost:5173](http://localhost:5173)
+   * **Backend API** – [http://localhost:8000/api/](http://localhost:8000/api/)
+   * **Django admin** – [http://localhost:8000/admin/](http://localhost:8000/admin/) (log in using the superuser credentials from step 2)
 
-2.  **Environment Variables for Backend:**
-    The `docker-compose.yml` file sets default development environment variables for Django, including database connection details and superuser credentials. You typically don't need a separate `.env` file for `docker-compose up` for the backend service due to these defaults. If you need to override them, you can create a `.env` file in the `clinicq_backend` directory, and Docker Compose might pick it up (behavior can vary). The `entrypoint.sh` script will use `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, and `DJANGO_SUPERUSER_PASSWORD` from the environment to create an initial superuser.
+### Environment Variables
 
-3.  **Environment Variables for Frontend (Optional):**
-    The frontend uses `VITE_API_BASE_URL` which is pre-configured in `docker-compose.yml` to point to the backend service (`http://localhost:8000/api`). If you need other frontend-specific environment variables, create a `.env` file in the `clinicq_frontend` directory. See Vite's documentation on [Env Variables and Modes](https://vitejs.dev/guide/env-and-mode.html).
+Default development values are provided via `docker-compose.yml`. Override them in a `.env` file or your shell as needed.
 
-4.  **Run Docker Compose:**
-    Navigate to the project root directory (where `docker-compose.yml` is located) and run:
-    ```bash
-    docker-compose up --build -d
-    ```
-    *   `--build`: Forces Docker to rebuild the images if there are changes in Dockerfiles or application code.
-    *   `-d`: Runs containers in detached mode (in the background).
-
-    This command will:
-    *   Build the Docker images for the backend and frontend services if they don't exist or if changes are detected.
-    *   Start containers for the PostgreSQL database, Django backend, and React frontend.
-    *   The backend service will automatically apply database migrations.
-    *   A default admin superuser is auto-created using the environment variables defined in `docker-compose.yml` for the `backend` service (e.g., `DJANGO_SUPERUSER_USERNAME=admin`, `DJANGO_SUPERUSER_EMAIL=admin@example.com`, `DJANGO_SUPERUSER_PASSWORD=adminpass`).
-
-5.  **Accessing the Application:**
-    *   **Frontend (Main Application)**: [http://localhost:5173](http://localhost:5173) (Vite dev server)
-    *   **Backend API**: [http://localhost:8000/api/](http://localhost:8000/api/)
-    *   **Django Admin**: [http://localhost:8000/admin/](http://localhost:8000/admin/)
-        *   Log in with the superuser credentials (e.g., `admin` / `adminpass` or as defined in `docker-compose.yml`). From here, you can manage `Visit` records and create initial user accounts for doctors if needed (though user authentication for doctors beyond Django admin is not part of v0.1.0).
+| Variable | Service | Description | Default |
+| --- | --- | --- | --- |
+| `POSTGRES_DB` | db | Name of development database | `clinicq_dev_db` |
+| `POSTGRES_USER` | db | Database user | `clinicq_dev_user` |
+| `POSTGRES_PASSWORD` | db | Database password | `clinicq_dev_password` |
+| `SECRET_KEY` | backend | Django secret key | `django_insecure_local_dev_secret_key_!@#%^&*()` |
+| `DEBUG` | backend | Enable Django debug mode | `True` |
+| `DATABASE_URL` | backend | Postgres connection string | `postgresql://clinicq_dev_user:clinicq_dev_password@db:5432/clinicq_dev_db` |
+| `DJANGO_SUPERUSER_USERNAME` | backend | Initial superuser username | `admin` |
+| `DJANGO_SUPERUSER_EMAIL` | backend | Initial superuser email | `admin@example.com` |
+| `DJANGO_SUPERUSER_PASSWORD` | backend | Initial superuser password | `adminpass` |
+| `VITE_API_BASE_URL` | frontend | URL used by frontend to reach the API | `http://localhost:8000/api` |
 
 ### Creating Additional Admin Users
 
-If you need to create additional Django superusers after the initial setup:
+To create additional Django superusers after the initial setup:
+
 ```bash
 docker-compose exec backend python manage.py createsuperuser
 ```
-Follow the prompts to set the username, email, and password.
 
 ### Stopping the Application
 
-To stop the Docker Compose services:
+Stop services with:
+
 ```bash
 docker-compose down
 ```
-To stop and remove volumes (like the database data):
+
+Remove containers and volumes with:
+
 ```bash
 docker-compose down -v
 ```
@@ -183,14 +186,19 @@ docker-compose exec frontend npm test -- --watchAll=false
 │       └── main.yml
 ├── docker-compose.yml     # Docker Compose for local development
 ├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE.md
 └── README.md
 ```
 
+## API Documentation
+
+Once the backend is running, the Django REST Framework browsable API is available at [http://localhost:8000/api/](http://localhost:8000/api/). Use it to explore and interact with endpoints during development.
+
 ## Contributing
 
-Please read `CONTRIBUTING.md` (to be created) for details on our code of conduct, and the process for submitting pull requests.
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ## License
 
-This project is licensed under the MIT License - see the `LICENSE.md` (to be created) file for details.
-```
+This project is licensed under the MIT License – see [LICENSE.md](LICENSE.md) for details.
