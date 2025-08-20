@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -23,7 +23,7 @@ const LoginPage = () => {
       } else {
         setError('No token returned');
       }
-    } catch (err) {
+    } catch {
       setError('Invalid credentials');
     }
   };
