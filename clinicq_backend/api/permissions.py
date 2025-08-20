@@ -1,5 +1,6 @@
 from rest_framework import permissions
 
+
 class IsDoctor(permissions.BasePermission):
     """Allows access only to users in the 'doctor' group."""
 

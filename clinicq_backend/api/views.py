@@ -15,9 +15,10 @@ from django.db.models import Q  # For complex lookups (patient search)
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 import logging
-
 from .google_drive import upload_prescription_image
 from .permissions import IsDoctor, IsAssistant
+
+logger = logging.getLogger(__name__)
 
 try:
     from googleapiclient.errors import GoogleApiError
@@ -38,7 +39,8 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     queryset = Patient.objects.all().order_by("registration_number")
     serializer_class = PatientSerializer
-    lookup_field = "registration_number"  # Use registration_number for single patient lookups
+    # Use registration_number for single patient lookups
+    lookup_field = "registration_number"
     permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
@@ -49,7 +51,9 @@ class PatientViewSet(viewsets.ModelViewSet):
         return [perm() for perm in permission_classes]
 
     def get_queryset(self):
-        """Optionally filter patients by a comma-separated list of registration numbers."""
+        """Optionally filter patients by a comma-separated list of
+        registration numbers.
+        """
         queryset = super().get_queryset()
         reg_nums = self.request.query_params.get("registration_numbers")
         if reg_nums:
@@ -57,11 +61,11 @@ class PatientViewSet(viewsets.ModelViewSet):
                 int(n)
                 for n in reg_nums.split(",")
                 if n.strip().isdigit()
-            numbers = []
-            for n in reg_nums.split(","):
-
+            ]
             if numbers:
-                queryset = queryset.filter(registration_number__in=numbers)
+                queryset = queryset.filter(
+                    registration_number__in=numbers
+                )
             else:
                 return Patient.objects.none()
         return queryset
@@ -69,7 +73,8 @@ class PatientViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="search")
     def search(self, request):
         """
-        Search for patients by registration number, name fragment, or phone fragment.
+        Search for patients by registration number,
+        name fragment, or phone fragment.
         Usage: GET /api/patients/search/?q=<query_term>
         """
         query = request.query_params.get("q", None)
@@ -82,7 +87,8 @@ class PatientViewSet(viewsets.ModelViewSet):
         # Build Q objects for searching
         # registration_number: exact match (if query is numeric)
         # name: case-insensitive contains
-        # phone: case-insensitive contains (searches for part of a phone number)
+        # phone: case-insensitive contains
+        # (searches for part of a phone number)
 
         filters = Q(name__icontains=query) | Q(phone__icontains=query)
         if query.isdigit():
@@ -90,7 +96,8 @@ class PatientViewSet(viewsets.ModelViewSet):
 
         patients = Patient.objects.filter(filters)
 
-        # Paginate results if pagination is configured globally, otherwise return all
+        # Paginate results if pagination is configured globally,
+        # otherwise return all
         page = self.paginate_queryset(patients)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -149,7 +156,6 @@ class VisitViewSet(viewsets.ModelViewSet):
         """
         today = datetime.date.today()
         queue_instance = serializer.validated_data["queue"]
-        patient_instance = serializer.validated_data["patient"]
 
         # Determine next token number for this specific queue and date
         last_visit_in_queue_today = (
@@ -163,8 +169,8 @@ class VisitViewSet(viewsets.ModelViewSet):
             next_token_number = last_visit_in_queue_today.token_number + 1
 
         # Save the visit with the auto-generated and assigned fields
-        # The serializer already has 'patient' (Patient instance) and 'queue' (Queue instance)
-        # from validated_data.
+        # The serializer already has 'patient' (Patient instance) and
+        # 'queue' (Queue instance) from validated_data.
         serializer.save(
             token_number=next_token_number,
             visit_date=today,
@@ -172,7 +178,9 @@ class VisitViewSet(viewsets.ModelViewSet):
         )
 
     @action(
-        detail=True, methods=["patch"], serializer_class=VisitStatusUpdateSerializer
+        detail=True,
+        methods=["patch"],
+        serializer_class=VisitStatusUpdateSerializer,
     )
     def done(self, request, pk=None):
         visit = self.get_object()
@@ -193,7 +201,10 @@ class VisitViewSet(viewsets.ModelViewSet):
                 visit, context={"request": request}
             )  # Add context for HATEOAS links if used
             return Response(full_visit_serializer.data)
-        return Response(status_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            status_serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
 class PrescriptionImageViewSet(viewsets.ModelViewSet):
@@ -209,7 +220,9 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         if visit_id:
             queryset = queryset.filter(visit_id=visit_id)
         if patient_reg:
-            queryset = queryset.filter(visit__patient__registration_number=patient_reg)
+            queryset = queryset.filter(
+                visit__patient__registration_number=patient_reg
+            )
         return queryset
 
     def create(self, request, *args, **kwargs):
@@ -228,12 +241,14 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
                 file_id, file_url = upload_prescription_image(image_file)
             except GoogleApiError as e:
                 logger.error(
-                    f"Google API error while uploading prescription image: {e}",
+                    "Google API error while uploading prescription image: %s",
+                    e,
                     exc_info=True,
                 )
             except Exception as e:
                 logger.error(
-                    f"Unexpected error while uploading prescription image: {e}",
+                    "Unexpected error while uploading prescription image: %s",
+                    e,
                     exc_info=True,
                 )
         else:
@@ -241,11 +256,14 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
                 file_id, file_url = upload_prescription_image(image_file)
             except Exception as e:
                 logger.error(
-                    f"Unexpected error while uploading prescription image: {e}",
+                    "Unexpected error while uploading prescription image: %s",
+                    e,
                     exc_info=True,
                 )
         instance = PrescriptionImage.objects.create(
-            visit=visit, drive_file_id=file_id or "", image_url=file_url or ""
+            visit=visit,
+            drive_file_id=file_id or "",
+            image_url=file_url or "",
         )
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

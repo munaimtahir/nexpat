@@ -20,7 +20,10 @@ def upload_prescription_image(file_obj):
     )
     service = build('drive', 'v3', credentials=creds)
     file_metadata = {'name': file_obj.name}
-    media = MediaIoBaseUpload(io.BytesIO(file_obj.read()), mimetype=file_obj.content_type)
+    media = MediaIoBaseUpload(
+        io.BytesIO(file_obj.read()),
+        mimetype=file_obj.content_type,
+    )
     created = (
         service.files()
         .create(body=file_metadata, media_body=media, fields='id, webViewLink')
