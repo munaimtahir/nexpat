@@ -57,11 +57,7 @@ class PatientViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         reg_nums = self.request.query_params.get("registration_numbers")
         if reg_nums:
-            numbers = [
-                int(n)
-                for n in reg_nums.split(",")
-                if n.strip().isdigit()
-            ]
+
             if numbers:
                 queryset = queryset.filter(
                     registration_number__in=numbers
