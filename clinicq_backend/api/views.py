@@ -57,7 +57,11 @@ class PatientViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         reg_nums = self.request.query_params.get("registration_numbers")
         if reg_nums:
-
+            numbers = [
+                int(num.strip())
+                for num in reg_nums.split(",")
+                if num.strip().isdigit()
+            ]
             if numbers:
                 queryset = queryset.filter(
                     registration_number__in=numbers
@@ -208,6 +212,13 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
     serializer_class = PrescriptionImageSerializer
     parser_classes = (MultiPartParser, FormParser)
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            permission_classes = [IsDoctor]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [perm() for perm in permission_classes]
 
     def get_queryset(self):
         queryset = super().get_queryset()
