@@ -7,7 +7,7 @@ jest.mock('../api');
 
 test('renders Public Display heading', async () => {
   api.get.mockResolvedValue({ data: [] });
-  const { unmount } = render(
+  render(
     <MemoryRouter>
       <PublicDisplayPage />
     </MemoryRouter>
