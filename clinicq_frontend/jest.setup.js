@@ -2,6 +2,8 @@
 import '@testing-library/jest-dom'; // For expect(...).toBeInTheDocument() etc.
 import 'whatwg-fetch'; // Polyfill for fetch
 
+// Ensure Vite-style environment variables are available in tests
+process.env.MODE = process.env.MODE || 'test';
 // Polyfill for TextEncoder
 // Node.js 'util' module should be available in Jest's Node environment
 const util = require('util');
