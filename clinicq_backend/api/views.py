@@ -54,7 +54,13 @@ class PatientViewSet(viewsets.ModelViewSet):
                 int(n)
                 for n in reg_nums.split(",")
                 if n.strip().isdigit()
-            ]
+            numbers = []
+            for n in reg_nums.split(","):
+                n = n.strip()
+                try:
+                    numbers.append(int(n))
+                except ValueError:
+                    continue
             if numbers:
                 queryset = queryset.filter(registration_number__in=numbers)
             else:
