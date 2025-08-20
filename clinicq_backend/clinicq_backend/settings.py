@@ -146,7 +146,6 @@ LOGGING = {
         "handlers": ["console"],
         "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
     },
-=======
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
