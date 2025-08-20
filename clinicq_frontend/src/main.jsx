@@ -11,7 +11,11 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Sentry.ErrorBoundary fallback={<p>An error has occurred</p>}>
+    <Sentry.ErrorBoundary fallback={
+      <div>
+        <p>Something went wrong. Please try refreshing the page. If the problem persists, contact support.</p>
+      </div>
+    }>
       <BrowserRouter>
         <App />
       </BrowserRouter>
