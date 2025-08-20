@@ -1,6 +1,16 @@
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
+from django.db.models import Q  # For complex lookups (patient search)
+import datetime  # Required for date operations
+import logging
+
 from .models import Visit, Patient, Queue, PrescriptionImage
 from .serializers import (
     VisitSerializer,
@@ -9,12 +19,7 @@ from .serializers import (
     QueueSerializer,
     PrescriptionImageSerializer,
 )
-from django.utils import timezone
-import datetime  # Required for date operations
-from django.db.models import Q  # For complex lookups (patient search)
-from rest_framework.parsers import MultiPartParser, FormParser
-from django.shortcuts import get_object_or_404
-import logging
+from .pagination import StandardResultsSetPagination
 from .google_drive import upload_prescription_image
 from .permissions import IsDoctor, IsAssistant
 
@@ -26,6 +31,8 @@ except Exception:  # pragma: no cover - optional dependency
     GoogleApiError = None
 
 
+@method_decorator(cache_page(60 * 5), name="list")
+@method_decorator(cache_page(60 * 5), name="retrieve")
 class QueueViewSet(viewsets.ReadOnlyModelViewSet):
     """API endpoint that allows queues to be viewed."""
 
@@ -34,11 +41,14 @@ class QueueViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
+@method_decorator(cache_page(60 * 5), name="list")
+@method_decorator(cache_page(60 * 5), name="retrieve")
 class PatientViewSet(viewsets.ModelViewSet):
     """API endpoint that allows patients to be viewed or edited."""
 
     queryset = Patient.objects.all().order_by("registration_number")
     serializer_class = PatientSerializer
+    pagination_class = StandardResultsSetPagination
     # Use registration_number for single patient lookups
     lookup_field = "registration_number"
     permission_classes = [permissions.IsAuthenticated]
@@ -58,13 +68,24 @@ class PatientViewSet(viewsets.ModelViewSet):
         reg_nums = self.request.query_params.get("registration_numbers")
         if reg_nums:
             if numbers:
-                queryset = queryset.filter(
-                    registration_number__in=numbers
-                )
+                queryset = queryset.filter(registration_number__in=numbers)
             else:
                 return Patient.objects.none()
         return queryset
 
+    def perform_create(self, serializer):
+        cache.clear()
+        return super().perform_create(serializer)
+
+    def perform_update(self, serializer):
+        cache.clear()
+        return super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        cache.clear()
+        return super().perform_destroy(instance)
+
+    @method_decorator(cache_page(60 * 5))
     @action(detail=False, methods=["get"], url_path="search")
     def search(self, request):
         """
@@ -105,6 +126,7 @@ class PatientViewSet(viewsets.ModelViewSet):
 class VisitViewSet(viewsets.ModelViewSet):
     queryset = Visit.objects.all()
     serializer_class = VisitSerializer
+    pagination_class = StandardResultsSetPagination
     permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
