@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -18,12 +18,12 @@ const LoginPage = () => {
       });
       const token = response.data.token;
       if (token) {
-        window.sessionStorage.setItem('token', token);
+        window.localStorage.setItem('token', token);
         navigate('/');
       } else {
         setError('No token returned');
       }
-    } catch (err) {
+    } catch {
       setError('Invalid credentials');
     }
   };

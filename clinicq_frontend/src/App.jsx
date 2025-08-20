@@ -1,4 +1,3 @@
-import React from 'react';
 import { Routes, Route, Link, useSearchParams } from 'react-router-dom'; // Removed BrowserRouter as Router
 import AssistantPage from './pages/AssistantPage';
 import DoctorPage from './pages/DoctorPage'; // Placeholder for now

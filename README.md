@@ -87,9 +87,30 @@ Follow these steps to run ClinicQ locally for development and testing.
    * **Backend API** – [http://localhost:8000/api/](http://localhost:8000/api/)
    * **Django admin** – [http://localhost:8000/admin/](http://localhost:8000/admin/) (log in using the superuser credentials from step 2)
 
+### Manual Setup (without Docker)
+
+If you prefer running the stack without Docker, ensure PostgreSQL is running and then:
+
+1. **Backend**
+   ```bash
+   python -m venv .venv && source .venv/bin/activate
+   pip install -r clinicq_backend/requirements.txt
+   export DATABASE_URL=postgresql://<user>:<password>@localhost:5432/<db>
+   cd clinicq_backend
+   python manage.py migrate
+   python manage.py runserver
+   ```
+2. **Frontend**
+   ```bash
+   cd ../clinicq_frontend
+   npm install
+   npm run dev
+   ```
+   The Vite dev server will be available at `http://localhost:5173`.
+
 ### Environment Variables
 
-Default development values are provided via `docker-compose.yml`. Override them in a `.env` file or your shell as needed.
+Default development values are provided via `docker-compose.yml`. Create a `.env` file or export variables in your shell to override them when running locally.
 
 | Variable | Service | Description | Default |
 | --- | --- | --- | --- |
@@ -103,6 +124,8 @@ Default development values are provided via `docker-compose.yml`. Override them 
 | `DJANGO_SUPERUSER_EMAIL` | backend | Initial superuser email | `admin@example.com` |
 | `DJANGO_SUPERUSER_PASSWORD` | backend | Initial superuser password | `adminpass` |
 | `VITE_API_BASE_URL` | frontend | URL used by frontend to reach the API | `http://localhost:8000/api` |
+| `CHOKIDAR_USEPOLLING` | frontend | Enables file-watching in some Docker setups | `true` |
+| `WDS_SOCKET_PORT` | frontend | Port used for Vite's HMR websocket | `5173` |
 
 ### Creating Additional Admin Users
 
@@ -193,7 +216,7 @@ docker-compose exec frontend npm test -- --watchAll=false
 
 ## API Documentation
 
-Once the backend is running, the Django REST Framework browsable API is available at [http://localhost:8000/api/](http://localhost:8000/api/). Use it to explore and interact with endpoints during development.
+Detailed endpoint information is available in [docs/api.md](docs/api.md). Once the backend is running, the Django REST Framework browsable API is available at [http://localhost:8000/api/](http://localhost:8000/api/).
 
 ## Contributing
 

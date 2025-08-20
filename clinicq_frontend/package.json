@@ -11,6 +11,7 @@
     "test": "cross-env NODE_ENV=test jest --coverage"
   },
   "dependencies": {
+    "@sentry/react": "^8.31.0",
     "axios": "^1.10.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -28,6 +29,7 @@
     "@vitejs/plugin-react": "^4.5.2",
     "autoprefixer": "^10.4.21",
     "babel-jest": "^30.0.4",
+    "babel-plugin-transform-vite-meta-env": "^1.0.3",
     "broadcast-channel": "^7.1.0",
     "cross-env": "^7.0.3",
     "eslint": "^9.29.0",
