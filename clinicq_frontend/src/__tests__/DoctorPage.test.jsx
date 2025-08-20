@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import DoctorPage from '../pages/DoctorPage';
-import axios from 'axios';
+import api from '../api';
 
-jest.mock('axios');
+jest.mock('../api');
 
 test('renders Doctor dashboard heading', async () => {
-  axios.get.mockResolvedValue({ data: [] });
+  api.get.mockResolvedValue({ data: [] });
   render(
     <MemoryRouter>
       <DoctorPage />

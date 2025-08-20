@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { Link } from 'react-router-dom';
 
 const DoctorPage = () => {
@@ -14,7 +14,7 @@ const DoctorPage = () => {
     setError('');
     try {
       const queueParam = selectedQueue ? `&queue=${selectedQueue}` : '';
-      const response = await axios.get(`/api/visits/?status=WAITING${queueParam}`);
+      const response = await api.get(`/api/visits/?status=WAITING${queueParam}`);
       const visits = response.data || [];
 
       // Fetch patient details in batch if possible, otherwise one by one
@@ -25,7 +25,7 @@ const DoctorPage = () => {
 
       if (registrationNumbers.length > 0) {
         try {
-          const patientsResp = await axios.get(
+          const patientsResp = await api.get(
             `/api/patients/?registration_numbers=${registrationNumbers.join(',')}`
           );
           patientsByRegNum = (patientsResp.data || []).reduce((acc, patient) => {
@@ -39,7 +39,7 @@ const DoctorPage = () => {
             await Promise.all(
               missingRegs.map(async (regNum) => {
                 try {
-                  const resp = await axios.get(`/api/patients/${regNum}/`);
+                  const resp = await api.get(`/api/patients/${regNum}/`);
                   patientsByRegNum[regNum] = resp.data;
                 } catch {
                   patientsByRegNum[regNum] = null;
@@ -52,7 +52,7 @@ const DoctorPage = () => {
           await Promise.all(
             registrationNumbers.map(async (regNum) => {
               try {
-                const resp = await axios.get(`/api/patients/${regNum}/`);
+                const resp = await api.get(`/api/patients/${regNum}/`);
                 patientsByRegNum[regNum] = resp.data;
               } catch {
                 patientsByRegNum[regNum] = null;
@@ -71,7 +71,7 @@ const DoctorPage = () => {
         withImages = await Promise.all(
           detailedVisits.map(async (v) => {
             try {
-              const imgResp = await axios.get(`/api/prescriptions/?visit=${v.id}`);
+              const imgResp = await api.get(`/api/prescriptions/?visit=${v.id}`);
               return { ...v, prescription_images: imgResp.data || [] };
             } catch {
               return { ...v, prescription_images: [] };
@@ -93,7 +93,7 @@ const DoctorPage = () => {
     if (process.env.NODE_ENV === 'test') return;
     const fetchQueues = async () => {
       try {
-        const response = await axios.get('/api/queues/');
+        const response = await api.get('/api/queues/');
         setQueues(response.data || []);
       } catch (err) {
         console.error('Error fetching queues:', err);
@@ -108,7 +108,7 @@ const DoctorPage = () => {
 
   const handleMarkDone = async (visitId) => {
     try {
-      await axios.patch(`/api/visits/${visitId}/done/`);
+      await api.patch(`/api/visits/${visitId}/done/`);
       fetchWaitingVisits();
     } catch (err) {
       console.error("Error marking visit as done:", err);

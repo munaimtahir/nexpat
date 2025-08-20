@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { Link } from 'react-router-dom';
 
 const REFRESH_INTERVAL = 5000; // 5 seconds
@@ -17,7 +17,7 @@ const PublicDisplayPage = ({ initialQueue = '' }) => {
       setError('');
       try {
         const queueParam = selectedQueue ? `&queue=${selectedQueue}` : '';
-        const response = await axios.get(`/api/visits/?status=WAITING${queueParam}`);
+        const response = await api.get(`/api/visits/?status=WAITING${queueParam}`);
         setWaitingVisits(response.data || []);
       } catch (err) {
         console.error("Error fetching waiting visits:", err);
@@ -38,7 +38,7 @@ const PublicDisplayPage = ({ initialQueue = '' }) => {
   useEffect(() => {
     const fetchQueues = async () => {
       try {
-        const response = await axios.get('/api/queues/');
+        const response = await api.get('/api/queues/');
         setQueues(response.data || []);
       } catch (err) {
         console.error('Error fetching queues:', err);

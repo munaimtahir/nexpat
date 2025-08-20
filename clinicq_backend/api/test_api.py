@@ -1,10 +1,10 @@
 import pytest
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import (
-    APITestCase,
-)  # Using APITestCase for DB access and client
-from .models import Visit, Patient, Queue  # Added Patient and Queue
+from rest_framework.test import APITestCase
+from django.contrib.auth.models import User, Group
+from rest_framework.authtoken.models import Token
+from .models import Visit, Patient, Queue
 from django.utils import timezone
 from datetime import date, timedelta
 from freezegun import freeze_time
@@ -13,6 +13,12 @@ from freezegun import freeze_time
 @pytest.mark.django_db
 class PatientAPITests(APITestCase):
     def setUp(self):
+        doctor_group, _ = Group.objects.get_or_create(name="doctor")
+        assistant_group, _ = Group.objects.get_or_create(name="assistant")
+        user = User.objects.create_user(username="tester", password="pass")
+        user.groups.add(doctor_group, assistant_group)
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
         # Using phone numbers less likely to contain the other patient's AutoField ID (e.g., "1" or "2")
         # self.patient1_data phone updated to include '12345' for the search test.
         self.patient1_data = {
@@ -164,6 +170,13 @@ class PatientAPITests(APITestCase):
 @pytest.mark.django_db
 class QueueAPITests(APITestCase):
     def setUp(self):
+        doctor_group, _ = Group.objects.get_or_create(name="doctor")
+        assistant_group, _ = Group.objects.get_or_create(name="assistant")
+        user = User.objects.create_user(username="queue_tester", password="pass")
+        user.groups.add(doctor_group, assistant_group)
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
         # Use get_or_create to avoid issues if 'General' queue is created by migrations
         self.queue1, _ = Queue.objects.get_or_create(name="General")
         self.queue2, _ = Queue.objects.get_or_create(name="Specialist")
@@ -186,6 +199,13 @@ class QueueAPITests(APITestCase):
 @pytest.mark.django_db
 class VisitAPITests(APITestCase):
     def setUp(self):
+        doctor_group, _ = Group.objects.get_or_create(name="doctor")
+        assistant_group, _ = Group.objects.get_or_create(name="assistant")
+        user = User.objects.create_user(username="visit_tester", password="pass")
+        user.groups.add(doctor_group, assistant_group)
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
         self.patient_data = {
             "name": "Visit Tester",
             "gender": "OTHER",
