@@ -67,7 +67,7 @@ const DoctorPage = () => {
         patient_details: patientsByRegNum[visit.patient_registration_number] || null,
       }));
       let withImages = detailedVisits;
-      if (process.env.NODE_ENV !== 'test') {
+      if (import.meta.env.MODE !== 'test') {
         withImages = await Promise.all(
           detailedVisits.map(async (v) => {
             try {
@@ -89,8 +89,8 @@ const DoctorPage = () => {
     }
   }, [selectedQueue]);
 
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'test') return;
+    useEffect(() => {
+      if (import.meta.env.MODE === 'test') return;
     const fetchQueues = async () => {
       try {
         const response = await api.get('/api/queues/');
