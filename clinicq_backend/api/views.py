@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.core.cache import cache
 from .models import Visit, Patient, Queue, PrescriptionImage
 from .serializers import (
     VisitSerializer,
@@ -17,6 +18,7 @@ from django.shortcuts import get_object_or_404
 import logging
 from .google_drive import upload_prescription_image
 from .permissions import IsDoctor, IsAssistant
+from .pagination import StandardResultsSetPagination
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +35,24 @@ class QueueViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = QueueSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def list(self, request, *args, **kwargs):
+        cache_key = "queues:list"
+        data = cache.get(cache_key)
+        if data is not None:
+            return Response(data)
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, 300)
+        return response
+
+    def retrieve(self, request, *args, **kwargs):
+        cache_key = f"queues:{kwargs['pk']}"
+        data = cache.get(cache_key)
+        if data is not None:
+            return Response(data)
+        response = super().retrieve(request, *args, **kwargs)
+        cache.set(cache_key, response.data, 300)
+        return response
+
 
 class PatientViewSet(viewsets.ModelViewSet):
     """API endpoint that allows patients to be viewed or edited."""
@@ -42,6 +62,7 @@ class PatientViewSet(viewsets.ModelViewSet):
     # Use registration_number for single patient lookups
     lookup_field = "registration_number"
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def get_permissions(self):
         if self.action == "destroy":
@@ -57,7 +78,11 @@ class PatientViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         reg_nums = self.request.query_params.get("registration_numbers")
         if reg_nums:
-
+            numbers = [
+                int(num.strip())
+                for num in reg_nums.split(",")
+                if num.strip().isdigit()
+            ]
             if numbers:
                 queryset = queryset.filter(
                     registration_number__in=numbers
@@ -102,11 +127,30 @@ class PatientViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(patients, many=True)
         return Response(serializer.data)
 
+    def retrieve(self, request, *args, **kwargs):
+        reg_no = kwargs[self.lookup_field]
+        cache_key = f"patient:{reg_no}"
+        data = cache.get(cache_key)
+        if data is not None:
+            return Response(data)
+        response = super().retrieve(request, *args, **kwargs)
+        cache.set(cache_key, response.data, 300)
+        return response
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        cache.delete(f"patient:{instance.registration_number}")
+
+    def perform_destroy(self, instance):
+        cache.delete(f"patient:{instance.registration_number}")
+        super().perform_destroy(instance)
+
 
 class VisitViewSet(viewsets.ModelViewSet):
     queryset = Visit.objects.all()
     serializer_class = VisitSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def get_permissions(self):
         if self.action == "create":

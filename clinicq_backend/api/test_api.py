@@ -8,11 +8,13 @@ from .models import Visit, Patient, Queue
 from django.utils import timezone
 from datetime import date, timedelta
 from freezegun import freeze_time
+from django.core.cache import cache
 
 
 @pytest.mark.django_db
 class PatientAPITests(APITestCase):
     def setUp(self):
+        cache.clear()
         doctor_group, _ = Group.objects.get_or_create(name="doctor")
         assistant_group, _ = Group.objects.get_or_create(name="assistant")
         user = User.objects.create_user(username="tester", password="pass")
@@ -50,9 +52,8 @@ class PatientAPITests(APITestCase):
         url = reverse("patient-list")
         response = self.client.get(url, format="json")
         assert response.status_code == status.HTTP_200_OK
-        assert (
-            len(response.data) == 2
-        )  # Assuming default pagination is not too small or using TestClient default
+        assert response.data["count"] == 2
+        assert len(response.data["results"]) == 2
 
     def test_get_patients_by_registration_numbers(self):
         url = reverse("patient-list")
@@ -63,7 +64,7 @@ class PatientAPITests(APITestCase):
             format="json",
         )
         assert response.status_code == status.HTTP_200_OK
-        returned = {p["registration_number"] for p in response.data}
+        returned = {p["registration_number"] for p in response.data["results"]}
         assert returned == {
             self.patient1.registration_number,
             self.patient2.registration_number,
@@ -109,28 +110,28 @@ class PatientAPITests(APITestCase):
             url, {"q": str(self.patient1.registration_number)}, format="json"
         )
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 1
-        assert response.data[0]["name"] == self.patient1.name
+        assert response.data["count"] == 1
+        assert response.data["results"][0]["name"] == self.patient1.name
 
     def test_search_patient_by_name_fragment(self):
         url = reverse("patient-search")
         response = self.client.get(url, {"q": "Alice"}, format="json")  # Partial name
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 1
-        assert response.data[0]["name"] == self.patient1.name
+        assert response.data["count"] == 1
+        assert response.data["results"][0]["name"] == self.patient1.name
 
     def test_search_patient_by_phone_fragment(self):
         url = reverse("patient-search")
         response = self.client.get(url, {"q": "12345"}, format="json")  # Partial phone
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 1
-        assert response.data[0]["name"] == self.patient1.name
+        assert response.data["count"] == 1
+        assert response.data["results"][0]["name"] == self.patient1.name
 
     def test_search_patient_no_results(self):
         url = reverse("patient-search")
         response = self.client.get(url, {"q": "NonExistent"}, format="json")
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 0
+        assert response.data["count"] == 0
 
     def test_search_patient_missing_query_param(self):
         url = reverse("patient-search")
@@ -170,6 +171,7 @@ class PatientAPITests(APITestCase):
 @pytest.mark.django_db
 class QueueAPITests(APITestCase):
     def setUp(self):
+        cache.clear()
         doctor_group, _ = Group.objects.get_or_create(name="doctor")
         assistant_group, _ = Group.objects.get_or_create(name="assistant")
         user = User.objects.create_user(username="queue_tester", password="pass")
@@ -199,6 +201,7 @@ class QueueAPITests(APITestCase):
 @pytest.mark.django_db
 class VisitAPITests(APITestCase):
     def setUp(self):
+        cache.clear()
         doctor_group, _ = Group.objects.get_or_create(name="doctor")
         assistant_group, _ = Group.objects.get_or_create(name="assistant")
         user = User.objects.create_user(username="visit_tester", password="pass")
@@ -317,22 +320,22 @@ class VisitAPITests(APITestCase):
         url_q1 = reverse("visit-list") + f"?status=WAITING&queue={self.queue1.pk}"
         response_q1 = self.client.get(url_q1, format="json")
         assert response_q1.status_code == status.HTTP_200_OK
-        assert len(response_q1.data) == 1
-        assert response_q1.data[0]["patient_full_name"] == self.patient.name
-        assert response_q1.data[0]["queue_name"] == self.queue1.name
+        assert response_q1.data["count"] == 1
+        assert response_q1.data["results"][0]["patient_full_name"] == self.patient.name
+        assert response_q1.data["results"][0]["queue_name"] == self.queue1.name
 
         url_q2 = reverse("visit-list") + f"?status=WAITING&queue={self.queue2.pk}"
         response_q2 = self.client.get(url_q2, format="json")
         assert response_q2.status_code == status.HTTP_200_OK
-        assert len(response_q2.data) == 1
-        assert response_q2.data[0]["patient_full_name"] == patient2.name
-        assert response_q2.data[0]["queue_name"] == self.queue2.name
+        assert response_q2.data["count"] == 1
+        assert response_q2.data["results"][0]["patient_full_name"] == patient2.name
+        assert response_q2.data["results"][0]["queue_name"] == self.queue2.name
 
         # Test without queue filter, should show all waiting for today
         url_all_waiting = reverse("visit-list") + "?status=WAITING"
         response_all_waiting = self.client.get(url_all_waiting, format="json")
         assert response_all_waiting.status_code == status.HTTP_200_OK
-        assert len(response_all_waiting.data) == 2
+        assert response_all_waiting.data["count"] == 2
 
     def test_patch_visit_done_api(self):
         visit = Visit.objects.create(
