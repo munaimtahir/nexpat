@@ -1,10 +1,12 @@
 from rest_framework.test import APITestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.authtoken.models import Token
+from django.core.cache import cache
 from api.models import Patient, Queue
 
 class PatientCRUDTests(APITestCase):
     def setUp(self):
+        cache.clear()
         doctor_group, _ = Group.objects.get_or_create(name="doctor")
         user = User.objects.create_user(username="doc", password="pass")
         user.groups.add(doctor_group)
@@ -43,6 +45,7 @@ class PatientCRUDTests(APITestCase):
 
 class PatientFilterTests(APITestCase):
     def setUp(self):
+        cache.clear()
         doctor_group, _ = Group.objects.get_or_create(name="doctor")
         user = User.objects.create_user(username="docfilter", password="pass")
         user.groups.add(doctor_group)
@@ -58,24 +61,25 @@ class PatientFilterTests(APITestCase):
             f"/api/patients/?registration_numbers={self.p1.registration_number},{self.p3.registration_number}"
         )
         self.assertEqual(resp.status_code, 200)
-        numbers = [p["registration_number"] for p in resp.data]
+        numbers = [p["registration_number"] for p in resp.data["results"]]
         self.assertEqual(numbers, [self.p1.registration_number, self.p3.registration_number])
 
     def test_filter_mixed_numbers(self):
         query = f"{self.p1.registration_number}, abc ,{self.p2.registration_number},xyz"
         resp = self.client.get(f"/api/patients/?registration_numbers={query}")
         self.assertEqual(resp.status_code, 200)
-        numbers = [p["registration_number"] for p in resp.data]
+        numbers = [p["registration_number"] for p in resp.data["results"]]
         self.assertEqual(numbers, [self.p1.registration_number, self.p2.registration_number])
 
     def test_filter_invalid_numbers(self):
         resp = self.client.get("/api/patients/?registration_numbers=abc, xyz")
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(len(resp.data), 0)
+        self.assertEqual(resp.data["count"], 0)
 
 
 class VisitTests(APITestCase):
     def setUp(self):
+        cache.clear()
         assistant_group, _ = Group.objects.get_or_create(name="assistant")
         self.assistant = User.objects.create_user(username="asst", password="pass")
         self.assistant.groups.add(assistant_group)
@@ -115,5 +119,5 @@ class VisitTests(APITestCase):
         }, format='json')
         resp = self.client.get(f'/api/visits/?status=WAITING&queue={self.queue1.id}')
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(len(resp.data), 1)
-        self.assertEqual(resp.data[0]['queue'], self.queue1.id)
+        self.assertEqual(resp.data['count'], 1)
+        self.assertEqual(resp.data['results'][0]['queue'], self.queue1.id)
