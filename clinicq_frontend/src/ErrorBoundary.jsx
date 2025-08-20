@@ -30,7 +30,12 @@ class ErrorBoundary extends Component {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          error: error.toString(),
+          error: {
+            name: error && error.name ? error.name : undefined,
+            message: error && error.message ? error.message : undefined,
+            stack: error && error.stack ? error.stack : undefined,
+            toString: error ? error.toString() : undefined,
+          },
           componentStack: errorInfo.componentStack,
         }),
       }).catch(() => {
