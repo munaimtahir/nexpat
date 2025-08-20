@@ -1,7 +1,16 @@
 from rest_framework.test import APITestCase
+from django.contrib.auth.models import User, Group
+from rest_framework.authtoken.models import Token
 from api.models import Patient, Queue
 
 class PatientCRUDTests(APITestCase):
+    def setUp(self):
+        doctor_group, _ = Group.objects.get_or_create(name="doctor")
+        user = User.objects.create_user(username="doc", password="pass")
+        user.groups.add(doctor_group)
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
     def test_patient_crud(self):
         # Create
         create_resp = self.client.post('/api/patients/', {
@@ -34,11 +43,17 @@ class PatientCRUDTests(APITestCase):
 
 class VisitTests(APITestCase):
     def setUp(self):
+        assistant_group, _ = Group.objects.get_or_create(name="assistant")
+        self.assistant = User.objects.create_user(username="asst", password="pass")
+        self.assistant.groups.add(assistant_group)
+        self.assistant_token = Token.objects.create(user=self.assistant)
+
         self.patient = Patient.objects.create(name='Alice', gender='FEMALE')
         self.queue1, _ = Queue.objects.get_or_create(name='General')
         self.queue2, _ = Queue.objects.get_or_create(name='Special')
 
     def test_visit_creation_assigns_token(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.assistant_token.key}")
         resp1 = self.client.post('/api/visits/', {
             'patient': self.patient.registration_number,
             'queue': self.queue1.id
@@ -46,6 +61,7 @@ class VisitTests(APITestCase):
         self.assertEqual(resp1.status_code, 201)
         self.assertEqual(resp1.data['token_number'], 1)
 
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.assistant_token.key}")
         resp2 = self.client.post('/api/visits/', {
             'patient': self.patient.registration_number,
             'queue': self.queue1.id
@@ -55,6 +71,7 @@ class VisitTests(APITestCase):
 
     def test_queue_filter_returns_only_selected_queue(self):
         # Create visits in two queues
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.assistant_token.key}")
         self.client.post('/api/visits/', {
             'patient': self.patient.registration_number,
             'queue': self.queue1.id
@@ -63,7 +80,6 @@ class VisitTests(APITestCase):
             'patient': self.patient.registration_number,
             'queue': self.queue2.id
         }, format='json')
-
         resp = self.client.get(f'/api/visits/?status=WAITING&queue={self.queue1.id}')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.data), 1)

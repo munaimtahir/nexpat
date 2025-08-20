@@ -35,5 +35,9 @@ Thanks for considering contributing to ClinicQ. This document outlines how to se
 - The pull request description should summarize the change and reference related issues.
 - All tests and lint checks must pass before the pull request is reviewed.
 
+## Local Setup Reference
+
+Instructions for running the project locally and a full list of environment variables are available in the [README](README.md).
+
 Thank you for contributing!
 

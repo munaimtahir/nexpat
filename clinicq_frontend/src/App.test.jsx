@@ -7,15 +7,15 @@ import App from './App';
 import AssistantPage from './pages/AssistantPage';
 import DoctorPage from './pages/DoctorPage';
 import PublicDisplayPage from './pages/PublicDisplayPage';
-import axios from 'axios';
+import api from './api';
 
-jest.mock('axios');
+jest.mock('./api');
 
 describe('Page Smoke Tests and Basic Accessibility', () => {
   beforeEach(() => {
-    axios.get.mockResolvedValue({ data: [] });
-    axios.post.mockResolvedValue({ data: {} });
-    axios.patch.mockResolvedValue({ data: {} });
+    api.get.mockResolvedValue({ data: [] });
+    api.post.mockResolvedValue({ data: {} });
+    api.patch.mockResolvedValue({ data: {} });
   });
 
   const pages = [
@@ -42,13 +42,13 @@ describe('Page Smoke Tests and Basic Accessibility', () => {
 
 describe('Displays last_5_visit_dates', () => {
   beforeEach(() => {
-    axios.get.mockReset();
-    axios.post.mockReset();
-    axios.patch.mockReset();
+    api.get.mockReset();
+    api.post.mockReset();
+    api.patch.mockReset();
   });
 
   test('Assistant page shows last visit dates for patient', async () => {
-    axios.get.mockImplementation((url) => {
+    api.get.mockImplementation((url) => {
       if (url === '/api/queues/') {
         return Promise.resolve({ data: [{ id: 1, name: 'General' }] });
       }
@@ -67,7 +67,7 @@ describe('Displays last_5_visit_dates', () => {
       }
       return Promise.resolve({ data: [] });
     });
-    axios.post.mockResolvedValue({ data: { token_number: 5 } });
+    api.post.mockResolvedValue({ data: { token_number: 5 } });
 
     const user = userEvent.setup();
     render(
@@ -92,7 +92,7 @@ describe('Displays last_5_visit_dates', () => {
   });
 
   test('Doctor page shows last visit dates for waiting patients', async () => {
-    axios.get.mockImplementation((url) => {
+    api.get.mockImplementation((url) => {
       if (url === '/api/visits/?status=WAITING') {
         return Promise.resolve({
           data: [
