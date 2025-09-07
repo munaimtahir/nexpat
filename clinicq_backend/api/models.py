@@ -4,14 +4,14 @@ import datetime
 
 class Visit(models.Model):
     PATIENT_GENDER_CHOICES = [
-        ('MALE', 'Male'),
-        ('FEMALE', 'Female'),
-        ('OTHER', 'Other'),
+        ("MALE", "Male"),
+        ("FEMALE", "Female"),
+        ("OTHER", "Other"),
     ]
 
     STATUS_CHOICES = [
-        ('WAITING', 'Waiting'),
-        ('DONE', 'Done'),
+        ("WAITING", "Waiting"),
+        ("DONE", "Done"),
     ]
 
     token_number = models.IntegerField()
@@ -19,7 +19,7 @@ class Visit(models.Model):
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,
-        default='WAITING',
+        default="WAITING",
     )
     patient = models.ForeignKey(
         "Patient",
@@ -44,8 +44,7 @@ class Visit(models.Model):
 
     def __str__(self):
         return (
-            f"Token {self.token_number} - {self.patient.name}"
-            f" ({self.visit_date})"
+            f"Token {self.token_number} - {self.patient.name}" f" ({self.visit_date})"
         )
 
 

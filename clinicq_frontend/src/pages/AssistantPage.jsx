@@ -84,7 +84,7 @@ const AssistantPage = () => {
 
     try {
       const response = await api.post('/api/visits/', {
-        patient: patientInfo.id,
+        patient: patientInfo.registration_number,
         queue: selectedQueue,
       });
 

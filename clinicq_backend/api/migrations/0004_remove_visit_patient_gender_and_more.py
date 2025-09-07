@@ -8,22 +8,26 @@ DEFAULT_QUEUE_NAME = "General"
 
 
 def ensure_patient_queue(apps, schema_editor):
-    Visit = apps.get_model('api', 'Visit')
-    Patient = apps.get_model('api', 'Patient')
-    Queue = apps.get_model('api', 'Queue')
+    Visit = apps.get_model("api", "Visit")
+    Patient = apps.get_model("api", "Patient")
+    Queue = apps.get_model("api", "Queue")
     db_alias = schema_editor.connection.alias
 
-    general_queue, _ = Queue.objects.using(db_alias).get_or_create(name=DEFAULT_QUEUE_NAME)
+    general_queue, _ = Queue.objects.using(db_alias).get_or_create(
+        name=DEFAULT_QUEUE_NAME
+    )
 
-    visits = Visit.objects.using(db_alias).filter(models.Q(patient__isnull=True) | models.Q(queue__isnull=True))
+    visits = Visit.objects.using(db_alias).filter(
+        models.Q(patient__isnull=True) | models.Q(queue__isnull=True)
+    )
     for visit in visits:
         if visit.patient_id is None:
-            name = getattr(visit, 'patient_name', None) or 'Unknown'
-            gender = getattr(visit, 'patient_gender', None) or 'OTHER'
+            name = getattr(visit, "patient_name", None) or "Unknown"
+            gender = getattr(visit, "patient_gender", None) or "OTHER"
             anon_patient, _ = Patient.objects.using(db_alias).get_or_create(
                 name=name,
                 gender=gender,
-                defaults={'phone': None},
+                defaults={"phone": None},
             )
             visit.patient = anon_patient
         if visit.queue_id is None:

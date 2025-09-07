@@ -8,23 +8,27 @@ class PatientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Patient
         fields = [
-            'registration_number', 'name', 'phone', 'gender',
-            'created_at', 'updated_at', 'last_5_visit_dates'
+            "registration_number",
+            "name",
+            "phone",
+            "gender",
+            "created_at",
+            "updated_at",
+            "last_5_visit_dates",
         ]
-        read_only_fields = ['registration_number', 'created_at', 'updated_at']
+        read_only_fields = ["registration_number", "created_at", "updated_at"]
 
     def get_last_5_visit_dates(self, obj):
-        return (
-            obj.visits.order_by("-visit_date")
-            .values_list("visit_date", flat=True)[:5]
-        )
+        return obj.visits.order_by("-visit_date").values_list("visit_date", flat=True)[
+            :5
+        ]
 
 
 class QueueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Queue
-        fields = ['id', 'name', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        fields = ["id", "name", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class VisitSerializer(serializers.ModelSerializer):
@@ -90,10 +94,10 @@ class VisitSerializer(serializers.ModelSerializer):
 class VisitStatusUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visit
-        fields = ['status']
+        fields = ["status"]
 
     def validate_status(self, value):
-        if value != 'DONE':
+        if value != "DONE":
             raise serializers.ValidationError(
                 "This endpoint only allows updating status to 'DONE'."
             )
@@ -103,5 +107,5 @@ class VisitStatusUpdateSerializer(serializers.ModelSerializer):
 class PrescriptionImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = PrescriptionImage
-        fields = ['id', 'visit', 'drive_file_id', 'image_url', 'created_at']
-        read_only_fields = ['id', 'drive_file_id', 'image_url', 'created_at']
+        fields = ["id", "visit", "drive_file_id", "image_url", "created_at"]
+        read_only_fields = ["id", "drive_file_id", "image_url", "created_at"]
