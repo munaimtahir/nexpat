@@ -1,11 +1,13 @@
 import pytest
-from django.utils import timezone
 from datetime import date, timedelta
 from freezegun import freeze_time
 from django.db import IntegrityError
 
-from api.models import Visit, Patient, Queue # Added Patient, Queue
-from api.serializers import VisitSerializer, PatientSerializer # VisitSerializer may not be used as much here now
+from api.models import Visit, Patient, Queue  # Added Patient, Queue
+from api.serializers import (
+    VisitSerializer,
+)  # VisitSerializer may not be used as much here now
+
 
 @pytest.mark.django_db
 class TestPatientModel:
@@ -14,9 +16,10 @@ class TestPatientModel:
         assert str(patient) == f"John Doe (ID: {patient.registration_number})"
 
     def test_patient_creation_defaults(self):
-        patient = Patient.objects.create(name="Jane Smith") # Gender defaults to OTHER
+        patient = Patient.objects.create(name="Jane Smith")  # Gender defaults to OTHER
         assert patient.gender == "OTHER"
-        assert patient.phone is None # Optional field
+        assert patient.phone is None  # Optional field
+
 
 @pytest.mark.django_db
 class TestQueueModel:
@@ -33,7 +36,9 @@ class TestQueueModel:
 @pytest.mark.django_db
 class TestVisitModel:
     def setUp(self):
-        self.patient = Patient.objects.create(name="Test Patient", gender="MALE", phone="12345")
+        self.patient = Patient.objects.create(
+            name="Test Patient", gender="MALE", phone="12345"
+        )
         self.queue = Queue.objects.create(name="Test Queue")
 
     # Tests for model field defaults and basic properties
@@ -48,8 +53,8 @@ class TestVisitModel:
             queue=queue,
             token_number=1,
         )
-        assert visit.status == "WAITING" # Default status
-        assert visit.visit_date == date.today() # Default visit_date
+        assert visit.status == "WAITING"  # Default status
+        assert visit.visit_date == date.today()  # Default visit_date
         assert visit.patient == patient
         assert visit.queue == queue
 
@@ -61,7 +66,7 @@ class TestVisitModel:
             patient=test_patient,
             queue=test_queue,
             token_number=10,
-            visit_date=date(2023, 5, 15)
+            visit_date=date(2023, 5, 15),
         )
         # The __str__ uses self.patient.name.
         assert str(visit) == "Token 10 - String Rep Patient (2023-05-15)"
@@ -73,19 +78,22 @@ class TestVisitModel:
         queue1 = Queue.objects.create(name="Queue A")
 
         Visit.objects.create(
-            token_number=1, patient=patient1, queue=queue1,
-            visit_date=date.today()
+            token_number=1, patient=patient1, queue=queue1, visit_date=date.today()
         )
         with pytest.raises(IntegrityError):
             Visit.objects.create(
-                token_number=1, patient=patient2, queue=queue1, # Same token, date, queue
-                visit_date=date.today()
+                token_number=1,
+                patient=patient2,
+                queue=queue1,  # Same token, date, queue
+                visit_date=date.today(),
             )
 
     def test_ordering(self):
         """Test that visits are ordered by visit_date, queue, then token_number."""
         p = Patient.objects.create(name="Order Patient")
-        q1 = Queue.objects.create(name="AlphaQueue") # Name affects ordering if PKs are same/similar
+        q1 = Queue.objects.create(
+            name="AlphaQueue"
+        )  # Name affects ordering if PKs are same/similar
         q2 = Queue.objects.create(name="BetaQueue")
 
         # To ensure queue name affects order, make their PKs different or rely on string sort
@@ -97,14 +105,25 @@ class TestVisitModel:
         # This orders by queue PK by default for FK. If we want queue name, query needs .order_by('queue__name')
         # Let's assume test checks default model ordering.
 
-        v1_yesterday_q1_t1 = Visit.objects.create(patient=p, queue=q1, token_number=1, visit_date=date.today() - timedelta(days=1))
+        v1_yesterday_q1_t1 = Visit.objects.create(
+            patient=p,
+            queue=q1,
+            token_number=1,
+            visit_date=date.today() - timedelta(days=1),
+        )
 
-        v2_today_q1_t2 = Visit.objects.create(patient=p, queue=q1, token_number=2, visit_date=date.today())
-        v3_today_q1_t1 = Visit.objects.create(patient=p, queue=q1, token_number=1, visit_date=date.today())
+        v2_today_q1_t2 = Visit.objects.create(
+            patient=p, queue=q1, token_number=2, visit_date=date.today()
+        )
+        v3_today_q1_t1 = Visit.objects.create(
+            patient=p, queue=q1, token_number=1, visit_date=date.today()
+        )
 
-        v4_today_q2_t1 = Visit.objects.create(patient=p, queue=q2, token_number=1, visit_date=date.today())
+        v4_today_q2_t1 = Visit.objects.create(
+            patient=p, queue=q2, token_number=1, visit_date=date.today()
+        )
 
-        visits = Visit.objects.all() # Meta ordering should apply
+        visits = Visit.objects.all()  # Meta ordering should apply
 
         # Expected order:
         # 1. Yesterday Q1 T1 (v1)
@@ -113,10 +132,15 @@ class TestVisitModel:
         # 4. Today Q2 T1 (v4)  (Assuming Q1's PK < Q2's PK or Q1 name < Q2 name if ordering by name)
         # If Queue objects q1 and q2 are created in that order, q1.pk < q2.pk is likely.
 
-        assert list(visits) == [v1_yesterday_q1_t1, v3_today_q1_t1, v2_today_q1_t2, v4_today_q2_t1]
+        assert list(visits) == [
+            v1_yesterday_q1_t1,
+            v3_today_q1_t1,
+            v2_today_q1_t2,
+            v4_today_q2_t1,
+        ]
 
     def test_patient_gender_choices_on_patient_model(self):
-        """ patient gender choices are defined on the Patient model."""
+        """patient gender choices are defined on the Patient model."""
         patient_female = Patient.objects.create(name="Alex", gender="FEMALE")
         assert patient_female.get_gender_display() == "Female"
 
@@ -133,7 +157,9 @@ class TestVisitModel:
         queue = Queue.objects.create(name="Model Date Queue")
         with freeze_time("2023-10-26"):
             visit = Visit.objects.create(
-                token_number=5, patient=patient, queue=queue,
+                token_number=5,
+                patient=patient,
+                queue=queue,
             )
             assert visit.visit_date == date(2023, 10, 26)
 
