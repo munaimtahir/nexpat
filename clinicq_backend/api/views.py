@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -67,10 +68,24 @@ class PatientViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         reg_nums = self.request.query_params.get("registration_numbers")
         if reg_nums:
-            # Filter out non-numeric values and strip whitespace
-            numbers = [
-                num.strip() for num in reg_nums.split(',') if num.strip().isdigit()
-            ]
+            raw_numbers = [num.strip() for num in reg_nums.split(",")]
+
+            if len(raw_numbers) > 50:
+                raise ValidationError(
+                    {"registration_numbers": "A maximum of 50 registration numbers are allowed."}
+                )
+
+            numbers = []
+            for num in raw_numbers:
+                if num.isdigit():
+                    if len(num) > 10:
+                        raise ValidationError(
+                            {
+                                "registration_numbers": "Registration numbers may not exceed 10 digits.",
+                            }
+                        )
+                    numbers.append(num)
+
             if numbers:
                 queryset = queryset.filter(registration_number__in=numbers)
             else:

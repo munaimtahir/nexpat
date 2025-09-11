@@ -92,6 +92,30 @@ class PatientAPITests(APITestCase):
         assert response.status_code == status.HTTP_200_OK
         assert response.data["results"] == []
 
+    def test_get_patients_registration_number_limit_accepted(self):
+        url = reverse("patient-list")
+        numbers = ",".join(str(i) for i in range(50))
+        response = self.client.get(
+            url, {"registration_numbers": numbers}, format="json"
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_get_patients_registration_number_limit_rejected(self):
+        url = reverse("patient-list")
+        numbers = ",".join(str(i) for i in range(51))
+        response = self.client.get(
+            url, {"registration_numbers": numbers}, format="json"
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_get_patients_registration_number_length_rejected(self):
+        url = reverse("patient-list")
+        numbers = f"{'1'*11},2"
+        response = self.client.get(
+            url, {"registration_numbers": numbers}, format="json"
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
     def test_get_patient_detail(self):
         url = reverse(
             "patient-detail",
