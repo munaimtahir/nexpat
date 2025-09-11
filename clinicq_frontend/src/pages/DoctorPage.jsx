@@ -8,6 +8,7 @@ const DoctorPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [queues, setQueues] = useState([]);
   const [selectedQueue, setSelectedQueue] = useState('');
+  const [uploadStates, setUploadStates] = useState({});
 
   const fetchWaitingVisits = useCallback(async () => {
     setIsLoading(true);
@@ -116,6 +117,46 @@ const DoctorPage = () => {
     }
   };
 
+  const handleFileChange = (visitId, file) => {
+    setUploadStates((prev) => ({
+      ...prev,
+      [visitId]: { ...prev[visitId], file, error: '' },
+    }));
+  };
+
+  const handleUpload = async (visitId) => {
+    const state = uploadStates[visitId];
+    if (!state?.file) return;
+    setUploadStates((prev) => ({
+      ...prev,
+      [visitId]: { ...state, uploading: true, error: '' },
+    }));
+    try {
+      const form = new FormData();
+      form.append('visit', visitId);
+      form.append('image', state.file);
+      await api.post('/api/prescriptions/', form);
+      const imgResp = await api.get(`/api/prescriptions/?visit=${visitId}`);
+      setWaitingVisits((prev) =>
+        prev.map((v) =>
+          v.id === visitId
+            ? { ...v, prescription_images: imgResp.data || [] }
+            : v
+        )
+      );
+      setUploadStates((prev) => ({
+        ...prev,
+        [visitId]: { file: null, uploading: false, error: '' },
+      }));
+    } catch (err) {
+      console.error('Upload failed', err);
+      setUploadStates((prev) => ({
+        ...prev,
+        [visitId]: { ...state, uploading: false, error: 'Failed to upload image' },
+      }));
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 bg-white shadow-md rounded-lg mt-10">
       <Link to="/" className="text-blue-500 hover:underline mb-4 block">&larr; Back to Home</Link>
@@ -181,6 +222,23 @@ const DoctorPage = () => {
                       />
                     ))}
                   </div>
+                )}
+                <div className="mt-2 flex items-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileChange(visit.id, e.target.files[0])}
+                  />
+                  <button
+                    onClick={() => handleUpload(visit.id)}
+                    disabled={uploadStates[visit.id]?.uploading}
+                    className="ml-2 px-2 py-1 bg-indigo-600 text-white rounded disabled:bg-gray-400"
+                  >
+                    {uploadStates[visit.id]?.uploading ? 'Uploading...' : 'Upload'}
+                  </button>
+                </div>
+                {uploadStates[visit.id]?.error && (
+                  <p className="text-red-500 text-xs">{uploadStates[visit.id].error}</p>
                 )}
               </div>
               <button

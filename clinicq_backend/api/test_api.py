@@ -185,6 +185,12 @@ class PatientAPITests(APITestCase):
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "error" in response.data
 
+    def test_me_endpoint_returns_roles(self):
+        url = reverse("auth-me")
+        response = self.client.get(url, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        assert set(response.data.get("roles", [])) == {"doctor", "assistant"}
+
     def test_patient_last_5_visit_dates(self):
         # Create a queue
         queue = Queue.objects.create(name="Test Queue")

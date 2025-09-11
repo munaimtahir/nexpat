@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { setAccessToken } from '../api';
+import { useAuth } from '../AuthContext';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { fetchRoles } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,6 +22,7 @@ const LoginPage = () => {
       if (token) {
         // Store token in memory rather than localStorage for security
         setAccessToken(token);
+        await fetchRoles();
         navigate('/');
       } else {
         setError('No token returned');
