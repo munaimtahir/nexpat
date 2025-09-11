@@ -5,6 +5,7 @@ from .views import (
     PatientViewSet,
     QueueViewSet,
     PrescriptionImageViewSet,
+    me,
 )
 
 router = DefaultRouter()
@@ -21,6 +22,7 @@ router.register(
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("auth/me/", me, name="auth-me"),
     # The patient search endpoint is registered as an action within
     # PatientViewSet so it will be available at /api/patients/search/
 ]

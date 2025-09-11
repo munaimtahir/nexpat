@@ -10,12 +10,6 @@ const AssistantPage = () => {
   const [generatedToken, setGeneratedToken] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [visitId, setVisitId] = useState(null);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState('');
-  const [existingImages, setExistingImages] = useState([]);
-  const [savedRegistrationNumber, setSavedRegistrationNumber] = useState('');
 
   useEffect(() => {
     const fetchQueues = async () => {
@@ -44,11 +38,8 @@ const AssistantPage = () => {
           const regNo = searchResp.data[0].registration_number;
           const detailResp = await api.get(`/api/patients/${regNo}/`);
           setPatientInfo(detailResp.data);
-          const imgResp = await api.get(`/api/prescriptions/?patient=${regNo}`);
-          setExistingImages(imgResp.data || []);
         } else {
           setPatientInfo(null);
-          setExistingImages([]);
         }
       } catch (err) {
         console.error('Error fetching patient:', err);
@@ -104,8 +95,6 @@ const AssistantPage = () => {
       setError('Received invalid token format from server.');
     }
 
-      setVisitId(response.data.id);
-      setSavedRegistrationNumber(patientInfo.registration_number);
       setRegistrationNumber('');
       setSelectedQueue('');
       setPatientInfo(null); // Clear patient info after successful visit creation
@@ -130,30 +119,6 @@ const AssistantPage = () => {
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedImage || !visitId) return;
-    setUploading(true);
-    setUploadError('');
-    try {
-      const form = new FormData();
-      form.append('visit', visitId);
-      form.append('image', selectedImage);
-      await api.post('/api/prescriptions/', form);
-      setSelectedImage(null);
-      const regNo = patientInfo?.registration_number || savedRegistrationNumber;
-      if (regNo) {
-        const imgResp = await api.get(
-          `/api/prescriptions/?patient=${regNo}`
-        );
-        setExistingImages(imgResp.data || []);
-      }
-    } catch (err) {
-      console.error('Upload failed', err);
-      setUploadError('Failed to upload image');
-    } finally {
-      setUploading(false);
-    }
-  };
 
   return (
     <div className="container mx-auto p-6 max-w-md bg-white shadow-md rounded-lg mt-10">
@@ -210,18 +175,6 @@ const AssistantPage = () => {
                 Last Visits: {patientInfo.last_5_visit_dates.join(', ')}
               </div>
             )}
-            {existingImages.length > 0 && (
-              <div className="mt-2 flex space-x-2 overflow-x-auto">
-                {existingImages.map((img) => (
-                  <img
-                    key={img.id}
-                    src={img.image_url}
-                    alt="Prescription"
-                    className="h-16 w-16 object-cover rounded"
-                  />
-                ))}
-              </div>
-            )}
           </div>
         )}
 
@@ -249,26 +202,6 @@ const AssistantPage = () => {
         </div>
       )}
 
-      {visitId && (
-        <div className="mt-4 space-y-2">
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={(e) => setSelectedImage(e.target.files[0])}
-          />
-          <button
-            onClick={handleUpload}
-            disabled={!selectedImage || uploading}
-            className="px-4 py-2 bg-indigo-600 text-white rounded disabled:bg-gray-400"
-          >
-            {uploading ? 'Uploading...' : 'Upload Prescription'}
-          </button>
-          {uploadError && (
-            <p className="text-red-500 text-sm">{uploadError}</p>
-          )}
-        </div>
-      )}
     </div>
   );
 };
