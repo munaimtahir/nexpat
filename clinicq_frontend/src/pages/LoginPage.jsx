@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
+import api, { setAccessToken } from '../api';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -18,7 +18,8 @@ const LoginPage = () => {
       });
       const token = response.data.token;
       if (token) {
-        window.localStorage.setItem('token', token);
+        // Store token in memory rather than localStorage for security
+        setAccessToken(token);
         navigate('/');
       } else {
         setError('No token returned');

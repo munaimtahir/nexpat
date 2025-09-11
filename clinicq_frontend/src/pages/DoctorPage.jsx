@@ -1,4 +1,3 @@
-/* global process */
 import { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 import { Link } from 'react-router-dom';
