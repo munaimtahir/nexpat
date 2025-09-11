@@ -9,6 +9,7 @@ const DoctorPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [queues, setQueues] = useState([]);
   const [selectedQueue, setSelectedQueue] = useState('');
+  const [uploadStates, setUploadStates] = useState({});
 
   const fetchWaitingVisits = useCallback(async () => {
     setIsLoading(true);
@@ -29,7 +30,8 @@ const DoctorPage = () => {
           const patientsResp = await api.get(
             `/api/patients/?registration_numbers=${registrationNumbers.join(',')}`
           );
-          patientsByRegNum = (patientsResp.data || []).reduce((acc, patient) => {
+          const patientList = patientsResp.data.results || patientsResp.data;
+          patientsByRegNum = (patientList || []).reduce((acc, patient) => {
             acc[patient.registration_number] = patient;
             return acc;
           }, {});
@@ -117,6 +119,44 @@ const DoctorPage = () => {
     }
   };
 
+  const handleUpload = async (visitId) => {
+    const uploadState = uploadStates[visitId] || {};
+    if (!uploadState.selectedImage) return;
+
+    setUploadStates((prev) => ({
+      ...prev,
+      [visitId]: { ...uploadState, uploading: true, uploadError: '' },
+    }));
+
+    try {
+      const form = new FormData();
+      form.append('visit', visitId);
+      form.append('image', uploadState.selectedImage);
+      await api.post('/api/prescriptions/', form);
+
+      // Reset upload state for this visit and refresh visits
+      setUploadStates((prev) => ({
+        ...prev,
+        [visitId]: { selectedImage: null, uploading: false, uploadError: '' },
+      }));
+      fetchWaitingVisits(); // This will refetch everything including images
+
+    } catch (err) {
+      console.error('Upload failed', err);
+      setUploadStates((prev) => ({
+        ...prev,
+        [visitId]: { ...uploadState, uploading: false, uploadError: 'Failed to upload image' },
+      }));
+    }
+  };
+
+  const handleFileSelect = (visitId, file) => {
+    setUploadStates((prev) => ({
+      ...prev,
+      [visitId]: { selectedImage: file, uploading: false, uploadError: '' },
+    }));
+  };
+
   return (
     <div className="container mx-auto p-6 bg-white shadow-md rounded-lg mt-10">
       <Link to="/" className="text-blue-500 hover:underline mb-4 block">&larr; Back to Home</Link>
@@ -184,12 +224,32 @@ const DoctorPage = () => {
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => handleMarkDone(visit.id)}
-                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-              >
-                Mark as Done
-              </button>
+              <div>
+                <button
+                  onClick={() => handleMarkDone(visit.id)}
+                  className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                >
+                  Mark as Done
+                </button>
+                <div className="mt-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="text-sm"
+                    onChange={(e) => handleFileSelect(visit.id, e.target.files[0])}
+                  />
+                  <button
+                    onClick={() => handleUpload(visit.id)}
+                    disabled={!uploadStates[visit.id]?.selectedImage || uploadStates[visit.id]?.uploading}
+                    className="mt-1 px-2 py-1 bg-indigo-600 text-white rounded-md text-sm disabled:bg-gray-400"
+                  >
+                    {uploadStates[visit.id]?.uploading ? 'Uploading...' : 'Upload'}
+                  </button>
+                  {uploadStates[visit.id]?.uploadError && (
+                    <p className="text-red-500 text-xs mt-1">{uploadStates[visit.id]?.uploadError}</p>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
         </div>

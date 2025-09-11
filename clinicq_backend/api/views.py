@@ -21,7 +21,7 @@ from .serializers import (
 )
 from .pagination import StandardResultsSetPagination
 from .google_drive import upload_prescription_image
-from .permissions import IsDoctor, IsAssistant
+from .permissions import IsDoctor, IsAssistant, IsDoctorOrUploader
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +67,9 @@ class PatientViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         reg_nums = self.request.query_params.get("registration_numbers")
         if reg_nums:
+            numbers = [
+                num.strip() for num in reg_nums.split(",") if num.strip().isdigit()
+            ]
             if numbers:
                 queryset = queryset.filter(registration_number__in=numbers)
             else:
@@ -232,7 +235,7 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
-            permission_classes = [IsDoctor]
+            permission_classes = [IsDoctorOrUploader]
         else:
             permission_classes = [permissions.IsAuthenticated]
         return [perm() for perm in permission_classes]
@@ -244,9 +247,7 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         if visit_id:
             queryset = queryset.filter(visit_id=visit_id)
         if patient_reg:
-            queryset = queryset.filter(
-                visit__patient__registration_number=patient_reg
-            )
+            queryset = queryset.filter(visit__patient__registration_number=patient_reg)
         return queryset
 
     def create(self, request, *args, **kwargs):

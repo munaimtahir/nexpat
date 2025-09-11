@@ -11,9 +11,6 @@ const AssistantPage = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [visitId, setVisitId] = useState(null);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState('');
   const [existingImages, setExistingImages] = useState([]);
   const [savedRegistrationNumber, setSavedRegistrationNumber] = useState('');
 
@@ -130,31 +127,6 @@ const AssistantPage = () => {
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedImage || !visitId) return;
-    setUploading(true);
-    setUploadError('');
-    try {
-      const form = new FormData();
-      form.append('visit', visitId);
-      form.append('image', selectedImage);
-      await api.post('/api/prescriptions/', form);
-      setSelectedImage(null);
-      const regNo = patientInfo?.registration_number || savedRegistrationNumber;
-      if (regNo) {
-        const imgResp = await api.get(
-          `/api/prescriptions/?patient=${regNo}`
-        );
-        setExistingImages(imgResp.data || []);
-      }
-    } catch (err) {
-      console.error('Upload failed', err);
-      setUploadError('Failed to upload image');
-    } finally {
-      setUploading(false);
-    }
-  };
-
   return (
     <div className="container mx-auto p-6 max-w-md bg-white shadow-md rounded-lg mt-10">
       <Link to="/" className="text-blue-500 hover:underline mb-4 block">
@@ -249,26 +221,6 @@ const AssistantPage = () => {
         </div>
       )}
 
-      {visitId && (
-        <div className="mt-4 space-y-2">
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={(e) => setSelectedImage(e.target.files[0])}
-          />
-          <button
-            onClick={handleUpload}
-            disabled={!selectedImage || uploading}
-            className="px-4 py-2 bg-indigo-600 text-white rounded disabled:bg-gray-400"
-          >
-            {uploading ? 'Uploading...' : 'Upload Prescription'}
-          </button>
-          {uploadError && (
-            <p className="text-red-500 text-sm">{uploadError}</p>
-          )}
-        </div>
-      )}
     </div>
   );
 };

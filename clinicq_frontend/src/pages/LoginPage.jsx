@@ -16,9 +16,10 @@ const LoginPage = () => {
         username,
         password,
       });
-      const token = response.data.token;
+      const { token, roles } = response.data;
       if (token) {
         window.localStorage.setItem('token', token);
+        window.localStorage.setItem('roles', JSON.stringify(roles));
         navigate('/');
       } else {
         setError('No token returned');

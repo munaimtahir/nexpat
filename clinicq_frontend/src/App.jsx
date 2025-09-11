@@ -1,4 +1,5 @@
 import { Routes, Route, Link, useSearchParams } from 'react-router-dom'; // Removed BrowserRouter as Router
+import { AuthProvider } from './AuthContext';
 import AssistantPage from './pages/AssistantPage';
 import DoctorPage from './pages/DoctorPage'; // Placeholder for now
 import PublicDisplayPage from './pages/PublicDisplayPage'; // Placeholder for now
@@ -32,20 +33,20 @@ const PublicDisplayRoute = () => {
 
 function App() {
   return (
-    // <Router> component removed
-    <div className="min-h-screen bg-gray-100">
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/assistant" element={<AssistantPage />} />
-        <Route path="/doctor" element={<DoctorPage />} />
-        <Route path="/display" element={<PublicDisplayRoute />} />
-        <Route path="/patients" element={<PatientsPage />} />
-        <Route path="/patients/new" element={<PatientFormPage />} />
-        <Route path="/patients/:registration_number/edit" element={<PatientFormPage />} />
-        <Route path="/login" element={<LoginPage />} />
-      </Routes>
-    </div>
-    // </Router> component removed
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-100">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/assistant" element={<AssistantPage />} />
+          <Route path="/doctor" element={<DoctorPage />} />
+          <Route path="/display" element={<PublicDisplayRoute />} />
+          <Route path="/patients" element={<PatientsPage />} />
+          <Route path="/patients/new" element={<PatientFormPage />} />
+          <Route path="/patients/:registration_number/edit" element={<PatientFormPage />} />
+          <Route path="/login" element={<LoginPage />} />
+        </Routes>
+      </div>
+    </AuthProvider>
   );
 }
 

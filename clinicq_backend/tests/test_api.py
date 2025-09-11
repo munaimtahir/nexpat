@@ -4,6 +4,7 @@ from rest_framework.authtoken.models import Token
 from django.core.cache import cache
 from api.models import Patient, Queue
 
+
 class PatientCRUDTests(APITestCase):
     def setUp(self):
         cache.clear()
@@ -15,30 +16,28 @@ class PatientCRUDTests(APITestCase):
 
     def test_patient_crud(self):
         # Create
-        create_resp = self.client.post('/api/patients/', {
-            'name': 'John Doe',
-            'gender': 'MALE',
-            'phone': '1234567890'
-        }, format='json')
+        create_resp = self.client.post(
+            "/api/patients/",
+            {"name": "John Doe", "gender": "MALE", "phone": "1234567890"},
+            format="json",
+        )
         self.assertEqual(create_resp.status_code, 201)
-        reg_no = create_resp.data['registration_number']
+        reg_no = create_resp.data["registration_number"]
 
         # Retrieve
-        get_resp = self.client.get(f'/api/patients/{reg_no}/')
+        get_resp = self.client.get(f"/api/patients/{reg_no}/")
         self.assertEqual(get_resp.status_code, 200)
-        self.assertEqual(get_resp.data['name'], 'John Doe')
+        self.assertEqual(get_resp.data["name"], "John Doe")
 
         # Update
         patch_resp = self.client.patch(
-            f'/api/patients/{reg_no}/',
-            {'phone': '0987654321'},
-            format='json'
+            f"/api/patients/{reg_no}/", {"phone": "0987654321"}, format="json"
         )
         self.assertEqual(patch_resp.status_code, 200)
-        self.assertEqual(patch_resp.data['phone'], '0987654321')
+        self.assertEqual(patch_resp.data["phone"], "0987654321")
 
         # Delete
-        del_resp = self.client.delete(f'/api/patients/{reg_no}/')
+        del_resp = self.client.delete(f"/api/patients/{reg_no}/")
         self.assertEqual(del_resp.status_code, 204)
         self.assertFalse(Patient.objects.filter(registration_number=reg_no).exists())
 
@@ -62,14 +61,18 @@ class PatientFilterTests(APITestCase):
         )
         self.assertEqual(resp.status_code, 200)
         numbers = [p["registration_number"] for p in resp.data["results"]]
-        self.assertEqual(numbers, [self.p1.registration_number, self.p3.registration_number])
+        self.assertEqual(
+            numbers, [self.p1.registration_number, self.p3.registration_number]
+        )
 
     def test_filter_mixed_numbers(self):
         query = f"{self.p1.registration_number}, abc ,{self.p2.registration_number},xyz"
         resp = self.client.get(f"/api/patients/?registration_numbers={query}")
         self.assertEqual(resp.status_code, 200)
         numbers = [p["registration_number"] for p in resp.data["results"]]
-        self.assertEqual(numbers, [self.p1.registration_number, self.p2.registration_number])
+        self.assertEqual(
+            numbers, [self.p1.registration_number, self.p2.registration_number]
+        )
 
     def test_filter_invalid_numbers(self):
         resp = self.client.get("/api/patients/?registration_numbers=abc, xyz")
@@ -85,39 +88,43 @@ class VisitTests(APITestCase):
         self.assistant.groups.add(assistant_group)
         self.assistant_token = Token.objects.create(user=self.assistant)
 
-        self.patient = Patient.objects.create(name='Alice', gender='FEMALE')
-        self.queue1, _ = Queue.objects.get_or_create(name='General')
-        self.queue2, _ = Queue.objects.get_or_create(name='Special')
+        self.patient = Patient.objects.create(name="Alice", gender="FEMALE")
+        self.queue1, _ = Queue.objects.get_or_create(name="General")
+        self.queue2, _ = Queue.objects.get_or_create(name="Special")
 
     def test_visit_creation_assigns_token(self):
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.assistant_token.key}")
-        resp1 = self.client.post('/api/visits/', {
-            'patient': self.patient.registration_number,
-            'queue': self.queue1.id
-        }, format='json')
+        resp1 = self.client.post(
+            "/api/visits/",
+            {"patient": self.patient.registration_number, "queue": self.queue1.id},
+            format="json",
+        )
         self.assertEqual(resp1.status_code, 201)
-        self.assertEqual(resp1.data['token_number'], 1)
+        self.assertEqual(resp1.data["token_number"], 1)
 
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.assistant_token.key}")
-        resp2 = self.client.post('/api/visits/', {
-            'patient': self.patient.registration_number,
-            'queue': self.queue1.id
-        }, format='json')
+        resp2 = self.client.post(
+            "/api/visits/",
+            {"patient": self.patient.registration_number, "queue": self.queue1.id},
+            format="json",
+        )
         self.assertEqual(resp2.status_code, 201)
-        self.assertEqual(resp2.data['token_number'], 2)
+        self.assertEqual(resp2.data["token_number"], 2)
 
     def test_queue_filter_returns_only_selected_queue(self):
         # Create visits in two queues
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.assistant_token.key}")
-        self.client.post('/api/visits/', {
-            'patient': self.patient.registration_number,
-            'queue': self.queue1.id
-        }, format='json')
-        self.client.post('/api/visits/', {
-            'patient': self.patient.registration_number,
-            'queue': self.queue2.id
-        }, format='json')
-        resp = self.client.get(f'/api/visits/?status=WAITING&queue={self.queue1.id}')
+        self.client.post(
+            "/api/visits/",
+            {"patient": self.patient.registration_number, "queue": self.queue1.id},
+            format="json",
+        )
+        self.client.post(
+            "/api/visits/",
+            {"patient": self.patient.registration_number, "queue": self.queue2.id},
+            format="json",
+        )
+        resp = self.client.get(f"/api/visits/?status=WAITING&queue={self.queue1.id}")
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.data['count'], 1)
-        self.assertEqual(resp.data['results'][0]['queue'], self.queue1.id)
+        self.assertEqual(resp.data["count"], 1)
+        self.assertEqual(resp.data["results"][0]["queue"], self.queue1.id)

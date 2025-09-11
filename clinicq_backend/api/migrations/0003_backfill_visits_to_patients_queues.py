@@ -8,6 +8,7 @@ DEFAULT_QUEUE_NAME = "General"
 # be mistaken for a real number in future searches or reports.
 ANONYMOUS_PATIENT_PHONE = None
 
+
 def forwards_func(apps, schema_editor):
     """
     - Creates a default 'General' queue.
@@ -16,18 +17,19 @@ def forwards_func(apps, schema_editor):
           from the Visit. These patients will have a null phone number.
         - Associates the Visit with this new Patient and the default 'General' queue.
     """
-    Visit = apps.get_model('api', 'Visit')
-    Patient = apps.get_model('api', 'Patient')
-    Queue = apps.get_model('api', 'Queue')
+    Visit = apps.get_model("api", "Visit")
+    Patient = apps.get_model("api", "Patient")
+    Queue = apps.get_model("api", "Queue")
     db_alias = schema_editor.connection.alias
 
     # 1. Create the default 'General' queue
-    general_queue, created = Queue.objects.using(db_alias).get_or_create(name=DEFAULT_QUEUE_NAME)
+    general_queue, created = Queue.objects.using(db_alias).get_or_create(
+        name=DEFAULT_QUEUE_NAME
+    )
     if created:
         print(f"\nCreated default queue: '{DEFAULT_QUEUE_NAME}'")
     else:
         print(f"\nFound existing queue: '{DEFAULT_QUEUE_NAME}'")
-
 
     # 2. Migrate existing visits
     visits_to_migrate = Visit.objects.using(db_alias).filter(patient__isnull=True)
@@ -42,15 +44,19 @@ def forwards_func(apps, schema_editor):
         # it might be better to use Patient.objects.create() directly.
         # For this release, we'll assume patients with the same name and gender
         # from old visits could be the same person.
-        anonymous_patient, patient_created = Patient.objects.using(db_alias).get_or_create(
+        anonymous_patient, patient_created = Patient.objects.using(
+            db_alias
+        ).get_or_create(
             name=visit.patient_name,
             gender=visit.patient_gender,
             # Leave phone unset for anonymous patients. A sentinel value might
             # pollute search results or imply a number where none exists.
-            defaults={'phone': ANONYMOUS_PATIENT_PHONE}
+            defaults={"phone": ANONYMOUS_PATIENT_PHONE},
         )
         if patient_created:
-            print(f"  Created Patient: {anonymous_patient.name} (ID: {anonymous_patient.registration_number})")
+            print(
+                f"  Created Patient: {anonymous_patient.name} (ID: {anonymous_patient.registration_number})"
+            )
 
         visit.patient = anonymous_patient
         visit.queue = general_queue
@@ -58,7 +64,9 @@ def forwards_func(apps, schema_editor):
         migrated_count += 1
 
     if migrated_count > 0:
-        print(f"Successfully migrated {migrated_count} visits to the '{DEFAULT_QUEUE_NAME}' queue and linked them to patient records.")
+        print(
+            f"Successfully migrated {migrated_count} visits to the '{DEFAULT_QUEUE_NAME}' queue and linked them to patient records."
+        )
     else:
         print("No visits required migration.")
 
@@ -73,8 +81,8 @@ def backwards_func(apps, schema_editor):
       migration are not deleted here, as they might be used by other data.
       Schema migration 0002 would handle field removal if models are reverted.
     """
-    Visit = apps.get_model('api', 'Visit')
-    Queue = apps.get_model('api', 'Queue')
+    Visit = apps.get_model("api", "Visit")
+    Queue = apps.get_model("api", "Queue")
     db_alias = schema_editor.connection.alias
 
     try:
@@ -92,18 +100,22 @@ def backwards_func(apps, schema_editor):
             reverted_count += 1
 
         if reverted_count > 0:
-            print(f"\nReverted {reverted_count} visits, setting their patient and queue to NULL.")
+            print(
+                f"\nReverted {reverted_count} visits, setting their patient and queue to NULL."
+            )
         else:
             print("\nNo visits found associated with the 'General' queue to revert.")
 
     except Queue.DoesNotExist:
-        print(f"\nQueue '{DEFAULT_QUEUE_NAME}' not found. No visits to revert based on this queue.")
+        print(
+            f"\nQueue '{DEFAULT_QUEUE_NAME}' not found. No visits to revert based on this queue."
+        )
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0002_queue_alter_visit_options_patient_visit_patient_and_more'),
+        ("api", "0002_queue_alter_visit_options_patient_visit_patient_and_more"),
     ]
 
     operations = [
