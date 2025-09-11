@@ -30,8 +30,16 @@ const DoctorPage = () => {
           const patientsResp = await api.get(
             `/api/patients/?registration_numbers=${registrationNumbers.join(',')}`
           );
-          const patientList = patientsResp.data.results || patientsResp.data;
-          patientsByRegNum = (patientList || []).reduce((acc, patient) => {
+          // Handle both paginated and non-paginated responses explicitly
+          // Paginated: { count, next, previous, results: [...] }
+          // Non-paginated: [ ... ]
+          let patientList = [];
+          if (Array.isArray(patientsResp.data)) {
+            patientList = patientsResp.data;
+          } else if (patientsResp.data && Array.isArray(patientsResp.data.results)) {
+            patientList = patientsResp.data.results;
+          }
+          patientsByRegNum = patientList.reduce((acc, patient) => {
             acc[patient.registration_number] = patient;
             return acc;
           }, {});
