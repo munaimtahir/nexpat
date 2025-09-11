@@ -33,12 +33,16 @@ const DoctorPage = () => {
           // Handle both paginated and non-paginated responses explicitly
           // Paginated: { count, next, previous, results: [...] }
           // Non-paginated: [ ... ]
-          let patientList = [];
-          if (Array.isArray(patientsResp.data)) {
-            patientList = patientsResp.data;
-          } else if (patientsResp.data && Array.isArray(patientsResp.data.results)) {
-            patientList = patientsResp.data.results;
-          }
+          // Normalize patient list response to always be an array
+          const normalizePatientListResponse = (data) => {
+            if (Array.isArray(data)) {
+              return data;
+            } else if (data && Array.isArray(data.results)) {
+              return data.results;
+            }
+            return [];
+          };
+          const patientList = normalizePatientListResponse(patientsResp.data);
           patientsByRegNum = patientList.reduce((acc, patient) => {
             acc[patient.registration_number] = patient;
             return acc;
