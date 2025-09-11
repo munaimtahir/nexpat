@@ -247,7 +247,9 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         if visit_id:
             queryset = queryset.filter(visit_id=visit_id)
         if patient_reg:
-            queryset = queryset.filter(visit__patient__registration_number=patient_reg)
+            queryset = queryset.filter(
+                visit__patient__registration_number=patient_reg,
+            )
         return queryset
 
     def create(self, request, *args, **kwargs):
