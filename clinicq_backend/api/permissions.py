@@ -1,23 +1,26 @@
 from rest_framework import permissions
 
 
-class IsDoctor(permissions.BasePermission):
+class IsInGroup(permissions.BasePermission):
+    """Generic permission that checks membership in a specific group."""
+
+    group_name = ""
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and request.user.groups.filter(name=self.group_name).exists()
+        )
+
+
+class IsDoctor(IsInGroup):
     """Allows access only to users in the 'doctor' group."""
 
-    def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.groups.filter(name="doctor").exists()
-        )
+    group_name = "doctor"
 
 
-class IsAssistant(permissions.BasePermission):
+class IsAssistant(IsInGroup):
     """Allows access only to users in the 'assistant' group."""
 
-    def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.groups.filter(name="assistant").exists()
-        )
+    group_name = "assistant"
