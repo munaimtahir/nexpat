@@ -16,6 +16,7 @@ Thanks for considering contributing to ClinicQ. This document outlines how to se
 4. Run tests and linters before committing:
    - **Backend**: `pytest`
    - **Frontend**: `npm test -- --watchAll=false`
+   - Coverage reports (e.g., `clinicq_frontend/coverage/`) are generated automatically and should not be committed.
 5. Ensure code is formatted and linted:
    - **Python**: use `black` and `flake8`
    - **JavaScript/TypeScript**: use `eslint` and `prettier`
