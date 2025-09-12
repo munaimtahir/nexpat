@@ -1,3 +1,4 @@
+# Reviewed for final cleanup
 from django.db import models
 import datetime
 

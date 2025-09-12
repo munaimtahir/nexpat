@@ -13,6 +13,7 @@ export const clearAccessToken = () => {
 
 // Use HTTP-only cookies for refresh tokens; send credentials on requests
 const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || "",
   withCredentials: true,
 });
 
