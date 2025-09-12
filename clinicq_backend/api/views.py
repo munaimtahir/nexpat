@@ -80,7 +80,9 @@ class PatientViewSet(viewsets.ModelViewSet):
 
             if len(raw_numbers) > 50:
                 raise ValidationError(
-                    {"registration_numbers": "A maximum of 50 registration numbers are allowed."}
+                    {
+                        "registration_numbers": "A maximum of 50 registration numbers are allowed."
+                    }
                 )
 
             numbers = []

@@ -1,8 +1,9 @@
 from django.contrib import admin
 from .models import Visit, Patient, Queue, PrescriptionImage
 
+# Register your models here.
 
-@admin.register(Visit)
+
 class VisitAdmin(admin.ModelAdmin):
     list_display = (
         "token_number",
@@ -18,7 +19,6 @@ class VisitAdmin(admin.ModelAdmin):
     ordering = ("-visit_date", "token_number")
 
 
-@admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
     list_display = (
         "registration_number",
@@ -32,15 +32,19 @@ class PatientAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
 
 
-@admin.register(Queue)
 class QueueAdmin(admin.ModelAdmin):
     list_display = ("name", "created_at")
     search_fields = ("name",)
     ordering = ("name",)
 
 
-@admin.register(PrescriptionImage)
 class PrescriptionImageAdmin(admin.ModelAdmin):
     list_display = ("visit", "drive_file_id", "created_at")
     search_fields = ("visit__patient__name", "drive_file_id")
     ordering = ("-created_at",)
+
+
+admin.site.register(Visit, VisitAdmin)
+admin.site.register(Patient, PatientAdmin)
+admin.site.register(Queue, QueueAdmin)
+admin.site.register(PrescriptionImage, PrescriptionImageAdmin)
