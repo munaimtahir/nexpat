@@ -3,70 +3,42 @@ import api from '../api';
 import { Link } from 'react-router-dom';
 
 const DoctorPage = () => {
-  const [waitingVisits, setWaitingVisits] = useState([]);
+  const [visits, setVisits] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [queues, setQueues] = useState([]);
   const [selectedQueue, setSelectedQueue] = useState('');
   const [uploadStates, setUploadStates] = useState({});
 
-  const fetchWaitingVisits = useCallback(async () => {
+  const fetchVisits = useCallback(async () => {
     setIsLoading(true);
     setError('');
     try {
       const queueParam = selectedQueue ? `&queue=${selectedQueue}` : '';
-      const response = await api.get(`/api/visits/?status=WAITING${queueParam}`);
-      const visits = response.data || [];
+      const response = await api.get(`/api/visits/?status=WAITING,START,IN_ROOM${queueParam}`);
+      const fetchedVisits = response.data || [];
 
-      // Fetch patient details in batch if possible, otherwise one by one
       const registrationNumbers = [
-        ...new Set(visits.map((v) => v.patient_registration_number)),
+        ...new Set(fetchedVisits.map((v) => v.patient_registration_number)),
       ];
       let patientsByRegNum = {};
 
       if (registrationNumbers.length > 0) {
-        try {
-          const patientsResp = await api.get(
-            `/api/patients/?registration_numbers=${registrationNumbers.join(',')}`
-          );
-          patientsByRegNum = (patientsResp.data || []).reduce((acc, patient) => {
-            acc[patient.registration_number] = patient;
-            return acc;
-          }, {});
-          const missingRegs = registrationNumbers.filter(
-            (regNum) => !patientsByRegNum[regNum]
-          );
-          if (missingRegs.length > 0) {
-            await Promise.all(
-              missingRegs.map(async (regNum) => {
-                try {
-                  const resp = await api.get(`/api/patients/${regNum}/`);
-                  patientsByRegNum[regNum] = resp.data;
-                } catch {
-                  patientsByRegNum[regNum] = null;
-                }
-              })
-            );
-          }
-        } catch {
-          // If batch fetch fails, fallback to individual requests
-          await Promise.all(
-            registrationNumbers.map(async (regNum) => {
-              try {
-                const resp = await api.get(`/api/patients/${regNum}/`);
-                patientsByRegNum[regNum] = resp.data;
-              } catch {
-                patientsByRegNum[regNum] = null;
-              }
-            })
-          );
-        }
+        // This logic can be simplified if the backend provides patient details directly
+        const patientsResp = await api.get(
+          `/api/patients/?registration_numbers=${registrationNumbers.join(',')}`
+        );
+        patientsByRegNum = (patientsResp.data || []).reduce((acc, patient) => {
+          acc[patient.registration_number] = patient;
+          return acc;
+        }, {});
       }
 
-      const detailedVisits = visits.map((visit) => ({
+      const detailedVisits = fetchedVisits.map((visit) => ({
         ...visit,
         patient_details: patientsByRegNum[visit.patient_registration_number] || null,
       }));
+
       let withImages = detailedVisits;
       if (import.meta.env.MODE !== 'test') {
         withImages = await Promise.all(
@@ -81,17 +53,17 @@ const DoctorPage = () => {
         );
       }
 
-      setWaitingVisits(withImages);
+      setVisits(withImages);
     } catch (err) {
-      console.error("Error fetching waiting visits:", err);
-      setError('Failed to fetch waiting visits. Please try again.');
+      console.error("Error fetching visits:", err);
+      setError('Failed to fetch visits. Please try again.');
     } finally {
       setIsLoading(false);
     }
   }, [selectedQueue]);
 
-    useEffect(() => {
-      if (import.meta.env.MODE === 'test') return;
+  useEffect(() => {
+    if (import.meta.env.MODE === 'test') return;
     const fetchQueues = async () => {
       try {
         const response = await api.get('/api/queues/');
@@ -104,16 +76,16 @@ const DoctorPage = () => {
   }, []);
 
   useEffect(() => {
-    fetchWaitingVisits();
-  }, [fetchWaitingVisits]);
+    fetchVisits();
+  }, [fetchVisits]);
 
-  const handleMarkDone = async (visitId) => {
+  const handleUpdateVisitStatus = async (visitId, action) => {
     try {
-      await api.patch(`/api/visits/${visitId}/done/`);
-      fetchWaitingVisits();
+      await api.patch(`/api/visits/${visitId}/${action}/`);
+      fetchVisits(); // Refetch to get the latest state
     } catch (err) {
-      console.error("Error marking visit as done:", err);
-      setError(`Failed to mark token as done. ${err.response?.data?.detail || ''}`);
+      console.error(`Error during action ${action} for visit ${visitId}:`, err);
+      setError(`Failed to perform action. ${err.response?.data?.detail || ''}`);
     }
   };
 
@@ -137,7 +109,7 @@ const DoctorPage = () => {
       form.append('image', state.file);
       await api.post('/api/prescriptions/', form);
       const imgResp = await api.get(`/api/prescriptions/?visit=${visitId}`);
-      setWaitingVisits((prev) =>
+      setVisits((prev) =>
         prev.map((v) =>
           v.id === visitId
             ? { ...v, prescription_images: imgResp.data || [] }
@@ -154,6 +126,56 @@ const DoctorPage = () => {
         ...prev,
         [visitId]: { ...state, uploading: false, error: 'Failed to upload image' },
       }));
+    }
+  };
+
+  const renderActionButtons = (visit) => {
+    switch (visit.status) {
+      case 'WAITING':
+        return (
+          <button
+            onClick={() => handleUpdateVisitStatus(visit.id, 'start')}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Start Consultation
+          </button>
+        );
+      case 'START':
+        return (
+          <>
+            <button
+              onClick={() => handleUpdateVisitStatus(visit.id, 'in_room')}
+              className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
+            >
+              Move to Room
+            </button>
+            <button
+              onClick={() => handleUpdateVisitStatus(visit.id, 'send_back_to_waiting')}
+              className="ml-2 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+            >
+              Send Back
+            </button>
+          </>
+        );
+      case 'IN_ROOM':
+        return (
+          <>
+            <button
+              onClick={() => handleUpdateVisitStatus(visit.id, 'done')}
+              className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+            >
+              Mark as Done
+            </button>
+            <button
+              onClick={() => handleUpdateVisitStatus(visit.id, 'send_back_to_waiting')}
+              className="ml-2 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+            >
+              Send Back
+            </button>
+          </>
+        );
+      default:
+        return null;
     }
   };
 
@@ -181,78 +203,49 @@ const DoctorPage = () => {
         </select>
       </div>
 
-      {isLoading && <p className="text-center text-gray-500">Loading waiting list...</p>}
+      {isLoading && <p className="text-center text-gray-500">Loading patient list...</p>}
       {error && <p className="text-red-500 text-sm bg-red-100 p-3 rounded-md mb-4">{error}</p>}
 
-      {!isLoading && waitingVisits.length === 0 && !error && (
-        <p className="text-center text-gray-600 py-4">No patients currently waiting.</p>
+      {!isLoading && visits.length === 0 && !error && (
+        <p className="text-center text-gray-600 py-4">No active patients.</p>
       )}
 
-      {waitingVisits.length > 0 && (
+      {visits.length > 0 && (
         <div className="space-y-4">
-          {waitingVisits.map((visit, index) => (
+          {visits.map((visit) => (
             <div
               key={visit.id}
-              className={`p-4 border rounded-lg shadow-sm flex justify-between items-center ${index === 0 ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'}`}
+              className={`p-4 border rounded-lg shadow-sm flex justify-between items-center ${
+                visit.status === 'IN_ROOM' ? 'bg-purple-50 border-purple-300' :
+                visit.status === 'START' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+              }`}
             >
               <div>
                 <p className="text-2xl font-bold text-blue-600">
                   Token: {visit.token_number}{' '}
+                  <span className="text-lg font-medium text-gray-600">({visit.status})</span>
                   {visit.queue_name && (
-                    <span className="text-base text-gray-500">({visit.queue_name})</span>
+                    <span className="text-base text-gray-500"> - {visit.queue_name}</span>
                   )}
                 </p>
-                <p className="text-gray-700">Patient: {visit.patient_name}</p>
-                <p className="text-sm text-gray-500">Gender: {visit.patient_gender}</p>
+                <p className="text-gray-700">Patient: {visit.patient_full_name}</p>
+                <p className="text-sm text-gray-500">Gender: {visit.patient_details?.gender}</p>
                 <p className="text-xs text-gray-500">
                   Last Visits:{' '}
-                  {visit.patient_details?.last_5_visit_dates &&
-                  visit.patient_details.last_5_visit_dates.length > 0
+                  {visit.patient_details?.last_5_visit_dates?.length > 0
                     ? visit.patient_details.last_5_visit_dates.join(', ')
                     : 'None'}
                 </p>
-                {visit.prescription_images && visit.prescription_images.length > 0 && (
-                  <div className="mt-2 flex space-x-2">
-                    {visit.prescription_images.map((img) => (
-                      <img
-                        key={img.id}
-                        src={img.image_url}
-                        alt="Prescription"
-                        className="h-16 w-16 object-cover rounded"
-                      />
-                    ))}
-                  </div>
-                )}
-                <div className="mt-2 flex items-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(visit.id, e.target.files[0])}
-                  />
-                  <button
-                    onClick={() => handleUpload(visit.id)}
-                    disabled={uploadStates[visit.id]?.uploading}
-                    className="ml-2 px-2 py-1 bg-indigo-600 text-white rounded disabled:bg-gray-400"
-                  >
-                    {uploadStates[visit.id]?.uploading ? 'Uploading...' : 'Upload'}
-                  </button>
-                </div>
-                {uploadStates[visit.id]?.error && (
-                  <p className="text-red-500 text-xs">{uploadStates[visit.id].error}</p>
-                )}
               </div>
-              <button
-                onClick={() => handleMarkDone(visit.id)}
-                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-              >
-                Mark as Done
-              </button>
+              <div className="flex flex-col items-end space-y-2">
+                {renderActionButtons(visit)}
+              </div>
             </div>
           ))}
         </div>
       )}
       <button
-        onClick={fetchWaitingVisits}
+        onClick={fetchVisits}
         disabled={isLoading}
         className="mt-6 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400"
       >

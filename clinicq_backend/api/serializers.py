@@ -97,11 +97,18 @@ class VisitStatusUpdateSerializer(serializers.ModelSerializer):
         fields = ["status"]
 
     def validate_status(self, value):
+        # This serializer is now only used for the 'done' action, so this validation is correct.
         if value != "DONE":
             raise serializers.ValidationError(
                 "This endpoint only allows updating status to 'DONE'."
             )
         return value
+
+
+class VisitStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Visit
+        fields = ["status"]
 
 
 class PrescriptionImageSerializer(serializers.ModelSerializer):
