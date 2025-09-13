@@ -15,14 +15,14 @@ import logging
 from .models import Visit, Patient, Queue, PrescriptionImage
 from .serializers import (
     VisitSerializer,
-    VisitStatusUpdateSerializer,
+    VisitStatusSerializer,
     PatientSerializer,
     QueueSerializer,
     PrescriptionImageSerializer,
 )
 from .pagination import StandardResultsSetPagination
 from .google_drive import upload_prescription_image
-from .permissions import IsDoctor, IsAssistant
+from .permissions import IsDoctor, IsAssistant, IsAdmin, IsDisplay
 
 logger = logging.getLogger(__name__)
 
@@ -160,10 +160,12 @@ class VisitViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
-        if self.action == "create":
+        if self.action == 'create':
             permission_classes = [IsAssistant]
-        elif self.action == "done":
+        elif self.action in ['start', 'in_room', 'send_back_to_waiting', 'done']:
             permission_classes = [IsDoctor]
+        elif self.action == 'list' and self.request.user.groups.filter(name='Display').exists():
+            permission_classes = [IsDisplay]
         else:
             permission_classes = [permissions.IsAuthenticated]
         return [perm() for perm in permission_classes]
@@ -183,8 +185,9 @@ class VisitViewSet(viewsets.ModelViewSet):
         queue_id_param = self.request.query_params.get("queue")
 
         if status_param:
-            queryset = queryset.filter(status__iexact=status_param)
-            if status_param.upper() == "WAITING":
+            statuses = [s.strip().upper() for s in status_param.split(',')]
+            queryset = queryset.filter(status__in=statuses)
+            if "WAITING" in statuses:
                 # For WAITING status, always filter by today's date
                 queryset = queryset.filter(visit_date=timezone.now().date())
 
@@ -215,43 +218,42 @@ class VisitViewSet(viewsets.ModelViewSet):
         if last_visit_in_queue_today:
             next_token_number = last_visit_in_queue_today.token_number + 1
 
-        # Save the visit with the auto-generated and assigned fields
-        # The serializer already has 'patient' (Patient instance) and
-        # 'queue' (Queue instance) from validated_data.
         serializer.save(
             token_number=next_token_number,
             visit_date=today,
             status="WAITING",
         )
 
-    @action(
-        detail=True,
-        methods=["patch"],
-        serializer_class=VisitStatusUpdateSerializer,
-    )
-    def done(self, request, pk=None):
+    def _update_status(self, request, pk, new_status, expected_current_statuses):
         visit = self.get_object()
-        if visit.status == "DONE":
+        if visit.status not in expected_current_statuses:
             return Response(
-                {"detail": "Visit is already marked as done."},
+                {"detail": f"Visit must be in one of the following states: {', '.join(expected_current_statuses)}"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Use the specific serializer for status updates
-        status_serializer = VisitStatusUpdateSerializer(
-            visit, data={"status": "DONE"}, partial=True
-        )
-        if status_serializer.is_valid():
-            status_serializer.save()
-            # Return the full visit details using the main VisitSerializer
-            full_visit_serializer = VisitSerializer(
-                visit, context={"request": request}
-            )  # Add context for HATEOAS links if used
+        serializer = VisitStatusSerializer(visit, data={"status": new_status}, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            full_visit_serializer = VisitSerializer(visit, context={"request": request})
             return Response(full_visit_serializer.data)
-        return Response(
-            status_serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["patch"])
+    def start(self, request, pk=None):
+        return self._update_status(request, pk, "START", ["WAITING"])
+
+    @action(detail=True, methods=["patch"])
+    def in_room(self, request, pk=None):
+        return self._update_status(request, pk, "IN_ROOM", ["START"])
+
+    @action(detail=True, methods=["patch"])
+    def send_back_to_waiting(self, request, pk=None):
+        return self._update_status(request, pk, "WAITING", ["START", "IN_ROOM"])
+
+    @action(detail=True, methods=["patch"])
+    def done(self, request, pk=None):
+        return self._update_status(request, pk, "DONE", ["IN_ROOM"])
 
 
 class PrescriptionImageViewSet(viewsets.ModelViewSet):

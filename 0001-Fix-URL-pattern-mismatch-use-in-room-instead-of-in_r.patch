@@ -1,0 +1,31 @@
+From 9f7e2477c4f6206be53656a0a21a12ddf41ae53e Mon Sep 17 00:00:00 2001
+From: "copilot-swe-agent[bot]" <198982749+Copilot@users.noreply.github.com>
+Date: Sat, 13 Sep 2025 21:41:42 +0000
+Subject: [PATCH] Fix URL pattern mismatch: use 'in-room' instead of 'in_room'
+ in test
+
+- Fixed inconsistency in test_doctor_can_transition_start_to_in_room
+- URL pattern names use hyphens per Django REST Framework convention
+- Test was using 'in_room' (underscores) but should use 'in-room' (hyphens)
+- All lifecycle tests now pass consistently
+- Frontend URLs (with underscores) work correctly with backend actions
+---
+ clinicq_backend/api/test_api.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/clinicq_backend/api/test_api.py b/clinicq_backend/api/test_api.py
+index 9f1e6e1..25dfd61 100644
+--- a/clinicq_backend/api/test_api.py
++++ b/clinicq_backend/api/test_api.py
+@@ -541,7 +541,7 @@ class VisitLifecycleTests(APITestCase):
+         self.visit.status = "START"
+         self.visit.save()
+         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+-        url = self._get_url("in_room", self.visit.pk)
++        url = self._get_url("in-room", self.visit.pk)
+         response = self.client.patch(url)
+         self.assertEqual(response.status_code, status.HTTP_200_OK)
+         self.visit.refresh_from_db()
+-- 
+2.51.0
+
