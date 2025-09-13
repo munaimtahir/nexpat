@@ -395,7 +395,7 @@ class VisitAPITests(APITestCase):
             queue=self.queue1,
             token_number=1,
             visit_date=date.today(),
-            status="WAITING",
+            status="IN_ROOM",  # The 'done' action now requires the 'IN_ROOM' status
         )
         url = reverse("visit-done", kwargs={"pk": visit.pk})
         response = self.client.patch(url, {}, format="json")
@@ -499,3 +499,102 @@ class VisitAPITests(APITestCase):
         visit = Visit.objects.get(pk=response.data["id"])
         assert visit.patient == self.patient
         assert visit.queue == self.queue1
+
+
+@pytest.mark.django_db
+class VisitLifecycleTests(APITestCase):
+    def setUp(self):
+        cache.clear()
+        self.doctor_group, _ = Group.objects.get_or_create(name="doctor")
+        self.assistant_group, _ = Group.objects.get_or_create(name="assistant")
+        self.display_group, _ = Group.objects.get_or_create(name="display")
+
+        self.doctor_user = User.objects.create_user(username="doctor", password="password")
+        self.doctor_user.groups.add(self.doctor_group)
+        self.doctor_token = Token.objects.create(user=self.doctor_user)
+
+        self.assistant_user = User.objects.create_user(username="assistant", password="password")
+        self.assistant_user.groups.add(self.assistant_group)
+        self.assistant_token = Token.objects.create(user=self.assistant_user)
+
+        self.patient = Patient.objects.create(name="Test Patient", gender="OTHER")
+        self.queue = Queue.objects.create(name="Test Queue")
+        self.visit = Visit.objects.create(
+            patient=self.patient,
+            queue=self.queue,
+            token_number=1,
+            status="WAITING",
+        )
+
+    def _get_url(self, action, pk):
+        return reverse(f"visit-{action}", kwargs={"pk": pk})
+
+    def test_doctor_can_transition_waiting_to_start(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        url = self._get_url("start", self.visit.pk)
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.visit.refresh_from_db()
+        self.assertEqual(self.visit.status, "START")
+
+    def test_doctor_can_transition_start_to_in_room(self):
+        self.visit.status = "START"
+        self.visit.save()
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        url = self._get_url("in-room", self.visit.pk)
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.visit.refresh_from_db()
+        self.assertEqual(self.visit.status, "IN_ROOM")
+
+    def test_doctor_can_transition_in_room_to_done(self):
+        self.visit.status = "IN_ROOM"
+        self.visit.save()
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        url = self._get_url("done", self.visit.pk)
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.visit.refresh_from_db()
+        self.assertEqual(self.visit.status, "DONE")
+
+    def test_doctor_can_send_back_to_waiting_from_start(self):
+        self.visit.status = "START"
+        self.visit.save()
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        url = self._get_url("send-back-to-waiting", self.visit.pk)
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.visit.refresh_from_db()
+        self.assertEqual(self.visit.status, "WAITING")
+
+    def test_invalid_transition_waiting_to_in_room(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        url = self._get_url("in-room", self.visit.pk)
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.visit.refresh_from_db()
+        self.assertEqual(self.visit.status, "WAITING")
+
+    def test_invalid_transition_waiting_to_done(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        url = self._get_url("done", self.visit.pk)
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.visit.refresh_from_db()
+        self.assertEqual(self.visit.status, "WAITING")
+
+    def test_assistant_cannot_change_status(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.assistant_token.key}")
+        url = self._get_url("start", self.visit.pk)
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_doctor_can_send_back_to_waiting_from_in_room(self):
+        self.visit.status = "IN_ROOM"
+        self.visit.save()
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        url = self._get_url("send-back-to-waiting", self.visit.pk)
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.visit.refresh_from_db()
+        self.assertEqual(self.visit.status, "WAITING")

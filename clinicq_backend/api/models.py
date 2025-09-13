@@ -12,6 +12,8 @@ class Visit(models.Model):
 
     STATUS_CHOICES = [
         ("WAITING", "Waiting"),
+        ("START", "Start"),
+        ("IN_ROOM", "In Room"),
         ("DONE", "Done"),
     ]
 

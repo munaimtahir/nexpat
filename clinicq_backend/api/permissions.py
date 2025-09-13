@@ -24,3 +24,15 @@ class IsAssistant(IsInGroup):
     """Allows access only to users in the 'assistant' group."""
 
     group_name = "assistant"
+
+
+class IsAdmin(IsInGroup):
+    """Allows access only to users in the 'admin' group."""
+
+    group_name = "admin"
+
+
+class IsDisplay(IsInGroup):
+    """Allows access only to users in the 'display' group."""
+
+    group_name = "display"

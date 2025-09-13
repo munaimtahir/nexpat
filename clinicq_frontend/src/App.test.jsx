@@ -92,28 +92,31 @@ describe('Displays last_5_visit_dates', () => {
 
   test('Doctor page shows last visit dates for waiting patients', async () => {
     api.get.mockImplementation((url) => {
-      if (url === '/api/visits/?status=WAITING') {
-        return Promise.resolve({
-          data: [
-            {
-              id: 1,
-              token_number: 10,
-              patient_name: 'Alice',
-              patient_gender: 'FEMALE',
-              patient_registration_number: 1,
-            },
-          ],
-        });
-      }
-      if (url === '/api/patients/1/') {
-        return Promise.resolve({
-          data: {
-            registration_number: 1,
-            last_5_visit_dates: ['2024-01-01', '2023-12-31'],
-          },
-        });
-      }
-      return Promise.resolve({ data: [] });
+        if (url.includes('/api/visits')) {
+            return Promise.resolve({
+              data: [
+                {
+                  id: 1,
+                  token_number: 10,
+                  patient_full_name: 'Alice',
+                  patient_registration_number: 1,
+                  status: 'WAITING',
+                },
+              ],
+            });
+          }
+          if (url.includes('/api/patients')) {
+            return Promise.resolve({
+              data: [
+                {
+                  registration_number: 1,
+                  last_5_visit_dates: ['2024-01-01', '2023-12-31'],
+                  gender: 'FEMALE',
+                },
+              ],
+            });
+          }
+          return Promise.resolve({ data: [] });
     });
 
     render(
