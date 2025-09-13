@@ -236,7 +236,6 @@ const DoctorPage = () => {
                     ? visit.patient_details.last_5_visit_dates.join(', ')
                     : 'None'}
                 </p>
-                {/* Prescription handling UI remains the same */}
               </div>
               <div className="flex flex-col items-end space-y-2">
                 {renderActionButtons(visit)}
