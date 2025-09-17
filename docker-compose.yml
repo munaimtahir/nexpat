@@ -27,18 +27,19 @@ services:
     # The default CMD in Dockerfile is gunicorn, but for dev we want runserver.
     # The entrypoint script will receive this as "$@"
     command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - ./clinicq_backend:/app/backend # Mount code for hot-reloading
+    # volumes:
+    #   - ./clinicq_backend:/app/backend # Mount code for hot-reloading
     ports:
       - "8000:8000"
     environment:
-      - SECRET_KEY=django_insecure_local_dev_secret_key_!@#%^&*()
-      - DEBUG=True
-      - DATABASE_URL=postgresql://clinicq_dev_user:clinicq_dev_password@db:5432/clinicq_dev_db
-      - DJANGO_SUPERUSER_USERNAME=admin
-      - DJANGO_SUPERUSER_EMAIL=admin@example.com
-      - DJANGO_SUPERUSER_PASSWORD=adminpass
-      # Add other necessary env vars for local dev
+      - DJANGO_SECRET_KEY=iamadoctor
+      - DJANGO_DEBUG=True
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,172.235.33.181
+      - DB_NAME=clinicq_dev_db
+      - DB_USER=clinicq_dev_user
+      - DB_PASSWORD=clinicq_dev_password
+      - DB_HOST=db
+      - DB_PORT=5432
     depends_on:
       db:
         condition: service_healthy
