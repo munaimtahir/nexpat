@@ -1,8 +1,16 @@
 # ClinicQ API Overview
 
-The ClinicQ backend exposes a RESTful API under the `/api/` prefix.
+The ClinicQ backend exposes a RESTful API under the `/api/` prefix. Authentication
+uses Django REST Framework's token authentication and currently supports only
+login—tokens are short-lived in the frontend (kept in memory) and **no refresh
+endpoint is provided**. When a token expires or becomes invalid the frontend will
+clear its session and redirect the user to log in again.
+
 The following endpoints are useful during development. Replace `<id>` or `<reg_no>`
 with the appropriate identifiers.
+
+## Authentication
+- `POST /api/auth/login/` – Retrieve a token for subsequent API calls (include `username` and `password` in the body)
 
 ## Patients
 - `GET /api/patients/` – List patients

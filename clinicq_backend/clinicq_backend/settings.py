@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 
+import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -76,12 +79,33 @@ WSGI_APPLICATION = "clinicq_backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+_database_url = os.environ.get("DATABASE_URL")
+
+if _database_url is None:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    sanitized_database_url = _database_url.strip()
+    if not sanitized_database_url:
+        raise ImproperlyConfigured(
+            "DATABASE_URL is set but empty. Please provide a valid database connection URL."
+        )
+
+    try:
+        DATABASES = {
+            "default": dj_database_url.parse(
+                sanitized_database_url,
+                conn_max_age=600,
+            )
+        }
+    except ValueError as exc:
+        raise ImproperlyConfigured(
+            f"DATABASE_URL is set but could not be parsed: {exc}."
+        ) from exc
 
 
 # Password validation

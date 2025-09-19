@@ -48,13 +48,13 @@ describe('Displays last_5_visit_dates', () => {
 
   test('Assistant page shows last visit dates for patient', async () => {
     api.get.mockImplementation((url) => {
-      if (url === '/api/queues/') {
+      if (url === '/queues/') {
         return Promise.resolve({ data: [{ id: 1, name: 'General' }] });
       }
-      if (url.startsWith('/api/patients/search/')) {
+      if (url.startsWith('/patients/search/')) {
         return Promise.resolve({ data: [{ registration_number: 1 }] });
       }
-      if (url === '/api/patients/1/') {
+      if (url === '/patients/1/') {
         return Promise.resolve({
           data: {
             registration_number: 1,
@@ -92,25 +92,28 @@ describe('Displays last_5_visit_dates', () => {
 
   test('Doctor page shows last visit dates for waiting patients', async () => {
     api.get.mockImplementation((url) => {
-      if (url === '/api/visits/?status=WAITING') {
+      if (url.includes('/visits')) {
         return Promise.resolve({
           data: [
             {
               id: 1,
               token_number: 10,
-              patient_name: 'Alice',
-              patient_gender: 'FEMALE',
+              patient_full_name: 'Alice',
               patient_registration_number: 1,
+              status: 'WAITING',
             },
           ],
         });
       }
-      if (url === '/api/patients/1/') {
+      if (url.includes('/patients')) {
         return Promise.resolve({
-          data: {
-            registration_number: 1,
-            last_5_visit_dates: ['2024-01-01', '2023-12-31'],
-          },
+          data: [
+            {
+              registration_number: 1,
+              last_5_visit_dates: ['2024-01-01', '2023-12-31'],
+              gender: 'FEMALE',
+            },
+          ],
         });
       }
       return Promise.resolve({ data: [] });

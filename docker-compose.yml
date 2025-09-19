@@ -59,7 +59,7 @@ services:
       - CHOKIDAR_USEPOLLING=true # For better hot-reloading in some Docker environments
       - WDS_SOCKET_PORT=5173 # For Vite HMR proxying if needed
       # Vite specific env vars can be prefixed with VITE_
-      - VITE_API_BASE_URL=http://localhost:8000/api # So frontend knows where backend is
+      - VITE_API_BASE_URL=http://backend:8000 # Base host; api helper appends /api path
     depends_on:
       - backend
 

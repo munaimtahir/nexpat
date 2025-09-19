@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchRoles = async () => {
     try {
-      const response = await api.get('/api/auth/me/');
+      const response = await api.get('/auth/me/');
       setRoles(response.data.roles || []);
     } catch {
       setRoles([]);

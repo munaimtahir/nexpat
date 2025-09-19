@@ -2,18 +2,56 @@ import axios from 'axios';
 
 // Store the short-lived access token in memory only
 let accessToken = null;
+let redirectingToLogin = false;
+
+const DEFAULT_API_PATH = '/api';
+
+const trimTrailingSlashes = (value) => value.replace(/\/+$/, '');
+
+const normalizeApiBase = (value) => {
+  const raw = (value ?? '').trim();
+
+  if (!raw) {
+    return DEFAULT_API_PATH;
+  }
+
+  const withoutTrailingSlash = trimTrailingSlashes(raw);
+
+  if (!withoutTrailingSlash) {
+    return DEFAULT_API_PATH;
+  }
+
+  if (/\/api(?:\/|$)/.test(withoutTrailingSlash)) {
+    return withoutTrailingSlash;
+  }
+
+  return `${withoutTrailingSlash}${DEFAULT_API_PATH}`;
+};
+
+const API_BASE_URL = normalizeApiBase(import.meta.env.VITE_API_BASE_URL);
+
+const buildApiUrl = (path = '') => {
+  if (!path) {
+    return API_BASE_URL;
+  }
+
+  const normalizedPath = path.replace(/^\/+/, '');
+  return `${API_BASE_URL}/${normalizedPath}`;
+};
 
 export const setAccessToken = (token) => {
   accessToken = token;
+  redirectingToLogin = false;
 };
 
 export const clearAccessToken = () => {
   accessToken = null;
+  redirectingToLogin = false;
 };
 
-// Use HTTP-only cookies for refresh tokens; send credentials on requests
+// Configure axios instance and send credentials for any cookie-backed endpoints
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "",
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
 
@@ -25,27 +63,22 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Attempt to refresh the access token transparently on 401 responses
+// When we receive a 401, clear any cached auth state and send the user back to login
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const { response, config } = error;
-    if (response && response.status === 401 && !config.__isRetryRequest) {
-      try {
-        const refreshResponse = await axios.post(
-          '/api/auth/refresh/',
-          {},
-          { withCredentials: true }
-        );
-        const newToken = refreshResponse.data.token;
-        if (newToken) {
-          setAccessToken(newToken);
-          config.__isRetryRequest = true;
-          config.headers.Authorization = `Bearer ${newToken}`;
-          return api(config);
-        }
-      } catch {
+
         clearAccessToken();
+
+        if (!redirectingToLogin) {
+          redirectingToLogin = true;
+
+          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+            window.location.assign('/login');
+            redirectingToLogin = false;
+          }
+        }
       }
     }
     return Promise.reject(error);
