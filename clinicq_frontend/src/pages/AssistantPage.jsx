@@ -14,7 +14,7 @@ const AssistantPage = () => {
   useEffect(() => {
     const fetchQueues = async () => {
       try {
-        const response = await api.get('/api/queues/');
+        const response = await api.get('/queues/');
         setQueues(response.data || []);
       } catch (err) {
         console.error('Error fetching queues:', err);
@@ -32,11 +32,11 @@ const AssistantPage = () => {
       }
       try {
         const searchResp = await api.get(
-          `/api/patients/search/?q=${encodeURIComponent(registrationNumber.trim())}`
+          `/patients/search/?q=${encodeURIComponent(registrationNumber.trim())}`
         );
         if (Array.isArray(searchResp.data) && searchResp.data.length > 0) {
           const regNo = searchResp.data[0].registration_number;
-          const detailResp = await api.get(`/api/patients/${regNo}/`);
+          const detailResp = await api.get(`/patients/${regNo}/`);
           setPatientInfo(detailResp.data);
         } else {
           setPatientInfo(null);
@@ -74,7 +74,7 @@ const AssistantPage = () => {
     }
 
     try {
-      const response = await api.post('/api/visits/', {
+      const response = await api.post('/visits/', {
         patient: patientInfo.registration_number,
         queue: selectedQueue,
       });

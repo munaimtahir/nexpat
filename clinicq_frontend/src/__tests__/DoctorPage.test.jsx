@@ -30,23 +30,23 @@ const mockVisits = [
 ];
 
 const mockPatientDetails = {
-    P001: { registration_number: 'P001', gender: 'MALE', last_5_visit_dates: [] },
-    P002: { registration_number: 'P002', gender: 'FEMALE', last_5_visit_dates: [] },
-    P003: { registration_number: 'P003', gender: 'OTHER', last_5_visit_dates: [] },
+  P001: { registration_number: 'P001', gender: 'MALE', last_5_visit_dates: [] },
+  P002: { registration_number: 'P002', gender: 'FEMALE', last_5_visit_dates: [] },
+  P003: { registration_number: 'P003', gender: 'OTHER', last_5_visit_dates: [] },
 };
 
 beforeEach(() => {
   api.get.mockImplementation((url) => {
-    if (url.includes('/api/visits')) {
+    if (url.includes('/visits')) {
       return Promise.resolve({ data: mockVisits });
     }
-    if (url.includes('/api/patients')) {
-        const regNumbers = url.split('=')[1].split(',');
-        const patients = regNumbers.map(reg => mockPatientDetails[reg]).filter(Boolean);
+    if (url.includes('/patients')) {
+      const regNumbers = url.split('=')[1].split(',');
+      const patients = regNumbers.map((reg) => mockPatientDetails[reg]).filter(Boolean);
       return Promise.resolve({ data: patients });
     }
-    if (url.includes('/api/queues')) {
-        return Promise.resolve({ data: [] });
+    if (url.includes('/queues')) {
+      return Promise.resolve({ data: [] });
     }
     return Promise.resolve({ data: [] });
   });
@@ -78,46 +78,46 @@ test('renders Doctor dashboard and displays visits with correct action buttons',
 });
 
 test('clicking "Start Consultation" calls the correct API endpoint', async () => {
-    render(
-      <MemoryRouter>
-        <DoctorPage />
-      </MemoryRouter>
-    );
+  render(
+    <MemoryRouter>
+      <DoctorPage />
+    </MemoryRouter>
+  );
 
-    const startButton = await screen.findByText(/Start Consultation/i);
-    fireEvent.click(startButton);
+  const startButton = await screen.findByText(/Start Consultation/i);
+  fireEvent.click(startButton);
 
-    await waitFor(() => {
-      expect(api.patch).toHaveBeenCalledWith('/api/visits/1/start/');
-    });
+  await waitFor(() => {
+    expect(api.patch).toHaveBeenCalledWith('/visits/1/start/');
+  });
 });
 
 test('clicking "Move to Room" calls the correct API endpoint', async () => {
-    render(
-      <MemoryRouter>
-        <DoctorPage />
-      </MemoryRouter>
-    );
+  render(
+    <MemoryRouter>
+      <DoctorPage />
+    </MemoryRouter>
+  );
 
-    const moveButton = await screen.findByText(/Move to Room/i);
-    fireEvent.click(moveButton);
+  const moveButton = await screen.findByText(/Move to Room/i);
+  fireEvent.click(moveButton);
 
-    await waitFor(() => {
-      expect(api.patch).toHaveBeenCalledWith('/api/visits/2/in_room/');
-    });
+  await waitFor(() => {
+    expect(api.patch).toHaveBeenCalledWith('/visits/2/in_room/');
+  });
 });
 
 test('clicking "Mark as Done" calls the correct API endpoint', async () => {
-    render(
-      <MemoryRouter>
-        <DoctorPage />
-      </MemoryRouter>
-    );
+  render(
+    <MemoryRouter>
+      <DoctorPage />
+    </MemoryRouter>
+  );
 
-    const doneButton = await screen.findByText(/Mark as Done/i);
-    fireEvent.click(doneButton);
+  const doneButton = await screen.findByText(/Mark as Done/i);
+  fireEvent.click(doneButton);
 
-    await waitFor(() => {
-      expect(api.patch).toHaveBeenCalledWith('/api/visits/3/done/');
-    });
+  await waitFor(() => {
+    expect(api.patch).toHaveBeenCalledWith('/visits/3/done/');
+  });
 });

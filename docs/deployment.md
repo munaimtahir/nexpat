@@ -22,7 +22,7 @@ Create a `.env` file (an example is provided at `deploy/.env.example`) with valu
 * Optional superuser variables: `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD`
 * Any additional settings used by the project (e.g. `CORS_ALLOWED_ORIGINS`)
 
-For the frontend, configure `VITE_API_BASE_URL` so the compiled React app knows how to reach the backend API.
+For the frontend, set `VITE_API_BASE_URL` to the backend host (for example `http://localhost:8000`). The frontend helper automatically appends the `/api` prefix, so avoid adding it twice.
 
 ## Launching the backend
 
@@ -91,7 +91,7 @@ Create a `.env` file based on [`deploy/.env.example`](../deploy/.env.example) an
 - `DATABASE_URL` – PostgreSQL connection string
 - `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` – optional initial superuser
 - `CORS_ALLOWED_ORIGINS` – allowed origins if backend and frontend are on different hosts
-- `VITE_API_BASE_URL` – API base URL used by the frontend build
+- `VITE_API_BASE_URL` – Backend host used by the frontend build (omit `/api`; the helper appends it)
 
 ## Running the Backend
 

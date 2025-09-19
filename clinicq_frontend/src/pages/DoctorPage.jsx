@@ -15,7 +15,7 @@ const DoctorPage = () => {
     setError('');
     try {
       const queueParam = selectedQueue ? `&queue=${selectedQueue}` : '';
-      const response = await api.get(`/api/visits/?status=WAITING,START,IN_ROOM${queueParam}`);
+      const response = await api.get(`/visits/?status=WAITING,START,IN_ROOM${queueParam}`);
       const fetchedVisits = response.data || [];
 
       const registrationNumbers = [
@@ -26,7 +26,7 @@ const DoctorPage = () => {
       if (registrationNumbers.length > 0) {
         // This logic can be simplified if the backend provides patient details directly
         const patientsResp = await api.get(
-          `/api/patients/?registration_numbers=${registrationNumbers.join(',')}`
+          `/patients/?registration_numbers=${registrationNumbers.join(',')}`
         );
         patientsByRegNum = (patientsResp.data || []).reduce((acc, patient) => {
           acc[patient.registration_number] = patient;
@@ -44,7 +44,7 @@ const DoctorPage = () => {
         withImages = await Promise.all(
           detailedVisits.map(async (v) => {
             try {
-              const imgResp = await api.get(`/api/prescriptions/?visit=${v.id}`);
+              const imgResp = await api.get(`/prescriptions/?visit=${v.id}`);
               return { ...v, prescription_images: imgResp.data || [] };
             } catch {
               return { ...v, prescription_images: [] };
@@ -66,7 +66,7 @@ const DoctorPage = () => {
     if (import.meta.env.MODE === 'test') return;
     const fetchQueues = async () => {
       try {
-        const response = await api.get('/api/queues/');
+        const response = await api.get('/queues/');
         setQueues(response.data || []);
       } catch (err) {
         console.error('Error fetching queues:', err);
@@ -81,7 +81,7 @@ const DoctorPage = () => {
 
   const handleUpdateVisitStatus = async (visitId, action) => {
     try {
-      await api.patch(`/api/visits/${visitId}/${action}/`);
+      await api.patch(`/visits/${visitId}/${action}/`);
       fetchVisits(); // Refetch to get the latest state
     } catch (err) {
       console.error(`Error during action ${action} for visit ${visitId}:`, err);
@@ -107,8 +107,8 @@ const DoctorPage = () => {
       const form = new FormData();
       form.append('visit', visitId);
       form.append('image', state.file);
-      await api.post('/api/prescriptions/', form);
-      const imgResp = await api.get(`/api/prescriptions/?visit=${visitId}`);
+      await api.post('/prescriptions/', form);
+      const imgResp = await api.get(`/prescriptions/?visit=${visitId}`);
       setVisits((prev) =>
         prev.map((v) =>
           v.id === visitId
