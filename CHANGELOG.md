@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+*   **Configuration**: Django now reads database settings from the `DATABASE_URL` environment variable using `dj-database-url`,
+    falling back to the local SQLite database when the variable is absent.
 *   **Visit Model**:
     *   Added `patient` (ForeignKey to `Patient`) and `queue` (ForeignKey to `Queue`) fields.
     *   `unique_together` constraint updated to `('token_number', 'visit_date', 'queue')`.
