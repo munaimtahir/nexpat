@@ -20,7 +20,7 @@ const normalizeApiBase = (value) => {
     return DEFAULT_API_PATH;
   }
 
-  if (/\/api(?:\/|$)/i.test(withoutTrailingSlash)) {
+  if (/\/api(?:\/|$)/.test(withoutTrailingSlash)) {
     return withoutTrailingSlash;
   }
 
