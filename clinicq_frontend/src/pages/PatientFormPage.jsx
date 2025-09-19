@@ -21,14 +21,14 @@ const PatientFormPage = () => {
   useEffect(() => {
     const fetchPatient = async () => {
       try {
-        const response = await api.get(`/api/patients/${registration_number}/`);
+        const response = await api.get(`/patients/${registration_number}/`);
         setFormData({
           name: response.data.name || '',
           phone: response.data.phone || '',
           gender: response.data.gender || 'OTHER',
           age: response.data.age || '',
         });
-        const imgResp = await api.get(`/api/prescriptions/?patient=${registration_number}`);
+        const imgResp = await api.get(`/prescriptions/?patient=${registration_number}`);
         setImages(imgResp.data || []);
       } catch (err) {
         console.error('Failed to load patient', err);
@@ -50,9 +50,9 @@ const PatientFormPage = () => {
     setError('');
     try {
       if (isEdit) {
-        await api.put(`/api/patients/${registration_number}/`, formData);
+        await api.put(`/patients/${registration_number}/`, formData);
       } else {
-        await api.post('/api/patients/', formData);
+        await api.post('/patients/', formData);
       }
       navigate('/patients');
     } catch (err) {

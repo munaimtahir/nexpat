@@ -22,10 +22,6 @@ Create a `.env` file (an example is provided at `deploy/.env.example`) with valu
 * Optional superuser variables: `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD`
 * Any additional settings used by the project (e.g. `CORS_ALLOWED_ORIGINS`)
 
-The backend relies on [`dj-database-url`](https://pypi.org/project/dj-database-url/) to parse `DATABASE_URL`. If the variable is
-set but malformed, Django will raise an `ImproperlyConfigured` error during startup.
-
-For the frontend, configure `VITE_API_BASE_URL` so the compiled React app knows how to reach the backend API.
 
 ## Launching the backend
 
@@ -94,7 +90,7 @@ Create a `.env` file based on [`deploy/.env.example`](../deploy/.env.example) an
 - `DATABASE_URL` – PostgreSQL connection string
 - `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` – optional initial superuser
 - `CORS_ALLOWED_ORIGINS` – allowed origins if backend and frontend are on different hosts
-- `VITE_API_BASE_URL` – API base URL used by the frontend build
+- `VITE_API_BASE_URL` – Backend host used by the frontend build (omit `/api`; the helper appends it)
 
 The backend parses `DATABASE_URL` using [`dj-database-url`](https://pypi.org/project/dj-database-url/). Providing an invalid URL
 causes Django to raise an `ImproperlyConfigured` exception at startup.

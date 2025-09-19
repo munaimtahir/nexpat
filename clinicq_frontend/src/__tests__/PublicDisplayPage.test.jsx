@@ -28,11 +28,11 @@ const mockVisits = [
 
 beforeEach(() => {
   api.get.mockImplementation((url) => {
-    if (url.includes('/api/visits')) {
+    if (url.includes('/visits')) {
       return Promise.resolve({ data: mockVisits });
     }
-    if (url.includes('/api/queues')) {
-        return Promise.resolve({ data: [] });
+    if (url.includes('/queues')) {
+      return Promise.resolve({ data: [] });
     }
     return Promise.resolve({ data: [] });
   });
@@ -62,22 +62,22 @@ test('renders Public Display and shows IN_ROOM and WAITING patients correctly', 
 });
 
 test('shows correct message when no patients are present', async () => {
-    api.get.mockImplementation((url) => {
-        if (url.includes('/api/visits')) {
-          return Promise.resolve({ data: [] });
-        }
-        if (url.includes('/api/queues')) {
-            return Promise.resolve({ data: [] });
-        }
-        return Promise.resolve({ data: [] });
-      });
+  api.get.mockImplementation((url) => {
+    if (url.includes('/visits')) {
+      return Promise.resolve({ data: [] });
+    }
+    if (url.includes('/queues')) {
+      return Promise.resolve({ data: [] });
+    }
+    return Promise.resolve({ data: [] });
+  });
 
-    render(
-      <MemoryRouter>
-        <PublicDisplayPage />
-      </MemoryRouter>
-    );
+  render(
+    <MemoryRouter>
+      <PublicDisplayPage />
+    </MemoryRouter>
+  );
 
-    expect(await screen.findByText(/No patient is currently in the room./i)).toBeInTheDocument();
-    expect(await screen.findByText(/The waiting queue is empty./i)).toBeInTheDocument();
+  expect(await screen.findByText(/No patient is currently in the room./i)).toBeInTheDocument();
+  expect(await screen.findByText(/The waiting queue is empty./i)).toBeInTheDocument();
 });

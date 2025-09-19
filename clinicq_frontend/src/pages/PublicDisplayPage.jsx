@@ -18,7 +18,7 @@ const PublicDisplayPage = ({ initialQueue = '' }) => {
       setError('');
       try {
         const queueParam = selectedQueue ? `&queue=${selectedQueue}` : '';
-        const response = await api.get(`/api/visits/?status=WAITING,IN_ROOM${queueParam}`);
+        const response = await api.get(`/visits/?status=WAITING,IN_ROOM${queueParam}`);
         const allVisits = response.data || [];
 
         setInRoomVisits(allVisits.filter(v => v.status === 'IN_ROOM'));
@@ -45,7 +45,7 @@ const PublicDisplayPage = ({ initialQueue = '' }) => {
   useEffect(() => {
     const fetchQueues = async () => {
       try {
-        const response = await api.get('/api/queues/');
+        const response = await api.get('/queues/');
         setQueues(response.data || []);
       } catch (err) {
         console.error('Error fetching queues:', err);

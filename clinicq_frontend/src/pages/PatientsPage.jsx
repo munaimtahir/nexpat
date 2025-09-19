@@ -13,9 +13,9 @@ const PatientsPage = () => {
     setLoading(true);
     setError('');
     try {
-      let url = '/api/patients/';
+      let url = '/patients/';
       if (term.trim()) {
-        url = `/api/patients/search/?q=${encodeURIComponent(term.trim())}`;
+        url = `/patients/search/?q=${encodeURIComponent(term.trim())}`;
       }
       const response = await api.get(url);
       setPatients(response.data);
@@ -34,7 +34,7 @@ const PatientsPage = () => {
   const handleDelete = async (regNum) => {
     if (!window.confirm('Are you sure you want to delete this patient?')) return;
     try {
-      await api.delete(`/api/patients/${regNum}/`);
+      await api.delete(`/patients/${regNum}/`);
       setPatients((prev) => prev.filter((p) => p.registration_number !== regNum));
     } catch (err) {
       console.error('Delete failed', err);
