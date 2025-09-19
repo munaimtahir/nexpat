@@ -102,7 +102,7 @@ else:
                 conn_max_age=600,
             )
         }
-    except (ValueError, dj_database_url.ParseError, dj_database_url.UnknownSchemeError) as exc:
+    except ValueError as exc:
         raise ImproperlyConfigured(
             f"DATABASE_URL is set but could not be parsed: {exc}."
         ) from exc
