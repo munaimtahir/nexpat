@@ -46,6 +46,7 @@ api.interceptors.response.use(
 
           if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
             window.location.assign('/login');
+            redirectingToLogin = false;
           }
         }
       }
