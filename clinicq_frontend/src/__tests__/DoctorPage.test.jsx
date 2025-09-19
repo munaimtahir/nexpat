@@ -42,7 +42,7 @@ beforeEach(() => {
     }
     if (url.includes('/patients')) {
       const regNumbers = url.split('=')[1].split(',');
-      const patients = regNumbers.map((reg) => mockPatientDetails[reg]).filter(Boolean);
+      const patients = regNumbers.map(reg => mockPatientDetails[reg]).filter(Boolean);
       return Promise.resolve({ data: patients });
     }
     if (url.includes('/queues')) {
