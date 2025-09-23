@@ -19,10 +19,14 @@ const PublicDisplayPage = ({ initialQueue = '' }) => {
       try {
         const queueParam = selectedQueue ? `&queue=${selectedQueue}` : '';
         const response = await api.get(`/visits/?status=WAITING,IN_ROOM${queueParam}`);
-        const allVisits = response.data || [];
+        const visitResults = Array.isArray(response?.data?.results)
+          ? response.data.results
+          : Array.isArray(response?.data)
+            ? response.data
+            : [];
 
-        setInRoomVisits(allVisits.filter(v => v.status === 'IN_ROOM'));
-        setWaitingVisits(allVisits.filter(v => v.status === 'WAITING'));
+        setInRoomVisits(visitResults.filter(v => v.status === 'IN_ROOM'));
+        setWaitingVisits(visitResults.filter(v => v.status === 'WAITING'));
 
       } catch (err) {
         console.error("Error fetching visits:", err);

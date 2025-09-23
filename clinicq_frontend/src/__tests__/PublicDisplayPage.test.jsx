@@ -29,7 +29,7 @@ const mockVisits = [
 beforeEach(() => {
   api.get.mockImplementation((url) => {
     if (url.includes('/visits')) {
-      return Promise.resolve({ data: mockVisits });
+      return Promise.resolve({ data: { results: mockVisits } });
     }
     if (url.includes('/queues')) {
       return Promise.resolve({ data: [] });
@@ -64,7 +64,7 @@ test('renders Public Display and shows IN_ROOM and WAITING patients correctly', 
 test('shows correct message when no patients are present', async () => {
   api.get.mockImplementation((url) => {
     if (url.includes('/visits')) {
-      return Promise.resolve({ data: [] });
+      return Promise.resolve({ data: { results: [] } });
     }
     if (url.includes('/queues')) {
       return Promise.resolve({ data: [] });
