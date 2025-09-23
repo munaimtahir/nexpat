@@ -1,8 +1,11 @@
-from rest_framework.test import APITestCase
-from django.contrib.auth.models import User, Group
-from rest_framework.authtoken.models import Token
+import datetime
+
+from django.contrib.auth.models import Group, User
 from django.core.cache import cache
-from api.models import Patient, Queue
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APITestCase
+
+from api.models import Patient, Queue, Visit
 
 
 class PatientCRUDTests(APITestCase):
@@ -84,9 +87,22 @@ class VisitTests(APITestCase):
     def setUp(self):
         cache.clear()
         assistant_group, _ = Group.objects.get_or_create(name="assistant")
+        doctor_group, _ = Group.objects.get_or_create(name="doctor")
+        display_group, _ = Group.objects.get_or_create(name="display")
+
         self.assistant = User.objects.create_user(username="asst", password="pass")
         self.assistant.groups.add(assistant_group)
         self.assistant_token = Token.objects.create(user=self.assistant)
+
+        self.doctor = User.objects.create_user(username="docuser", password="pass")
+        self.doctor.groups.add(doctor_group)
+        self.doctor_token = Token.objects.create(user=self.doctor)
+
+        self.display_user = User.objects.create_user(
+            username="displayuser", password="pass"
+        )
+        self.display_user.groups.add(display_group)
+        self.display_token = Token.objects.create(user=self.display_user)
 
         self.patient = Patient.objects.create(name="Alice", gender="FEMALE")
         self.queue1, _ = Queue.objects.get_or_create(name="General")
@@ -128,3 +144,53 @@ class VisitTests(APITestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data["count"], 1)
         self.assertEqual(resp.data["results"][0]["queue"], self.queue1.id)
+
+    def test_doctor_can_progress_visit_statuses(self):
+        visit = Visit.objects.create(
+            patient=self.patient,
+            queue=self.queue1,
+            token_number=1,
+            visit_date=datetime.date.today(),
+            status="WAITING",
+        )
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+
+        start_resp = self.client.patch(f"/api/visits/{visit.id}/start/")
+        self.assertEqual(start_resp.status_code, 200)
+        self.assertEqual(start_resp.data["status"], "START")
+
+        send_back_resp = self.client.patch(
+            f"/api/visits/{visit.id}/send_back_to_waiting/"
+        )
+        self.assertEqual(send_back_resp.status_code, 200)
+        self.assertEqual(send_back_resp.data["status"], "WAITING")
+
+        restart_resp = self.client.patch(f"/api/visits/{visit.id}/start/")
+        self.assertEqual(restart_resp.status_code, 200)
+        self.assertEqual(restart_resp.data["status"], "START")
+
+        in_room_resp = self.client.patch(f"/api/visits/{visit.id}/in_room/")
+        self.assertEqual(in_room_resp.status_code, 200)
+        self.assertEqual(in_room_resp.data["status"], "IN_ROOM")
+
+        done_resp = self.client.patch(f"/api/visits/{visit.id}/done/")
+        self.assertEqual(done_resp.status_code, 200)
+        self.assertEqual(done_resp.data["status"], "DONE")
+
+    def test_display_user_can_list_visits(self):
+        visit = Visit.objects.create(
+            patient=self.patient,
+            queue=self.queue1,
+            token_number=1,
+            visit_date=datetime.date.today(),
+            status="WAITING",
+        )
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.display_token.key}")
+
+        resp = self.client.get("/api/visits/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertGreaterEqual(resp.data["count"], 1)
+        visit_ids = [item["id"] for item in resp.data["results"]]
+        self.assertIn(visit.id, visit_ids)

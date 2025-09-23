@@ -5,14 +5,20 @@ from django.db import migrations
 
 def create_groups(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
-    Group.objects.bulk_create(
-        [
-            Group(name="Admin"),
-            Group(name="Doctor"),
-            Group(name="Assistant"),
-            Group(name="Display"),
-        ]
-    )
+    canonical_groups = ["admin", "doctor", "assistant", "display"]
+
+    for group_name in canonical_groups:
+        existing_group = (
+            Group.objects.filter(name__iexact=group_name)
+            .order_by("id")
+            .first()
+        )
+        if existing_group:
+            if existing_group.name != group_name:
+                existing_group.name = group_name
+                existing_group.save(update_fields=["name"])
+        else:
+            Group.objects.create(name=group_name)
 
 
 class Migration(migrations.Migration):
