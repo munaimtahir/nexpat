@@ -14,8 +14,8 @@ from freezegun import freeze_time
 class PatientAPITests(APITestCase):
     def setUp(self):
         cache.clear()
-        doctor_group, _ = Group.objects.get_or_create(name="doctor")
-        assistant_group, _ = Group.objects.get_or_create(name="assistant")
+        doctor_group, _ = Group.objects.get_or_create(name="Doctor")
+        assistant_group, _ = Group.objects.get_or_create(name="Assistant")
         user = User.objects.create_user(username="tester", password="pass")
         user.groups.add(doctor_group, assistant_group)
         token = Token.objects.create(user=user)
@@ -189,7 +189,8 @@ class PatientAPITests(APITestCase):
         url = reverse("auth-me")
         response = self.client.get(url, format="json")
         assert response.status_code == status.HTTP_200_OK
-        assert set(response.data.get("roles", [])) == {"doctor", "assistant"}
+        roles = {role.lower() for role in response.data.get("roles", [])}
+        assert roles == {"doctor", "assistant"}
 
     def test_patient_last_5_visit_dates(self):
         # Create a queue
@@ -224,8 +225,8 @@ class PatientAPITests(APITestCase):
 class QueueAPITests(APITestCase):
     def setUp(self):
         cache.clear()
-        doctor_group, _ = Group.objects.get_or_create(name="doctor")
-        assistant_group, _ = Group.objects.get_or_create(name="assistant")
+        doctor_group, _ = Group.objects.get_or_create(name="Doctor")
+        assistant_group, _ = Group.objects.get_or_create(name="Assistant")
         user = User.objects.create_user(username="queue_tester", password="pass")
         user.groups.add(doctor_group, assistant_group)
         token = Token.objects.create(user=user)
@@ -254,8 +255,8 @@ class QueueAPITests(APITestCase):
 class VisitAPITests(APITestCase):
     def setUp(self):
         cache.clear()
-        doctor_group, _ = Group.objects.get_or_create(name="doctor")
-        assistant_group, _ = Group.objects.get_or_create(name="assistant")
+        doctor_group, _ = Group.objects.get_or_create(name="Doctor")
+        assistant_group, _ = Group.objects.get_or_create(name="Assistant")
         user = User.objects.create_user(username="visit_tester", password="pass")
         user.groups.add(doctor_group, assistant_group)
         token = Token.objects.create(user=user)
@@ -505,9 +506,9 @@ class VisitAPITests(APITestCase):
 class VisitLifecycleTests(APITestCase):
     def setUp(self):
         cache.clear()
-        self.doctor_group, _ = Group.objects.get_or_create(name="doctor")
-        self.assistant_group, _ = Group.objects.get_or_create(name="assistant")
-        self.display_group, _ = Group.objects.get_or_create(name="display")
+        self.doctor_group, _ = Group.objects.get_or_create(name="Doctor")
+        self.assistant_group, _ = Group.objects.get_or_create(name="Assistant")
+        self.display_group, _ = Group.objects.get_or_create(name="Display")
 
         self.doctor_user = User.objects.create_user(username="doctor", password="password")
         self.doctor_user.groups.add(self.doctor_group)

@@ -11,7 +11,7 @@ from api.models import Patient, Queue, Visit
 class PatientCRUDTests(APITestCase):
     def setUp(self):
         cache.clear()
-        doctor_group, _ = Group.objects.get_or_create(name="doctor")
+        doctor_group, _ = Group.objects.get_or_create(name="Doctor")
         user = User.objects.create_user(username="doc", password="pass")
         user.groups.add(doctor_group)
         token = Token.objects.create(user=user)
@@ -48,7 +48,7 @@ class PatientCRUDTests(APITestCase):
 class PatientFilterTests(APITestCase):
     def setUp(self):
         cache.clear()
-        doctor_group, _ = Group.objects.get_or_create(name="doctor")
+        doctor_group, _ = Group.objects.get_or_create(name="Doctor")
         user = User.objects.create_user(username="docfilter", password="pass")
         user.groups.add(doctor_group)
         token = Token.objects.create(user=user)
@@ -86,9 +86,9 @@ class PatientFilterTests(APITestCase):
 class VisitTests(APITestCase):
     def setUp(self):
         cache.clear()
-        assistant_group, _ = Group.objects.get_or_create(name="assistant")
-        doctor_group, _ = Group.objects.get_or_create(name="doctor")
-        display_group, _ = Group.objects.get_or_create(name="display")
+        assistant_group, _ = Group.objects.get_or_create(name="Assistant")
+        doctor_group, _ = Group.objects.get_or_create(name="Doctor")
+        display_group, _ = Group.objects.get_or_create(name="Display")
 
         self.assistant = User.objects.create_user(username="asst", password="pass")
         self.assistant.groups.add(assistant_group)
