@@ -10,7 +10,7 @@ class IsInGroup(permissions.BasePermission):
         return bool(
             request.user
             and request.user.is_authenticated
-            and request.user.groups.filter(name=self.group_name).exists()
+            and request.user.groups.filter(name__iexact=self.group_name).exists()
         )
 
 
