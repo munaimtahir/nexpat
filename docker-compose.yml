@@ -34,6 +34,7 @@ services:
     environment:
       - SECRET_KEY=django_insecure_local_dev_secret_key_!@#%^&*()
       - DEBUG=True
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,backend
       - DATABASE_URL=postgresql://clinicq_dev_user:clinicq_dev_password@db:5432/clinicq_dev_db
       - DJANGO_SUPERUSER_USERNAME=admin
       - DJANGO_SUPERUSER_EMAIL=admin@example.com
