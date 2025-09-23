@@ -110,7 +110,7 @@ server {
 # 6. Create a symbolic link: `sudo ln -s /etc/nginx/sites-available/clinicq /etc/nginx/sites-enabled/clinicq`.
 # 7. Test Nginx configuration: `sudo nginx -t`.
 # 8. Reload Nginx: `sudo systemctl reload nginx`.
-# 9. Ensure Django's `ALLOWED_HOSTS` includes your domain.
+# 9. Ensure Django's `DJANGO_ALLOWED_HOSTS` includes your domain.
 # 10. Ensure Django's `STATIC_ROOT` (for `collectstatic`) is set to `$django_static_root`.
 #     And `MEDIA_ROOT` to `$django_media_root`.
 # 11. The React app should be built into `$react_app_root` (e.g., `clinicq_frontend/dist`).
