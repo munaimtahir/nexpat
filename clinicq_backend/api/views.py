@@ -164,7 +164,7 @@ class VisitViewSet(viewsets.ModelViewSet):
             permission_classes = [IsAssistant]
         elif self.action in ['start', 'in_room', 'send_back_to_waiting', 'done']:
             permission_classes = [IsDoctor]
-        elif self.action == 'list' and self.request.user.groups.filter(name='Display').exists():
+        elif self.action == 'list' and self.request.user.groups.filter(name='display').exists():
             permission_classes = [IsDisplay]
         else:
             permission_classes = [permissions.IsAuthenticated]

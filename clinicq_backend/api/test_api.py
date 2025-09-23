@@ -542,6 +542,7 @@ class VisitLifecycleTests(APITestCase):
         self.visit.save()
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
 
+        url = self._get_url("in-room", self.visit.pk)
         response = self.client.patch(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.visit.refresh_from_db()
