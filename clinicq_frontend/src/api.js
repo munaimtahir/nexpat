@@ -75,7 +75,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const { response } = error ?? {};
+    let response;
+    if (error && typeof error === 'object') {
+      response = error.response;
+    }
 
     if (response?.status === 401) {
       clearAccessToken();
