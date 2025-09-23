@@ -49,6 +49,14 @@ export const clearAccessToken = () => {
   redirectingToLogin = false;
 };
 
+export const authNavigation = {
+  redirectToLogin: () => {
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.location.assign('/login');
+    }
+  },
+};
+
 // Configure axios instance and send credentials for any cookie-backed endpoints
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -67,20 +75,18 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const { response, config } = error;
+    const { response } = error ?? {};
 
-        clearAccessToken();
+    if (response?.status === 401) {
+      clearAccessToken();
 
-        if (!redirectingToLogin) {
-          redirectingToLogin = true;
-
-          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-            window.location.assign('/login');
-            redirectingToLogin = false;
-          }
-        }
+      if (!redirectingToLogin) {
+        redirectingToLogin = true;
+        authNavigation.redirectToLogin();
+        redirectingToLogin = false;
       }
     }
+
     return Promise.reject(error);
   }
 );
