@@ -13,7 +13,12 @@
   }
 
   body {
-    @apply m-0 min-h-screen bg-slate-50 text-slate-900 antialiased;
+    margin: 0;
+    min-height: 100vh;
+    background-color: #f8fafc; /* Tailwind bg-slate-50 */
+    color: #0f172a; /* Tailwind text-slate-900 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
@@ -21,11 +26,15 @@
   }
 
   a {
-    @apply text-indigo-600 underline-offset-4 transition-colors duration-150 ease-in-out;
+    color: #4f46e5; /* Tailwind text-indigo-600 */
+    text-underline-offset: 4px;
+    transition-property: color;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   a:hover {
-    @apply text-indigo-700;
+    color: #4338ca; /* Tailwind text-indigo-700 */
   }
 
   button, input, textarea, select {

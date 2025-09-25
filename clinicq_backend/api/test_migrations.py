@@ -116,57 +116,28 @@ def test_0003_backfill_migrates_existing_visits(migrator):
     existed before (i.e., where patient_id and queue_id are NULL).
     """
     # Sets DB schema to state of 0002_... (before 0003 data migration)
-    migrator.apply_initial_migration(("api", "0003_backfill_visits_to_patients_queues"))
+    old_state = migrator.apply_initial_migration(
+        ("api", "0002_queue_alter_visit_options_patient_visit_patient_and_more")
+    )
 
-    # Use raw SQL to insert a "legacy" visit.
-    # This ensures the data exists in the DB for the migration's RunPython to find,
-    # bypassing potential ORM transactional visibility issues from test setup.
-    # The `api_visit` table at state 0002 (after migration 0002_...) has
-    # patient_id and queue_id columns, which should be NULL for a legacy visit.
-    from django.db import connection
-    from django.utils.timezone import now
+    OldVisit = old_state.apps.get_model("api", "Visit")
 
-    # Ensure a clean slate directly in DB if necessary, though test isolation should handle this.
-    # For this test, we want to be sure.
-    with connection.cursor() as cursor:
-        cursor.execute("DELETE FROM api_patient;")
-        cursor.execute("DELETE FROM api_queue;")
-        cursor.execute("DELETE FROM api_visit;")
+    # Ensure a clean slate and insert a legacy visit using the historical model so that
+    # the data is stored in the same database connection that migrations operate on.
+    OldVisit.objects.all().delete()
+    OldVisit.objects.create(
+        token_number=101,
+        patient_name="Old SQL Patient",
+        patient_gender="female",  # lower-case to exercise normalisation
+        visit_date="2023-01-01",
+        status="WAITING",
+    )
 
-        # Get current time for created_at/updated_at to match Django's auto_now_add behavior
-        current_timestamp = now().strftime("%Y-%m-%d %H:%M:%S.%f")
-
-        # Insert a visit that looks like it's from before patient/queue FKs were populated.
-        # patient_id and queue_id columns exist but are NULL.
-        cursor.execute(
-            """
-            INSERT INTO api_visit (
-                token_number, patient_name, patient_gender, visit_date,
-                status, created_at, updated_at, patient_id, queue_id
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, NULL, NULL)
-            """,
-            [
-                101,
-                "Old SQL Patient",
-                "FEMALE",
-                "2023-01-01",
-                "WAITING",
-                current_timestamp,
-                current_timestamp,
-            ],
-        )
-        # Verify insertion if needed, e.g. by fetching the row ID.
-        # For now, assume insertion works if no error.
-        # legacy_visit_id = cursor.lastrowid # This varies by DB backend.
-
-    # Apply data migration 0003
-    # This migration should now find the row inserted via SQL.
-
-    # Debug: Check if visit was actually inserted before migration
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT COUNT(*) FROM api_visit WHERE patient_id IS NULL")
-        null_patient_count = cursor.fetchone()[0]
-        print(f"Visits with NULL patient_id before migration: {null_patient_count}")
+    legacy_visit_count = OldVisit.objects.filter(patient__isnull=True).count()
+    print(
+        "Visits with NULL patient_id before migration:",
+        legacy_visit_count,
+    )
 
     migrator.apply_tested_migration(("api", "0003_backfill_visits_to_patients_queues"))
 
@@ -180,49 +151,21 @@ def test_0003_backfill_migrates_existing_visits(migrator):
     all_queues = list(RuntimeQueue.objects.all())
     print(f"All queues after migration: {[q.name for q in all_queues]}")
 
-    # Due to transaction isolation in tests, the migration may not be visible
-    # in the current test context. If the General queue doesn't exist, create it
-    # to allow the test to verify the migration logic would work correctly.
-    general_queue, created = RuntimeQueue.objects.get_or_create(name="General")
-    if created:
-        print("Created General queue manually in test (transaction isolation issue)")
+    general_queue = RuntimeQueue.objects.get(name="General")
 
-    # Similarly, since the migration didn't process the visit due to transaction isolation,
-    # let's verify the migration would work by manually creating the expected patient
-    # that the migration should have created
-    anonymous_patient, patient_created = RuntimePatient.objects.get_or_create(
-        name="Old SQL Patient", gender="FEMALE", defaults={"phone": None}
-    )
-    if patient_created:
-        print(
-            "Created anonymous patient manually in test (transaction isolation issue)"
-        )
-
-    # Verify the objects exist (either from migration or manual creation)
-    assert general_queue is not None
-    assert anonymous_patient is not None
-    assert (
-        anonymous_patient.phone is None
-    )  # As per data migration logic for new patients
+    # The migration should have created a patient record and linked it to the visit.
+    anonymous_patient = RuntimePatient.objects.get(name="Old SQL Patient")
+    assert anonymous_patient.phone is None  # As per data migration logic for new patients
 
     # Fetch the visit that was inserted via SQL and should have been updated by the migration
     migrated_sql_visit = RuntimeVisit.objects.get(
         token_number=101, visit_date="2023-01-01"
     )
 
-    # Due to transaction isolation in tests, the migration may not have linked the visit
-    # to the patient and queue. Let's verify the migration logic by linking them manually.
-    if migrated_sql_visit.patient_id is None:
-        migrated_sql_visit.patient = anonymous_patient
-        migrated_sql_visit.queue = general_queue
-        migrated_sql_visit.save()
-        print(
-            "Manually linked visit to patient and queue (transaction isolation issue)"
-        )
-
     assert migrated_sql_visit.patient_id == anonymous_patient.pk
     assert migrated_sql_visit.queue_id == general_queue.pk
     assert migrated_sql_visit.patient.name == "Old SQL Patient"
+    assert migrated_sql_visit.patient.gender == "FEMALE"
 
 
 @pytest.mark.django_db(transaction=True)

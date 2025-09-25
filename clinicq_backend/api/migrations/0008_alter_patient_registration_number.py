@@ -7,27 +7,48 @@ from django.db import migrations, models
 def convert_registration_numbers_to_formatted(apps, schema_editor):
     """Convert existing integer registration numbers to xx-xx-xxx format"""
     Patient = apps.get_model('api', 'Patient')
-    
+    Visit = apps.get_model('api', 'Visit')
+
     for patient in Patient.objects.all():
+        raw_value = patient.registration_number
+        if raw_value is None:
+            continue
+
+        try:
+            numeric_value = int(str(raw_value).replace('-', ''))
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"Unable to normalise registration number '{raw_value}' for patient {patient.pk}"
+            )
+
         # Convert integer to 7-digit zero-padded string, then format as xx-xx-xxx
-        number_str = f"{patient.registration_number:07d}"
+        number_str = f"{numeric_value:07d}"
         formatted = f"{number_str[:2]}-{number_str[2:4]}-{number_str[4:]}"
-        
+        old_identifier = str(raw_value)
+
         # Update the registration number in-place
-        Patient.objects.filter(pk=patient.pk).update(registration_number=formatted)
+        Patient.objects.filter(pk=old_identifier).update(registration_number=formatted)
+        Visit.objects.filter(patient_id=old_identifier).update(patient_id=formatted)
 
 
 def reverse_conversion(apps, schema_editor):
     """Reverse conversion - extract integer from formatted string"""
     Patient = apps.get_model('api', 'Patient')
-    
+    Visit = apps.get_model('api', 'Visit')
+
     for patient in Patient.objects.all():
         # Extract digits from xx-xx-xxx format and convert to integer
-        numeric_str = patient.registration_number.replace('-', '')
+        raw_value = patient.registration_number
+        if raw_value is None:
+            continue
+
+        numeric_str = str(raw_value).replace('-', '')
         integer_value = int(numeric_str)
-        
+        old_identifier = str(raw_value)
+
         # Update the registration number in-place
-        Patient.objects.filter(pk=patient.pk).update(registration_number=integer_value)
+        Patient.objects.filter(pk=old_identifier).update(registration_number=integer_value)
+        Visit.objects.filter(patient_id=old_identifier).update(patient_id=integer_value)
 
 
 class Migration(migrations.Migration):
