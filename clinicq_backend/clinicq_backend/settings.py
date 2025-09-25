@@ -152,7 +152,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATICFILES_DIRS: list[Path] = []
 
-_frontend_dist = BASE_DIR / "clinicq_frontend" / "dist"
+_frontend_dist = BASE_DIR.parent / "clinicq_frontend" / "dist"
 if _frontend_dist.exists():
     STATICFILES_DIRS.append(_frontend_dist)
 
