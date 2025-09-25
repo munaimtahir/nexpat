@@ -30,15 +30,6 @@ const normalizeApiBase = (value) => {
 
 const API_BASE_URL = normalizeApiBase(import.meta.env.VITE_API_BASE_URL);
 
-const buildApiUrl = (path = '') => {
-  if (!path) {
-    return API_BASE_URL;
-  }
-
-  const normalizedPath = path.replace(/^\/+/, '');
-  return `${API_BASE_URL}/${normalizedPath}`;
-};
-
 export const setAccessToken = (token) => {
   accessToken = token;
   redirectingToLogin = false;

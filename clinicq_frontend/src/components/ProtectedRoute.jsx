@@ -13,7 +13,7 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
     const ensureRoles = async () => {
       try {
         await fetchRoles();
-      } catch (error) {
+      } catch {
         // The API interceptor handles redirecting on 401s.
       } finally {
         if (!cancelled) {

@@ -38,4 +38,13 @@ export default defineConfig([
       },
     },
   },
+  {
+    files: ['src/__mocks__/**/*.{js,jsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.jest,
+      },
+    },
+  },
 ])
