@@ -6,32 +6,6 @@ from django.db import migrations, models
 
 def convert_registration_numbers_to_formatted(apps, schema_editor):
     """Convert existing integer registration numbers to xx-xx-xxx format"""
-    Patient = apps.get_model("api", "Patient")
-
-    for patient in Patient.objects.all():
-        # Convert integer to 7-digit zero-padded string, format as xx-xx-xxx
-        number_str = f"{patient.registration_number:07d}"
-        formatted = f"{number_str[:2]}-{number_str[2:4]}-{number_str[4:]}"
-
-        # Update the registration number in-place
-        Patient.objects.filter(registration_number=patient.pk).update(
-            registration_number=formatted
-        )
-
-
-def reverse_conversion(apps, schema_editor):
-    """Reverse conversion - extract integer from formatted string"""
-    Patient = apps.get_model("api", "Patient")
-
-    for patient in Patient.objects.all():
-        # Extract digits from xx-xx-xxx format and convert to integer
-        numeric_str = patient.registration_number.replace("-", "")
-        integer_value = int(numeric_str)
-
-        # Update the registration number in-place
-        Patient.objects.filter(registration_number=patient.pk).update(
-            registration_number=integer_value
-        )
 
 
 class Migration(migrations.Migration):

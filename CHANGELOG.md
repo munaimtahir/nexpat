@@ -55,7 +55,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-*   N/A (No specific bug fixes noted for this release, primarily new features).
+*   Hardened data migration `0003_backfill_visits_to_patients_queues` to normalise legacy gender values, generate AutoField-compatible registration numbers, and migrate visits in atomic batches tied to the default queue.
+*   Corrected migration `0008_alter_patient_registration_number` so patient primary keys convert safely between integer and formatted string representations while keeping visit foreign keys aligned.
+
+### Security
+
+*   Cleared frontend advisories by upgrading Axios/FormData, adopting the Tailwind v4 PostCSS plugin, and rewriting base styles without `@apply` to keep production builds stable.
 
 ### Removed
 
