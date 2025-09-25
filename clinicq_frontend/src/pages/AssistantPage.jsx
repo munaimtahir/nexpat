@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import api from '../api';
 import { Link } from 'react-router-dom';
+import api from '../api.js';
+import { firstFromListResponse } from '../utils/api.js';
 
 const AssistantPage = () => {
   const [registrationNumber, setRegistrationNumber] = useState('');
@@ -15,7 +16,7 @@ const AssistantPage = () => {
     const fetchQueues = async () => {
       try {
         const response = await api.get('/queues/');
-        setQueues(response.data || []);
+        setQueues(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
         console.error('Error fetching queues:', err);
         setError('Failed to load queues.');
@@ -32,15 +33,17 @@ const AssistantPage = () => {
       }
       try {
         const searchResp = await api.get(
-          `/patients/search/?q=${encodeURIComponent(registrationNumber.trim())}`
+          `/patients/search/?q=${encodeURIComponent(registrationNumber.trim())}`,
         );
-        if (Array.isArray(searchResp.data) && searchResp.data.length > 0) {
-          const regNo = searchResp.data[0].registration_number;
-          const detailResp = await api.get(`/patients/${regNo}/`);
-          setPatientInfo(detailResp.data);
-        } else {
+
+        const firstMatch = firstFromListResponse(searchResp.data);
+        if (!firstMatch?.registration_number) {
           setPatientInfo(null);
+          return;
         }
+
+        const detailResp = await api.get(`/patients/${firstMatch.registration_number}/`);
+        setPatientInfo(detailResp.data);
       } catch (err) {
         console.error('Error fetching patient:', err);
         setPatientInfo(null);
@@ -48,7 +51,7 @@ const AssistantPage = () => {
     };
     const handler = setTimeout(() => {
       fetchPatient();
-    }, 500); // 500ms debounce
+    }, 500);
     return () => clearTimeout(handler);
   }, [registrationNumber]);
 
@@ -79,37 +82,26 @@ const AssistantPage = () => {
         queue: selectedQueue,
       });
 
-      const tokenValue = response.data.token_number;
-      if (
-        typeof tokenValue === 'number' ||
-        (typeof tokenValue === 'string' && tokenValue.trim() !== '')
-      ) {
+      const tokenValue = response?.data?.token_number;
+      if (typeof tokenValue === 'number' || (typeof tokenValue === 'string' && tokenValue.trim() !== '')) {
         setGeneratedToken(tokenValue);
-        } else {
-        console.error(
-          'Received invalid token_number type or empty string:',
-          typeof tokenValue,
-          tokenValue,
-        );
-      setGeneratedToken('N/A');
-      setError('Received invalid token format from server.');
-    }
+      } else {
+        console.error('Received invalid token_number:', tokenValue);
+        setGeneratedToken('N/A');
+        setError('Received invalid token format from server.');
+      }
 
       setRegistrationNumber('');
       setSelectedQueue('');
-      setPatientInfo(null); // Clear patient info after successful visit creation
+      setPatientInfo(null);
     } catch (err) {
       console.error('Error creating visit:', err);
-      if (err.response && err.response.data) {
+      if (err.response?.data) {
         const serverErrors = err.response.data;
-        const messages = [];
-        for (const key in serverErrors) {
-          messages.push(
-            `${key}: ${
-              serverErrors[key].join ? serverErrors[key].join(', ') : serverErrors[key]
-            }`,
-          );
-        }
+        const messages = Object.keys(serverErrors).map((key) => {
+          const value = serverErrors[key];
+          return `${key}: ${Array.isArray(value) ? value.join(', ') : value}`;
+        });
         setError(`Failed to generate token: ${messages.join('; ')}`);
       } else {
         setError('Failed to generate token. Please check the console for details.');
@@ -118,7 +110,6 @@ const AssistantPage = () => {
       setIsLoading(false);
     }
   };
-
 
   return (
     <div className="container mx-auto p-6 max-w-md bg-white shadow-md rounded-lg mt-10">
@@ -170,7 +161,7 @@ const AssistantPage = () => {
             <div>
               Patient: {patientInfo.name} ({patientInfo.gender})
             </div>
-            {patientInfo.last_5_visit_dates && patientInfo.last_5_visit_dates.length > 0 && (
+            {Array.isArray(patientInfo.last_5_visit_dates) && patientInfo.last_5_visit_dates.length > 0 && (
               <div>
                 Last Visits: {patientInfo.last_5_visit_dates.join(', ')}
               </div>
@@ -188,7 +179,7 @@ const AssistantPage = () => {
       </form>
 
       {error && (
-        <p className="mt-4 text-red-500 text-sm bg-red-100 p-3 rounded-md">{error}</p>
+        <p className="mt-4 text-red-500 text-sm bg-red-100 p-3 rounded-md" role="alert">{error}</p>
       )}
 
       {generatedToken !== null && (
@@ -201,7 +192,6 @@ const AssistantPage = () => {
           </p>
         </div>
       )}
-
     </div>
   );
 };

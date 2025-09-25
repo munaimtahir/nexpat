@@ -1,34 +1,49 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api, { setAccessToken } from '../api';
-import { useAuth } from '../AuthContext';
+import { useLocation, useNavigate } from 'react-router-dom';
+import api, { setAccessToken } from '../api.js';
+import { useAuth } from '../AuthContext.jsx';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const { fetchRoles } = useAuth();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const from = location.state?.from?.pathname || '/';
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
+
     try {
       const response = await api.post('/auth/login/', {
         username,
         password,
       });
-      const token = response.data.token;
-      if (token) {
-        // Store token in memory rather than localStorage for security
-        setAccessToken(token);
-        await fetchRoles();
-        navigate('/');
-      } else {
-        setError('No token returned');
+
+      const token = response?.data?.token;
+      if (!token) {
+        setError('Login succeeded, but the server did not return a token.');
+        return;
       }
-    } catch {
-      setError('Invalid credentials');
+
+      setAccessToken(token);
+      try {
+        await fetchRoles();
+      } catch (rolesError) {
+        // Roles API errors are handled by the interceptor; we surface a generic message here.
+        console.error('Failed to fetch roles after login:', rolesError);
+      }
+
+      navigate(from, { replace: true });
+    } catch (submitError) {
+      if (submitError?.response?.status === 400) {
+        setError('Invalid username or password.');
+      } else {
+        setError('Unable to log in. Please try again later.');
+      }
     }
   };
 
@@ -44,6 +59,7 @@ const LoginPage = () => {
             id="username"
             type="text"
             value={username}
+            autoComplete="username"
             onChange={(e) => setUsername(e.target.value)}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
@@ -56,11 +72,12 @@ const LoginPage = () => {
             id="password"
             type="password"
             value={password}
+            autoComplete="current-password"
             onChange={(e) => setPassword(e.target.value)}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
         </div>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-red-500 text-sm" role="alert">{error}</p>}
         <button
           type="submit"
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"

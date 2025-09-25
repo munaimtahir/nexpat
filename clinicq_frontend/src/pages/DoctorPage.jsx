@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import api from '../api';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../api.js';
+import { unwrapListResponse } from '../utils/api.js';
 
 const DoctorPage = () => {
   const [visits, setVisits] = useState([]);
@@ -16,46 +17,55 @@ const DoctorPage = () => {
     try {
       const queueParam = selectedQueue ? `&queue=${selectedQueue}` : '';
       const response = await api.get(`/visits/?status=WAITING,START,IN_ROOM${queueParam}`);
-      const fetchedVisits = response.data || [];
+      const fetchedVisits = unwrapListResponse(response.data);
 
       const registrationNumbers = [
-        ...new Set(fetchedVisits.map((v) => v.patient_registration_number)),
+        ...new Set(
+          fetchedVisits
+            .map((visit) => visit.patient_registration_number)
+            .filter(Boolean)
+            .map((value) => String(value)),
+        ),
       ];
-      let patientsByRegNum = {};
 
+      let patientsByRegNum = {};
       if (registrationNumbers.length > 0) {
-        // This logic can be simplified if the backend provides patient details directly
         const patientsResp = await api.get(
-          `/patients/?registration_numbers=${registrationNumbers.join(',')}`
+          `/patients/?registration_numbers=${registrationNumbers.join(',')}`,
         );
-        patientsByRegNum = (patientsResp.data || []).reduce((acc, patient) => {
-          acc[patient.registration_number] = patient;
+        const patientList = unwrapListResponse(patientsResp.data);
+        patientsByRegNum = patientList.reduce((acc, patient) => {
+          if (patient?.registration_number !== undefined) {
+            acc[String(patient.registration_number)] = patient;
+          }
           return acc;
         }, {});
       }
 
       const detailedVisits = fetchedVisits.map((visit) => ({
         ...visit,
-        patient_details: patientsByRegNum[visit.patient_registration_number] || null,
+        patient_details:
+          patientsByRegNum[String(visit.patient_registration_number)] ?? null,
       }));
 
       let withImages = detailedVisits;
       if (import.meta.env.MODE !== 'test') {
         withImages = await Promise.all(
-          detailedVisits.map(async (v) => {
+          detailedVisits.map(async (visit) => {
             try {
-              const imgResp = await api.get(`/prescriptions/?visit=${v.id}`);
-              return { ...v, prescription_images: imgResp.data || [] };
-            } catch {
-              return { ...v, prescription_images: [] };
+              const imgResp = await api.get(`/prescriptions/?visit=${visit.id}`);
+              return { ...visit, prescription_images: unwrapListResponse(imgResp.data) };
+            } catch (imageError) {
+              console.error('Failed to fetch prescription images:', imageError);
+              return { ...visit, prescription_images: [] };
             }
-          })
+          }),
         );
       }
 
       setVisits(withImages);
     } catch (err) {
-      console.error("Error fetching visits:", err);
+      console.error('Error fetching visits:', err);
       setError('Failed to fetch visits. Please try again.');
     } finally {
       setIsLoading(false);
@@ -67,7 +77,7 @@ const DoctorPage = () => {
     const fetchQueues = async () => {
       try {
         const response = await api.get('/queues/');
-        setQueues(response.data || []);
+        setQueues(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
         console.error('Error fetching queues:', err);
       }
@@ -82,7 +92,7 @@ const DoctorPage = () => {
   const handleUpdateVisitStatus = async (visitId, action) => {
     try {
       await api.patch(`/visits/${visitId}/${action}/`);
-      fetchVisits(); // Refetch to get the latest state
+      fetchVisits();
     } catch (err) {
       console.error(`Error during action ${action} for visit ${visitId}:`, err);
       setError(`Failed to perform action. ${err.response?.data?.detail || ''}`);
@@ -110,11 +120,11 @@ const DoctorPage = () => {
       await api.post('/prescriptions/', form);
       const imgResp = await api.get(`/prescriptions/?visit=${visitId}`);
       setVisits((prev) =>
-        prev.map((v) =>
-          v.id === visitId
-            ? { ...v, prescription_images: imgResp.data || [] }
-            : v
-        )
+        prev.map((visit) =>
+          visit.id === visitId
+            ? { ...visit, prescription_images: unwrapListResponse(imgResp.data) }
+            : visit,
+        ),
       );
       setUploadStates((prev) => ({
         ...prev,
@@ -129,7 +139,7 @@ const DoctorPage = () => {
     }
   };
 
-  const renderActionButtons = (visit) => {
+  const renderActionButtons = useCallback((visit) => {
     switch (visit.status) {
       case 'WAITING':
         return (
@@ -177,7 +187,16 @@ const DoctorPage = () => {
       default:
         return null;
     }
-  };
+  }, [handleUpdateVisitStatus]);
+
+  const normalizedVisits = useMemo(
+    () =>
+      visits.map((visit) => ({
+        ...visit,
+        prescription_images: visit.prescription_images || [],
+      })),
+    [visits],
+  );
 
   return (
     <div className="container mx-auto p-6 bg-white shadow-md rounded-lg mt-10">
@@ -204,20 +223,23 @@ const DoctorPage = () => {
       </div>
 
       {isLoading && <p className="text-center text-gray-500">Loading patient list...</p>}
-      {error && <p className="text-red-500 text-sm bg-red-100 p-3 rounded-md mb-4">{error}</p>}
+      {error && <p className="text-red-500 text-sm bg-red-100 p-3 rounded-md mb-4" role="alert">{error}</p>}
 
-      {!isLoading && visits.length === 0 && !error && (
+      {!isLoading && normalizedVisits.length === 0 && !error && (
         <p className="text-center text-gray-600 py-4">No active patients.</p>
       )}
 
-      {visits.length > 0 && (
+      {normalizedVisits.length > 0 && (
         <div className="space-y-4">
-          {visits.map((visit) => (
+          {normalizedVisits.map((visit) => (
             <div
               key={visit.id}
               className={`p-4 border rounded-lg shadow-sm flex justify-between items-center ${
-                visit.status === 'IN_ROOM' ? 'bg-purple-50 border-purple-300' :
-                visit.status === 'START' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                visit.status === 'IN_ROOM'
+                  ? 'bg-purple-50 border-purple-300'
+                  : visit.status === 'START'
+                    ? 'bg-blue-50 border-blue-300'
+                    : 'bg-gray-50'
               }`}
             >
               <div>
@@ -236,9 +258,40 @@ const DoctorPage = () => {
                     ? visit.patient_details.last_5_visit_dates.join(', ')
                     : 'None'}
                 </p>
+                {visit.prescription_images.length > 0 && (
+                  <div className="mt-2 flex space-x-2">
+                    {visit.prescription_images.map((img) => (
+                      <a
+                        key={img.id}
+                        href={img.image_url}
+                        className="text-xs text-blue-600 hover:underline"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View Prescription
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="flex flex-col items-end space-y-2">
                 {renderActionButtons(visit)}
+                <input
+                  type="file"
+                  onChange={(e) => handleFileChange(visit.id, e.target.files?.[0] ?? null)}
+                  className="text-sm"
+                />
+                <button
+                  type="button"
+                  disabled={!uploadStates[visit.id]?.file || uploadStates[visit.id]?.uploading}
+                  onClick={() => handleUpload(visit.id)}
+                  className="px-3 py-1 bg-indigo-600 text-white rounded disabled:bg-gray-400"
+                >
+                  {uploadStates[visit.id]?.uploading ? 'Uploading...' : 'Upload Prescription'}
+                </button>
+                {uploadStates[visit.id]?.error && (
+                  <span className="text-xs text-red-500">{uploadStates[visit.id].error}</span>
+                )}
               </div>
             </div>
           ))}

@@ -6,6 +6,7 @@ import App from './App';
 import AssistantPage from './pages/AssistantPage';
 import DoctorPage from './pages/DoctorPage';
 import PublicDisplayPage from './pages/PublicDisplayPage';
+import { AuthProvider } from './AuthContext.jsx';
 import api from './api';
 
 jest.mock('./api');
@@ -70,9 +71,11 @@ describe('Displays last_5_visit_dates', () => {
 
     const user = userEvent.setup();
     render(
-      <MemoryRouter initialEntries={['/assistant']}>
-        <App />
-      </MemoryRouter>
+      <AuthProvider initialState={{ roles: ['Assistant'], username: 'assistant' }}>
+        <MemoryRouter initialEntries={['/assistant']}>
+          <App />
+        </MemoryRouter>
+      </AuthProvider>
     );
 
     const regInput = screen.getByLabelText(/Registration Number/i);
@@ -120,9 +123,11 @@ describe('Displays last_5_visit_dates', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/doctor']}>
-        <App />
-      </MemoryRouter>
+      <AuthProvider initialState={{ roles: ['Doctor'], username: 'doctor' }}>
+        <MemoryRouter initialEntries={['/doctor']}>
+          <App />
+        </MemoryRouter>
+      </AuthProvider>
     );
 
     await waitFor(() => {

@@ -1,35 +1,40 @@
 import { useEffect, useState } from 'react';
-import api from '../api';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import api from '../api.js';
+import { unwrapListResponse } from '../utils/api.js';
 
 const genders = [
   { value: 'MALE', label: 'Male' },
   { value: 'FEMALE', label: 'Female' },
-  { value: 'OTHER', label: 'Other' }
+  { value: 'OTHER', label: 'Other' },
 ];
 
+const defaultFormState = {
+  name: '',
+  phone: '',
+  gender: 'OTHER',
+};
+
 const PatientFormPage = () => {
-  const { registration_number } = useParams();
-  const isEdit = Boolean(registration_number);
+  const { registration_number: registrationNumberParam } = useParams();
+  const isEdit = Boolean(registrationNumberParam);
   const navigate = useNavigate();
 
-  // Optionally add age field for completeness (from v2.0 branch)
-  const [formData, setFormData] = useState({ name: '', phone: '', gender: 'OTHER', age: '' });
+  const [formData, setFormData] = useState(defaultFormState);
   const [error, setError] = useState('');
   const [images, setImages] = useState([]);
 
   useEffect(() => {
     const fetchPatient = async () => {
       try {
-        const response = await api.get(`/patients/${registration_number}/`);
+        const response = await api.get(`/patients/${registrationNumberParam}/`);
         setFormData({
-          name: response.data.name || '',
-          phone: response.data.phone || '',
-          gender: response.data.gender || 'OTHER',
-          age: response.data.age || '',
+          name: response.data?.name || '',
+          phone: response.data?.phone || '',
+          gender: response.data?.gender || 'OTHER',
         });
-        const imgResp = await api.get(`/prescriptions/?patient=${registration_number}`);
-        setImages(imgResp.data || []);
+        const imgResp = await api.get(`/prescriptions/?patient=${registrationNumberParam}`);
+        setImages(unwrapListResponse(imgResp.data));
       } catch (err) {
         console.error('Failed to load patient', err);
         setError('Failed to load patient');
@@ -37,29 +42,32 @@ const PatientFormPage = () => {
     };
     if (isEdit) {
       fetchPatient();
+    } else {
+      setFormData(defaultFormState);
+      setImages([]);
     }
-  }, [isEdit, registration_number]);
+  }, [isEdit, registrationNumberParam]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = (event) => {
+    const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
     try {
       if (isEdit) {
-        await api.put(`/patients/${registration_number}/`, formData);
+        await api.put(`/patients/${registrationNumberParam}/`, formData);
       } else {
         await api.post('/patients/', formData);
       }
       navigate('/patients');
     } catch (err) {
       console.error('Save failed', err);
-      if (err.response && err.response.data) {
+      if (err.response?.data) {
         const messages = Object.entries(err.response.data)
-          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+          .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
           .join('; ');
         setError(messages);
       } else {
@@ -97,17 +105,6 @@ const PatientFormPage = () => {
           />
         </div>
         <div>
-          <label htmlFor="age" className="block text-sm font-medium text-gray-700">Age</label>
-          <input
-            type="number"
-            id="age"
-            name="age"
-            value={formData.age}
-            onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-          />
-        </div>
-        <div>
           <label htmlFor="gender" className="block text-sm font-medium text-gray-700">Gender</label>
           <select
             id="gender"
@@ -116,12 +113,12 @@ const PatientFormPage = () => {
             onChange={handleChange}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
           >
-            {genders.map((g) => (
-              <option key={g.value} value={g.value}>{g.label}</option>
+            {genders.map((gender) => (
+              <option key={gender.value} value={gender.value}>{gender.label}</option>
             ))}
           </select>
         </div>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        {error && <p className="text-red-600 text-sm" role="alert">{error}</p>}
         <button
           type="submit"
           className="w-full py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700"
@@ -131,13 +128,20 @@ const PatientFormPage = () => {
       </form>
       {isEdit && images.length > 0 && (
         <div className="mt-4 flex space-x-2 overflow-x-auto">
-          {images.map((img) => (
-            <img
-              key={img.id}
-              src={img.image_url}
-              alt="Prescription"
-              className="h-20 w-20 object-cover rounded"
-            />
+          {images.map((image) => (
+            <a
+              key={image.id}
+              href={image.image_url}
+              className="inline-block"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <img
+                src={image.image_url}
+                alt="Prescription"
+                className="h-20 w-20 object-cover rounded"
+              />
+            </a>
           ))}
         </div>
       )}
