@@ -2,6 +2,18 @@ import { useEffect, useState } from 'react';
 import api from '../api';
 import { Link, useNavigate } from 'react-router-dom';
 
+const normalizePatientsPayload = (payload) => {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (payload && Array.isArray(payload.results)) {
+    return payload.results;
+  }
+
+  return [];
+};
+
 const PatientsPage = () => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +30,7 @@ const PatientsPage = () => {
         url = `/patients/search/?q=${encodeURIComponent(term.trim())}`;
       }
       const response = await api.get(url);
-      setPatients(response.data);
+      setPatients(normalizePatientsPayload(response.data));
     } catch (err) {
       console.error('Failed to fetch patients', err);
       setError('Failed to fetch patients');
