@@ -276,24 +276,22 @@ const DoctorPage = () => {
               </div>
               <div className="flex flex-col items-end space-y-2">
                 {renderActionButtons(visit)}
-                <div className="flex flex-col items-end space-y-2">
-                  <input
-                    type="file"
-                    onChange={(e) => handleFileChange(visit.id, e.target.files?.[0] ?? null)}
-                    className="text-sm"
-                  />
-                  <button
-                    type="button"
-                    disabled={!uploadStates[visit.id]?.file || uploadStates[visit.id]?.uploading}
-                    onClick={() => handleUpload(visit.id)}
-                    className="px-3 py-1 bg-indigo-600 text-white rounded disabled:bg-gray-400"
-                  >
-                    {uploadStates[visit.id]?.uploading ? 'Uploading...' : 'Upload Prescription'}
-                  </button>
-                  {uploadStates[visit.id]?.error && (
-                    <span className="text-xs text-red-500">{uploadStates[visit.id].error}</span>
-                  )}
-                </div>
+                <input
+                  type="file"
+                  onChange={(e) => handleFileChange(visit.id, e.target.files?.[0] ?? null)}
+                  className="text-sm"
+                />
+                <button
+                  type="button"
+                  disabled={!uploadStates[visit.id]?.file || uploadStates[visit.id]?.uploading}
+                  onClick={() => handleUpload(visit.id)}
+                  className="px-3 py-1 bg-indigo-600 text-white rounded disabled:bg-gray-400"
+                >
+                  {uploadStates[visit.id]?.uploading ? 'Uploading...' : 'Upload Prescription'}
+                </button>
+                {uploadStates[visit.id]?.error && (
+                  <span className="text-xs text-red-500">{uploadStates[visit.id].error}</span>
+                )}
               </div>
             </div>
           ))}
