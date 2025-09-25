@@ -89,15 +89,18 @@ const DoctorPage = () => {
     fetchVisits();
   }, [fetchVisits]);
 
-  const handleUpdateVisitStatus = async (visitId, action) => {
-    try {
-      await api.patch(`/visits/${visitId}/${action}/`);
-      fetchVisits();
-    } catch (err) {
-      console.error(`Error during action ${action} for visit ${visitId}:`, err);
-      setError(`Failed to perform action. ${err.response?.data?.detail || ''}`);
-    }
-  };
+  const handleUpdateVisitStatus = useCallback(
+    async (visitId, action) => {
+      try {
+        await api.patch(`/visits/${visitId}/${action}/`);
+        fetchVisits();
+      } catch (err) {
+        console.error(`Error during action ${action} for visit ${visitId}:`, err);
+        setError(`Failed to perform action. ${err.response?.data?.detail || ''}`);
+      }
+    },
+    [fetchVisits],
+  );
 
   const handleFileChange = (visitId, file) => {
     setUploadStates((prev) => ({

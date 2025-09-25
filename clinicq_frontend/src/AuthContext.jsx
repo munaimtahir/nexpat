@@ -56,6 +56,8 @@ export const AuthProvider = ({ children, initialState }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// Hooks exported alongside components trigger the react-refresh guard; document the intent explicitly.
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
 
 export default AuthContext;
