@@ -11,6 +11,7 @@ from django.core.cache import cache
 from django.db.models import Q  # For complex lookups (patient search)
 import datetime  # Required for date operations
 import logging
+import re  # For registration number pattern matching
 
 from .models import Visit, Patient, Queue, PrescriptionImage
 from .serializers import (
@@ -87,7 +88,11 @@ class PatientViewSet(viewsets.ModelViewSet):
 
             numbers = []
             for num in raw_numbers:
-                if num.isdigit():
+                # Accept formatted registration numbers (xx-xx-xxx pattern)
+                if re.match(r'^\d{2}-\d{2}-\d{3}$', num):
+                    numbers.append(num)
+                # Also accept old numeric format for backward compatibility during transition
+                elif num.isdigit():
                     if len(num) > 10:
                         raise ValidationError(
                             {
@@ -131,14 +136,21 @@ class PatientViewSet(viewsets.ModelViewSet):
             )
 
         # Build Q objects for searching
-        # registration_number: exact match (if query is numeric)
+        # registration_number: exact match (if query matches format or is numeric)
         # name: case-insensitive contains
         # phone: case-insensitive contains
         # (searches for part of a phone number)
 
         filters = Q(name__icontains=query) | Q(phone__icontains=query)
-        if query.isdigit():
-            filters |= Q(registration_number=int(query))
+        
+        # Check if query matches registration number format (xx-xx-xxx)
+        if re.match(r'^\d{2}-\d{2}-\d{3}$', query):
+            filters |= Q(registration_number=query)
+        # Also check for old numeric format for backward compatibility
+        elif query.isdigit():
+            # For numeric queries, try both exact match and also try to find
+            # registration numbers that might match this pattern
+            filters |= Q(registration_number=query)
 
         patients = Patient.objects.filter(filters)
 
