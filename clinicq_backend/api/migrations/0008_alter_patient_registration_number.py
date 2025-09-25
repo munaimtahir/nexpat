@@ -47,7 +47,7 @@ def reverse_conversion(apps, schema_editor):
         old_identifier = str(raw_value)
 
         # Update the registration number in-place
-        Patient.objects.filter(pk=old_identifier).update(registration_number=integer_value)
+        Patient.objects.filter(registration_number=old_identifier).update(registration_number=integer_value)
         Visit.objects.filter(patient_id=old_identifier).update(patient_id=integer_value)
 
 
