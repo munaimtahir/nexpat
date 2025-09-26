@@ -152,7 +152,7 @@ class PatientViewSet(viewsets.ModelViewSet):
             # registration numbers that might match this pattern
             filters |= Q(registration_number=query)
 
-        patients = Patient.objects.filter(filters)
+        patients = Patient.objects.filter(filters).order_by("registration_number")
 
         # Paginate results if pagination is configured globally,
         # otherwise return all
