@@ -57,7 +57,8 @@ class Visit(models.Model):
 
     def __str__(self):
         return (
-            f"Token {self.token_number} - {self.patient.name}" f" ({self.visit_date})"
+            f"Token {self.token_number} - {self.patient.name} "
+            f"({self.visit_date})"
         )
 
 
@@ -65,8 +66,8 @@ class Patient(models.Model):
     # Using CharField with custom format xx-xx-xxx for registration_number
     # to ensure proper formatting and uniqueness
     registration_number = models.CharField(
-        max_length=8, 
-        primary_key=True, 
+        max_length=8,
+        primary_key=True,
         unique=True,
         validators=[validate_registration_number_format]
     )
@@ -89,19 +90,19 @@ class Patient(models.Model):
         """Generate the next registration number in xx-xx-xxx format"""
         # Get the highest existing registration number
         last_patient = cls.objects.order_by('-registration_number').first()
-        
+
         if not last_patient:
             # First patient gets 01-00-001
             return "01-00-001"
-        
+
         # Extract numeric value from existing format (remove dashes)
         last_number_str = last_patient.registration_number.replace('-', '')
         last_number = int(last_number_str)
-        
+
         # Increment and format as xx-xx-xxx
         next_number = last_number + 1
         formatted = f"{next_number:07d}"  # Zero-pad to 7 digits
-        
+
         return f"{formatted[:2]}-{formatted[2:4]}-{formatted[4:]}"
 
     def save(self, *args, **kwargs):

@@ -23,7 +23,7 @@ from .serializers import (
 )
 from .pagination import StandardResultsSetPagination
 from .google_drive import upload_prescription_image
-from .permissions import IsDoctor, IsAssistant, IsAdmin, IsDisplay
+from .permissions import IsDoctor, IsAssistant, IsDisplay
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,8 @@ class PatientViewSet(viewsets.ModelViewSet):
             if len(raw_numbers) > 50:
                 raise ValidationError(
                     {
-                        "registration_numbers": "A maximum of 50 registration numbers are allowed."
+                        "registration_numbers": 
+                        "A maximum of 50 registration numbers are allowed."
                     }
                 )
 
@@ -91,12 +92,14 @@ class PatientViewSet(viewsets.ModelViewSet):
                 # Accept formatted registration numbers (xx-xx-xxx pattern)
                 if re.match(r'^\d{2}-\d{2}-\d{3}$', num):
                     numbers.append(num)
-                # Also accept old numeric format for backward compatibility during transition
+                # Also accept old numeric format for backward compatibility
+                # during transition
                 elif num.isdigit():
                     if len(num) > 10:
                         raise ValidationError(
                             {
-                                "registration_numbers": "Registration numbers may not exceed 10 digits.",
+                                "registration_numbers": 
+                                "Registration numbers may not exceed 10 digits.",
                             }
                         )
                     numbers.append(num)
@@ -104,7 +107,8 @@ class PatientViewSet(viewsets.ModelViewSet):
             if numbers:
                 queryset = queryset.filter(registration_number__in=numbers)
             else:
-                # If all provided registration numbers are invalid, return empty
+                # If all provided registration numbers are invalid, 
+                # return empty
                 return Patient.objects.none()
         return queryset
 
@@ -142,17 +146,19 @@ class PatientViewSet(viewsets.ModelViewSet):
         # (searches for part of a phone number)
 
         filters = Q(name__icontains=query) | Q(phone__icontains=query)
-        
+
         # Check if query matches registration number format (xx-xx-xxx)
         if re.match(r'^\d{2}-\d{2}-\d{3}$', query):
             filters |= Q(registration_number=query)
         # Also check for old numeric format for backward compatibility
         elif query.isdigit():
-            # For numeric queries, try both exact match and also try to find
-            # registration numbers that might match this pattern
+            # For numeric queries, try both exact match and also try to
+            # find registration numbers that might match this pattern
             filters |= Q(registration_number=query)
 
-        patients = Patient.objects.filter(filters).order_by("registration_number")
+        patients = Patient.objects.filter(filters).order_by(
+            "registration_number"
+        )
 
         # Paginate results if pagination is configured globally,
         # otherwise return all
@@ -174,11 +180,15 @@ class VisitViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             permission_classes = [IsAssistant]
-        elif self.action in ['start', 'in_room', 'send_back_to_waiting', 'done']:
+        elif self.action in [
+            'start', 'in_room', 'send_back_to_waiting', 'done'
+        ]:
             permission_classes = [IsDoctor]
         elif (
             self.action == 'list'
-            and self.request.user.groups.filter(name__iexact='display').exists()
+            and self.request.user.groups.filter(
+                name__iexact='display'
+            ).exists()
         ):
             permission_classes = [IsDisplay]
         else:
@@ -231,7 +241,9 @@ class VisitViewSet(viewsets.ModelViewSet):
 
         next_token_number = 1
         if last_visit_in_queue_today:
-            next_token_number = last_visit_in_queue_today.token_number + 1
+            next_token_number = (
+                last_visit_in_queue_today.token_number + 1
+            )
 
         serializer.save(
             token_number=next_token_number,
@@ -239,20 +251,30 @@ class VisitViewSet(viewsets.ModelViewSet):
             status="WAITING",
         )
 
-    def _update_status(self, request, pk, new_status, expected_current_statuses):
+    def _update_status(self, request, pk, new_status, 
+                       expected_current_statuses):
         visit = self.get_object()
         if visit.status not in expected_current_statuses:
             return Response(
-                {"detail": f"Visit must be in one of the following states: {', '.join(expected_current_statuses)}"},
+                {
+                    "detail": f"Visit must be in one of the following "
+                             f"states: {', '.join(expected_current_statuses)}"
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = VisitStatusSerializer(visit, data={"status": new_status}, partial=True)
+        serializer = VisitStatusSerializer(
+            visit, data={"status": new_status}, partial=True
+        )
         if serializer.is_valid():
             serializer.save()
-            full_visit_serializer = VisitSerializer(visit, context={"request": request})
+            full_visit_serializer = VisitSerializer(
+                visit, context={"request": request}
+            )
             return Response(full_visit_serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            serializer.errors, status=status.HTTP_400_BAD_REQUEST
+        )
 
     @action(detail=True, methods=["patch"])
     def start(self, request, pk=None):
@@ -272,7 +294,9 @@ class VisitViewSet(viewsets.ModelViewSet):
 
 
 class PrescriptionImageViewSet(viewsets.ModelViewSet):
-    queryset = PrescriptionImage.objects.all().order_by("-created_at")
+    queryset = PrescriptionImage.objects.all().order_by(
+        "-created_at"
+    )
     serializer_class = PrescriptionImageSerializer
     parser_classes = (MultiPartParser, FormParser)
     permission_classes = [permissions.IsAuthenticated]
