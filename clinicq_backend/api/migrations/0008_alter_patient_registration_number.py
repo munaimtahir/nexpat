@@ -35,8 +35,8 @@ def convert_registration_numbers_to_formatted(apps, schema_editor):
                 try:
                     formatted_value = format_value(old_value)
                 except ValueError:
-                    # Skip rows that cannot be coerced; they will surface during
-                    # validation once the validator is re-applied.
+                    # Skip rows that cannot be coerced; they will surface
+                    # during validation once the validator is re-applied.
                     continue
 
                 if str(old_value) == formatted_value:
