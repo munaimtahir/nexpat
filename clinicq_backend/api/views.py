@@ -258,7 +258,7 @@ class VisitViewSet(viewsets.ModelViewSet):
             return Response(
                 {
                     "detail": f"Visit must be in one of the following "
-                             f"states: {', '.join(expected_current_statuses)}"
+                    f"states: {', '.join(expected_current_statuses)}"
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -286,7 +286,8 @@ class VisitViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["patch"])
     def send_back_to_waiting(self, request, pk=None):
-        return self._update_status(request, pk, "WAITING", ["START", "IN_ROOM"])
+        return self._update_status(
+            request, pk, "WAITING", ["START", "IN_ROOM"])
 
     @action(detail=True, methods=["patch"])
     def done(self, request, pk=None):
@@ -315,7 +316,8 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         if visit_id:
             queryset = queryset.filter(visit_id=visit_id)
         if patient_reg:
-            queryset = queryset.filter(visit__patient__registration_number=patient_reg)
+            queryset = queryset.filter(
+                visit__patient__registration_number=patient_reg)
         return queryset
 
     def create(self, request, *args, **kwargs):

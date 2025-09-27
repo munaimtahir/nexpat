@@ -32,7 +32,7 @@ GENDER_ALIASES = {
 
 
 def _normalise_gender(raw_value):
-    """Map historical gender values to the canonical choices used by 
+    """Map historical gender values to the canonical choices used by
     Visit/Patient."""
 
     if raw_value is None:
@@ -50,9 +50,9 @@ def forwards_func(apps, schema_editor):
     - Creates a default 'General' queue.
     - For each existing Visit:
         - Creates an 'anonymous' Patient record using the patient_name and
-          patient_gender from the Visit. These patients will have a null 
+          patient_gender from the Visit. These patients will have a null
           phone number.
-        - Associates the Visit with this new Patient and the default 
+        - Associates the Visit with this new Patient and the default
           'General' queue.
     """
     Visit = apps.get_model("api", "Visit")
@@ -141,10 +141,10 @@ def forwards_func(apps, schema_editor):
 def backwards_func(apps, schema_editor):
     """
     Reverses the data migration.
-    - Sets patient and queue fields on Visit back to NULL for visits 
-      associated with the 'General' queue and patients that might have 
+    - Sets patient and queue fields on Visit back to NULL for visits
+      associated with the 'General' queue and patients that might have
       been auto-created.
-    - This is a destructive operation for the foreign key links but aims to 
+    - This is a destructive operation for the foreign key links but aims to
       revert the state as much as possible. Patient and Queue records created
       by the forward migration are not deleted here, as they might be used by
       other data. Schema migration 0002 would handle field removal if models

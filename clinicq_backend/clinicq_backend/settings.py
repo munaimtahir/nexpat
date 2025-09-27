@@ -261,14 +261,26 @@ if _csrf_origins:
     ]
 
 # Security middleware settings (enabled in production)
-SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "false").lower() in ("true", "1", "yes", "on")
+SECURE_SSL_REDIRECT = os.getenv(
+    "SECURE_SSL_REDIRECT", "false").lower() in (
+        "true", "1", "yes", "on")
 SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "0"))
-SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv("SECURE_HSTS_INCLUDE_SUBDOMAINS", "false").lower() in ("true", "1", "yes", "on")
-SECURE_HSTS_PRELOAD = os.getenv("SECURE_HSTS_PRELOAD", "false").lower() in ("true", "1", "yes", "on")
-SECURE_CONTENT_TYPE_NOSNIFF = os.getenv("SECURE_CONTENT_TYPE_NOSNIFF", "true").lower() in ("true", "1", "yes", "on")
-SECURE_BROWSER_XSS_FILTER = os.getenv("SECURE_BROWSER_XSS_FILTER", "true").lower() in ("true", "1", "yes", "on")
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", "false").lower() in (
+        "true", "1", "yes", "on")
+SECURE_HSTS_PRELOAD = os.getenv(
+    "SECURE_HSTS_PRELOAD", "false").lower() in (
+        "true", "1", "yes", "on")
+SECURE_CONTENT_TYPE_NOSNIFF = os.getenv(
+    "SECURE_CONTENT_TYPE_NOSNIFF", "true").lower() in (
+        "true", "1", "yes", "on")
+SECURE_BROWSER_XSS_FILTER = os.getenv(
+    "SECURE_BROWSER_XSS_FILTER", "true").lower() in (
+        "true", "1", "yes", "on")
 X_FRAME_OPTIONS = os.getenv("X_FRAME_OPTIONS", "SAMEORIGIN")
-SECURE_REFERRER_POLICY = os.getenv("SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin")
+SECURE_REFERRER_POLICY = os.getenv(
+    "SECURE_REFERRER_POLICY",
+    "strict-origin-when-cross-origin")
 
 # Session security
 SESSION_COOKIE_SECURE = SECURE_SSL_REDIRECT

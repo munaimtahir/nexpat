@@ -127,7 +127,7 @@ class PatientAPITests(APITestCase):
 
     def test_get_patients_registration_number_length_rejected(self):
         url = reverse("patient-list")
-        numbers = f"{'1'*11},2"
+        numbers = f"{'1' * 11},2"
         response = self.client.get(
             url, {"registration_numbers": numbers}, format="json"
         )
@@ -237,8 +237,8 @@ class PatientAPITests(APITestCase):
 
         # Dates should be most recent 5. SerializerMethodField doesn't
         # guarantee order unless explicitly handled.
-        # The query in serializer is 
-        # `obj.visits.order_by('-visit_date').values_list('visit_date', 
+        # The query in serializer is
+        # `obj.visits.order_by('-visit_date').values_list('visit_date',
         # flat=True)[:5]`
         # This means they are already sorted from most recent to oldest.
         expected_dates_iso = [
@@ -258,7 +258,8 @@ class QueueAPITests(APITestCase):
         token = Token.objects.create(user=user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
 
-        # Use get_or_create to avoid issues if 'General' queue is created by migrations
+        # Use get_or_create to avoid issues if 'General' queue is created by
+        # migrations
         self.queue1, _ = Queue.objects.get_or_create(name="General")
         self.queue2, _ = Queue.objects.get_or_create(name="Specialist")
 
@@ -305,7 +306,7 @@ class VisitAPITests(APITestCase):
         """Test POST /api/visits/ for creating a new visit with patient and queue."""
         url = reverse("visit-list")
         data = {"patient": self.patient.registration_number,
-            "queue": self.queue1.pk}
+                "queue": self.queue1.pk}
 
         response = self.client.post(url, data, format="json")
 
@@ -323,9 +324,9 @@ class VisitAPITests(APITestCase):
         patient2 = Patient.objects.create(
             name="Another Patient", gender="MALE")
         data1 = {"patient": self.patient.registration_number,
-            "queue": self.queue1.pk}
+                 "queue": self.queue1.pk}
         data2 = {"patient": patient2.registration_number,
-            "queue": self.queue1.pk}
+                 "queue": self.queue1.pk}
 
         response1 = self.client.post(url, data1, format="json")
         assert response1.status_code == status.HTTP_201_CREATED
@@ -354,7 +355,7 @@ class VisitAPITests(APITestCase):
 
         # Visit in Queue 2 - token should also be 1
         data_q2_v1 = {"patient": patient2.registration_number,
-            "queue": self.queue2.pk}
+                      "queue": self.queue2.pk}
         response_q2_v1 = self.client.post(url, data_q2_v1, format="json")
         assert response_q2_v1.status_code == status.HTTP_201_CREATED
         # Independent token for Queue 2
@@ -365,7 +366,7 @@ class VisitAPITests(APITestCase):
         patient3 = Patient.objects.create(
             name="Patient Three QOne", gender="OTHER")
         data_q1_v2 = {"patient": patient3.registration_number,
-            "queue": self.queue1.pk}
+                      "queue": self.queue1.pk}
         response_q1_v2 = self.client.post(url, data_q1_v2, format="json")
         assert response_q1_v2.status_code == status.HTTP_201_CREATED
         # Incremented for Queue 1
@@ -410,7 +411,7 @@ class VisitAPITests(APITestCase):
         )
 
         url_q1 = reverse("visit-list") + \
-                         f"?status=WAITING&queue={self.queue1.pk}"
+            f"?status=WAITING&queue={self.queue1.pk}"
         response_q1 = self.client.get(url_q1, format="json")
         assert response_q1.status_code == status.HTTP_200_OK
         assert response_q1.data["count"] == 1
@@ -418,7 +419,7 @@ class VisitAPITests(APITestCase):
         assert response_q1.data["results"][0]["queue_name"] == self.queue1.name
 
         url_q2 = reverse("visit-list") + \
-                         f"?status=WAITING&queue={self.queue2.pk}"
+            f"?status=WAITING&queue={self.queue2.pk}"
         response_q2 = self.client.get(url_q2, format="json")
         assert response_q2.status_code == status.HTTP_200_OK
         assert response_q2.data["count"] == 1
@@ -502,7 +503,8 @@ class VisitAPITests(APITestCase):
         assert self.patient.phone == original_patient_phone
 
         # Second visit for the same patient (quick re-registration)
-        # Simulate some time passes, maybe another day or same day different queue
+        # Simulate some time passes, maybe another day or same day different
+        # queue
         visit2_data = {
             "patient": self.patient.registration_number,
             "queue": self.queue2.pk,

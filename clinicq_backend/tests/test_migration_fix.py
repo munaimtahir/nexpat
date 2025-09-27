@@ -96,6 +96,7 @@ class TestMigrationPKFix(TestCase):
 
         self.assertEqual(updated_count, 1)
 
-        # Since registration_number is the primary key, we need to get the updated patient
+        # Since registration_number is the primary key, we need to get the
+        # updated patient
         updated_patient = Patient.objects.get(registration_number="9988777")
         self.assertEqual(updated_patient.name, "Formatted Patient")

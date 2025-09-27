@@ -61,7 +61,8 @@ class TestVisitModel:
         assert visit.queue == queue
 
     def test_visit_string_representation(self):
-        # Re-setup for this specific test method if setUp isn't standard unittest.TestCase
+        # Re-setup for this specific test method if setUp isn't standard
+        # unittest.TestCase
         test_patient = Patient.objects.create(name="String Rep Patient")
         test_queue = Queue.objects.create(name="String Rep Queue")
         visit = Visit.objects.create(
@@ -99,7 +100,8 @@ class TestVisitModel:
         q2 = Queue.objects.create(name="BetaQueue")
 
         # To ensure queue name affects order, make their PKs different or rely on string sort
-        # For robust test, ensure queue names lead to predictable sort if that's part of ordering
+        # For robust test, ensure queue names lead to predictable sort if
+        # that's part of ordering
 
         # Order by visit_date, then queue__name, then token_number
         # (assuming default ordering includes queue.name now)
@@ -132,7 +134,8 @@ class TestVisitModel:
         # 2. Today Q1 T1 (v3)
         # 3. Today Q1 T2 (v2)
         # 4. Today Q2 T1 (v4)  (Assuming Q1's PK < Q2's PK or Q1 name < Q2 name if ordering by name)
-        # If Queue objects q1 and q2 are created in that order, q1.pk < q2.pk is likely.
+        # If Queue objects q1 and q2 are created in that order, q1.pk < q2.pk
+        # is likely.
 
         assert list(visits) == [
             v1_yesterday_q1_t1,
@@ -151,7 +154,8 @@ class TestVisitModel:
         # This test might be redundant if the field is only for data migration.
 
     # Removed tests that directly tested VisitSerializer's old create() behavior for token/date generation
-    # as this logic is now in VisitViewSet.perform_create() and covered by API tests.
+    # as this logic is now in VisitViewSet.perform_create() and covered by API
+    # tests.
 
     # Test for visit_date defaulting to today via model field default
     def test_visit_date_defaults_to_today_model_level(self):
@@ -172,7 +176,8 @@ class TestVisitModel:
         queue = Queue.objects.create(name="Serializer Queue")
 
         # Data for serializer - these are the fields the serializer expects for write operations.
-        # Token number, visit_date, status etc. are read-only or set by perform_create in ViewSet.
+        # Token number, visit_date, status etc. are read-only or set by
+        # perform_create in ViewSet.
         visit_data = {
             "patient": patient.pk,
             "queue": queue.pk,
