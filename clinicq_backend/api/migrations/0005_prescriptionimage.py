@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "drive_file_id", 
+                    "drive_file_id",
                     models.CharField(blank=True, max_length=255)
                 ),
                 ("image_url", models.URLField(blank=True)),

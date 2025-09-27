@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv(
-    "SECRET_KEY", 
+    "SECRET_KEY",
     "django-insecure-@$43#sqi9t4_2&u38$v@l+3p37m&sp04afnk$usaf6f0z+2-*a"
 )
 
@@ -223,12 +223,12 @@ REST_FRAMEWORK = {
 # CORS Configuration
 # Allow both development (frontend on different port) and production origins
 _cors_allowed_origins = os.getenv(
-    "CORS_ALLOWED_ORIGINS", 
+    "CORS_ALLOWED_ORIGINS",
     "http://localhost:5173,http://127.0.0.1:5173"
 )
 CORS_ALLOWED_ORIGINS = [
-    origin.strip() 
-    for origin in _cors_allowed_origins.split(",") 
+    origin.strip()
+    for origin in _cors_allowed_origins.split(",")
     if origin.strip()
 ]
 
@@ -255,8 +255,8 @@ CORS_ALLOW_HEADERS = [
 _csrf_origins = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 if _csrf_origins:
     CSRF_TRUSTED_ORIGINS = [
-        origin.strip() 
-        for origin in _csrf_origins.split(",") 
+        origin.strip()
+        for origin in _csrf_origins.split(",")
         if origin.strip()
     ]
 

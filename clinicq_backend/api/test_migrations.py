@@ -86,7 +86,8 @@ def test_0003_backfill_creates_default_queue(migrator):
     # This means state '0002_...'
     # Apply all migrations up to the one just before the one we are testing.
     # This sets the DB schema to the state of migration 0002_...
-    migrator.apply_initial_migration(("api", "0003_backfill_visits_to_patients_queues"))
+    migrator.apply_initial_migration(
+        ("api", "0003_backfill_visits_to_patients_queues"))
 
     # Verify that 'General' queue does not exist at this point using the historical model from old_state
     # This ensures the test environment is clean if other tests/migrations might have created it.
@@ -98,7 +99,8 @@ def test_0003_backfill_creates_default_queue(migrator):
     # Relying on idempotency of the migration's get_or_create and test isolation.
 
     # Apply the data migration 0003 itself
-    migrator.apply_tested_migration(("api", "0003_backfill_visits_to_patients_queues"))
+    migrator.apply_tested_migration(
+        ("api", "0003_backfill_visits_to_patients_queues"))
 
     # After the migration, the database schema is now at state 0003.
     # Query using the live, current runtime models.
@@ -139,7 +141,8 @@ def test_0003_backfill_migrates_existing_visits(migrator):
         legacy_visit_count,
     )
 
-    migrator.apply_tested_migration(("api", "0003_backfill_visits_to_patients_queues"))
+    migrator.apply_tested_migration(
+        ("api", "0003_backfill_visits_to_patients_queues"))
 
     # After migration, query using live runtime models
     # from api.models import Queue as RuntimeQueue # Already imported
@@ -155,7 +158,8 @@ def test_0003_backfill_migrates_existing_visits(migrator):
 
     # The migration should have created a patient record and linked it to the visit.
     anonymous_patient = RuntimePatient.objects.get(name="Old SQL Patient")
-    assert anonymous_patient.phone is None  # As per data migration logic for new patients
+    # As per data migration logic for new patients
+    assert anonymous_patient.phone is None
 
     # Fetch the visit that was inserted via SQL and should have been updated by the migration
     migrated_sql_visit = RuntimeVisit.objects.get(
@@ -185,12 +189,14 @@ def test_0003_backfill_handles_no_existing_visits(migrator):
     # Rely on test isolation for a clean database state for Patients and Queues
     # OldQueueHistorical.objects.all().delete()
     # OldPatientHistorical.objects.all().delete()
-    OldVisitHistorical.objects.all().delete()  # Ensure no visits exist for this specific test
+    # Ensure no visits exist for this specific test
+    OldVisitHistorical.objects.all().delete()
 
     assert OldVisitHistorical.objects.count() == 0
 
     # Apply migration 0003
-    migrator.apply_tested_migration(("api", "0003_backfill_visits_to_patients_queues"))
+    migrator.apply_tested_migration(
+        ("api", "0003_backfill_visits_to_patients_queues"))
 
     # After migration, query using live runtime models
     from api.models import Queue as RuntimeQueue
@@ -220,7 +226,8 @@ def test_0002_schema_migration_creates_indexes_and_unique_constraint(migrator):
     from django.db import connection, models
 
     with connection.cursor() as cursor:
-        cursor.execute(f"PRAGMA index_list('{PatientAtState0002._meta.db_table}')")
+        cursor.execute(
+            f"PRAGMA index_list('{PatientAtState0002._meta.db_table}')")
         indexes_on_table = [row[1] for row in cursor.fetchall()]
         assert "api_patient_phone_9d1c6b_idx" in indexes_on_table
         assert "api_patient_name_8aa05a_idx" in indexes_on_table
@@ -228,7 +235,8 @@ def test_0002_schema_migration_creates_indexes_and_unique_constraint(migrator):
     VisitMeta = VisitAtState0002._meta
     found_constraints = False
     if hasattr(VisitMeta, "unique_together") and VisitMeta.unique_together:
-        assert VisitMeta.unique_together == {("token_number", "visit_date", "queue")}
+        assert VisitMeta.unique_together == {
+            ("token_number", "visit_date", "queue")}
         found_constraints = True
     elif hasattr(VisitMeta, "constraints"):
         for constraint in VisitMeta.constraints:

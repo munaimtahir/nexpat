@@ -82,7 +82,7 @@ class PatientViewSet(viewsets.ModelViewSet):
             if len(raw_numbers) > 50:
                 raise ValidationError(
                     {
-                        "registration_numbers": 
+                        "registration_numbers":
                         "A maximum of 50 registration numbers are allowed."
                     }
                 )
@@ -98,7 +98,7 @@ class PatientViewSet(viewsets.ModelViewSet):
                     if len(num) > 10:
                         raise ValidationError(
                             {
-                                "registration_numbers": 
+                                "registration_numbers":
                                 "Registration numbers may not exceed 10 digits.",
                             }
                         )
@@ -107,7 +107,7 @@ class PatientViewSet(viewsets.ModelViewSet):
             if numbers:
                 queryset = queryset.filter(registration_number__in=numbers)
             else:
-                # If all provided registration numbers are invalid, 
+                # If all provided registration numbers are invalid,
                 # return empty
                 return Patient.objects.none()
         return queryset
@@ -251,7 +251,7 @@ class VisitViewSet(viewsets.ModelViewSet):
             status="WAITING",
         )
 
-    def _update_status(self, request, pk, new_status, 
+    def _update_status(self, request, pk, new_status,
                        expected_current_statuses):
         visit = self.get_object()
         if visit.status not in expected_current_statuses:
