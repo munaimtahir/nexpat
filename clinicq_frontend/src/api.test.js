@@ -45,7 +45,7 @@ describe('api interceptors', () => {
     setAccessToken('test-token');
 
     const configWithToken = runRequestInterceptor({ headers: {} });
-    expect(configWithToken.headers.Authorization).toBe('Bearer test-token');
+    expect(configWithToken.headers.Authorization).toBe('Token test-token');
 
     const error = new Error('Unauthorized');
     error.response = { status: 401 };
@@ -68,7 +68,7 @@ describe('api interceptors', () => {
     setAccessToken('still-valid-token');
 
     const configBefore = runRequestInterceptor({ headers: {} });
-    expect(configBefore.headers.Authorization).toBe('Bearer still-valid-token');
+    expect(configBefore.headers.Authorization).toBe('Token still-valid-token');
 
     const error = new Error(`HTTP ${status}`);
     error.response = { status };
@@ -78,7 +78,7 @@ describe('api interceptors', () => {
     expect(redirectSpy).not.toHaveBeenCalled();
 
     const configAfter = runRequestInterceptor({ headers: {} });
-    expect(configAfter.headers.Authorization).toBe('Bearer still-valid-token');
+    expect(configAfter.headers.Authorization).toBe('Token still-valid-token');
   });
 
   it('does not redirect or clear the token for network errors without a response', async () => {
@@ -88,7 +88,7 @@ describe('api interceptors', () => {
     setAccessToken('network-token');
 
     const configBefore = runRequestInterceptor({ headers: {} });
-    expect(configBefore.headers.Authorization).toBe('Bearer network-token');
+    expect(configBefore.headers.Authorization).toBe('Token network-token');
 
     const error = new Error('Network Error');
 
@@ -97,6 +97,6 @@ describe('api interceptors', () => {
     expect(redirectSpy).not.toHaveBeenCalled();
 
     const configAfter = runRequestInterceptor({ headers: {} });
-    expect(configAfter.headers.Authorization).toBe('Bearer network-token');
+    expect(configAfter.headers.Authorization).toBe('Token network-token');
   });
 });

@@ -1,0 +1,41 @@
+version: '3.8'
+
+# Production Docker Compose configuration
+# This extends the base docker-compose.yml with production-specific settings
+
+services:
+  db:
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-clinicq_prod_db}
+      - POSTGRES_USER=${POSTGRES_USER:-clinicq_prod_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - clinicq_postgres_prod_data:/var/lib/postgresql/data/
+
+  backend:
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=false
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-clinicq_prod_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-clinicq_prod_db}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - GOOGLE_SERVICE_ACCOUNT_FILE=/run/secrets/gdrive_service_account
+      - DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL:-INFO}
+      - SENTRY_DSN=${SENTRY_DSN}
+    secrets:
+      - gdrive_service_account
+    command: gunicorn clinicq_backend.wsgi:application --bind 0.0.0.0:8000 --workers 3
+
+  frontend:
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000}
+      - VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
+    # Use production build
+    command: nginx -g "daemon off;"
+
+secrets:
+  gdrive_service_account:
+    file: ./secrets/gdrive_service_account.json
+
+volumes:
+  clinicq_postgres_prod_data:

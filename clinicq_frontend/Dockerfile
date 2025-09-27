@@ -24,7 +24,7 @@ FROM nginx:1.25-alpine
 COPY --from=builder /app/frontend/dist /usr/share/nginx/html
 
 # Optional: Copy a custom Nginx configuration if needed for the frontend server
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 # If you have a specific nginx config for serving the SPA (e.g., handling client-side routing)
 # For now, default Nginx behavior for static files will be used.
 # A common addition would be: try_files $uri $uri/ /index.html; in the Nginx config.
