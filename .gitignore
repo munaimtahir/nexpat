@@ -98,3 +98,16 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Node modules
+node_modules/
+
+# Production secrets
+secrets/*.json
+!secrets/*.example
+!secrets/.gitkeep
+
+# Environment files with sensitive data
+.env
+.env.local
+.env.production

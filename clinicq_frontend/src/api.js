@@ -57,7 +57,7 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   // Attach access token from memory when available
   if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
+    config.headers.Authorization = `Token ${accessToken}`;
   }
   return config;
 });
