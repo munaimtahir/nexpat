@@ -23,10 +23,7 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                (
-                    "drive_file_id",
-                    models.CharField(blank=True, max_length=255)
-                ),
+                ("drive_file_id", models.CharField(blank=True, max_length=255)),
                 ("image_url", models.URLField(blank=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (

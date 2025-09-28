@@ -25,19 +25,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv(
-    "SECRET_KEY",
-    "django-insecure-@$43#sqi9t4_2&u38$v@l+3p37m&sp04afnk$usaf6f0z+2-*a"
+    "SECRET_KEY", "django-insecure-@$43#sqi9t4_2&u38$v@l+3p37m&sp04afnk$usaf6f0z+2-*a"
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes", "on")
 
 _raw_allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost")
-ALLOWED_HOSTS: list[str] = [
-    host.strip()
-    for host in _raw_allowed_hosts.split(",")
-    if host.strip()
-]
+ALLOWED_HOSTS: list[str] = [host.strip() for host in _raw_allowed_hosts.split(",") if host.strip()]
 
 
 # Application definition
@@ -103,8 +98,7 @@ else:
     sanitized_database_url = _database_url.strip()
     if not sanitized_database_url:
         raise ImproperlyConfigured(
-            "DATABASE_URL is set but empty. Please provide a valid "
-            "database connection URL."
+            "DATABASE_URL is set but empty. Please provide a valid " "database connection URL."
         )
 
     try:
@@ -115,9 +109,7 @@ else:
             )
         }
     except ValueError as exc:
-        raise ImproperlyConfigured(
-            f"DATABASE_URL is set but could not be parsed: {exc}."
-        ) from exc
+        raise ImproperlyConfigured(f"DATABASE_URL is set but could not be parsed: {exc}.") from exc
 
 
 # Password validation
@@ -125,28 +117,16 @@ else:
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "UserAttributeSimilarityValidator"
-        ),
+        "NAME": ("django.contrib.auth.password_validation." "UserAttributeSimilarityValidator"),
     },
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "MinimumLengthValidator"
-        ),
+        "NAME": ("django.contrib.auth.password_validation." "MinimumLengthValidator"),
     },
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "CommonPasswordValidator"
-        ),
+        "NAME": ("django.contrib.auth.password_validation." "CommonPasswordValidator"),
     },
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "NumericPasswordValidator"
-        ),
+        "NAME": ("django.contrib.auth.password_validation." "NumericPasswordValidator"),
     },
 ]
 
@@ -220,12 +200,14 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
 }
-
-# CORS Configuration
-CORS_ALLOW_CREDENTIALS = True
+CORS Configuration
+Allow both development (frontend on different port) and production origins
+_cors_allowed_origins = os.getenv(
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+)
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite dev
-    # "https://app.example.com",  # prod
+    origin.strip() for origin in _cors_allowed_origins.split(",") if origin.strip()
+main
 ]
 # For quick local smoke tests only (remove in prod):
 # CORS_ALLOW_ALL_ORIGINS = True
@@ -258,33 +240,42 @@ CORS_ALLOW_HEADERS = [
 # CSRF trusted origins (for production domains)
 _csrf_origins = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 if _csrf_origins:
-    CSRF_TRUSTED_ORIGINS = [
-        origin.strip()
-        for origin in _csrf_origins.split(",")
-        if origin.strip()
-    ]
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in _csrf_origins.split(",") if origin.strip()]
 
 # Security middleware settings (enabled in production)
-SECURE_SSL_REDIRECT = os.getenv(
-    "SECURE_SSL_REDIRECT", "false").lower() in (
-        "true", "1", "yes", "on")
+SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "false").lower() in (
+    "true",
+    "1",
+    "yes",
+    "on",
+)
 SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "0"))
-SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv(
-    "SECURE_HSTS_INCLUDE_SUBDOMAINS", "false").lower() in (
-        "true", "1", "yes", "on")
-SECURE_HSTS_PRELOAD = os.getenv(
-    "SECURE_HSTS_PRELOAD", "false").lower() in (
-        "true", "1", "yes", "on")
-SECURE_CONTENT_TYPE_NOSNIFF = os.getenv(
-    "SECURE_CONTENT_TYPE_NOSNIFF", "true").lower() in (
-        "true", "1", "yes", "on")
-SECURE_BROWSER_XSS_FILTER = os.getenv(
-    "SECURE_BROWSER_XSS_FILTER", "true").lower() in (
-        "true", "1", "yes", "on")
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv("SECURE_HSTS_INCLUDE_SUBDOMAINS", "false").lower() in (
+    "true",
+    "1",
+    "yes",
+    "on",
+)
+SECURE_HSTS_PRELOAD = os.getenv("SECURE_HSTS_PRELOAD", "false").lower() in (
+    "true",
+    "1",
+    "yes",
+    "on",
+)
+SECURE_CONTENT_TYPE_NOSNIFF = os.getenv("SECURE_CONTENT_TYPE_NOSNIFF", "true").lower() in (
+    "true",
+    "1",
+    "yes",
+    "on",
+)
+SECURE_BROWSER_XSS_FILTER = os.getenv("SECURE_BROWSER_XSS_FILTER", "true").lower() in (
+    "true",
+    "1",
+    "yes",
+    "on",
+)
 X_FRAME_OPTIONS = os.getenv("X_FRAME_OPTIONS", "SAMEORIGIN")
-SECURE_REFERRER_POLICY = os.getenv(
-    "SECURE_REFERRER_POLICY",
-    "strict-origin-when-cross-origin")
+SECURE_REFERRER_POLICY = os.getenv("SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin")
 
 # Session security
 SESSION_COOKIE_SECURE = SECURE_SSL_REDIRECT

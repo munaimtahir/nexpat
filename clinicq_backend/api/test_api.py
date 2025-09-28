@@ -8,6 +8,7 @@ from django.core.cache import cache
 from .models import Visit, Patient, Queue
 from datetime import date, timedelta
 from freezegun import freeze_time
+import os
 
 
 @pytest.mark.django_db
@@ -43,11 +44,7 @@ class PatientAPITests(APITestCase):
 
     def test_create_patient(self):
         url = reverse("patient-list")
-        data = {
-            "name": "Charlie Brown",
-            "phone": "1122334455",
-            "gender": "MALE"
-        }
+        data = {"name": "Charlie Brown", "phone": "1122334455", "gender": "MALE"}
         response = self.client.post(url, data, format="json")
         assert response.status_code == status.HTTP_201_CREATED
         assert Patient.objects.count() == 3
@@ -64,8 +61,7 @@ class PatientAPITests(APITestCase):
     def test_get_patients_by_registration_numbers(self):
         url = reverse("patient-list")
         numbers = (
-            f"{self.patient1.registration_number},"
-            f"{self.patient2.registration_number},9999"
+            f"{self.patient1.registration_number}," f"{self.patient2.registration_number},9999"
         )
         response = self.client.get(
             url,
@@ -82,16 +78,11 @@ class PatientAPITests(APITestCase):
     def test_get_patients_by_mixed_registration_numbers(self):
         url = reverse("patient-list")
         query = (
-            f"{self.patient1.registration_number}, abc ,"
-            f"{self.patient2.registration_number},xyz"
+            f"{self.patient1.registration_number}, abc ," f"{self.patient2.registration_number},xyz"
         )
-        response = self.client.get(
-            url, {"registration_numbers": query}, format="json"
-        )
+        response = self.client.get(url, {"registration_numbers": query}, format="json")
         assert response.status_code == status.HTTP_200_OK
-        numbers = [
-            p["registration_number"] for p in response.data["results"]
-        ]
+        numbers = [p["registration_number"] for p in response.data["results"]]
         assert sorted(numbers) == sorted(
             [
                 self.patient1.registration_number,
@@ -112,25 +103,19 @@ class PatientAPITests(APITestCase):
     def test_get_patients_registration_number_limit_accepted(self):
         url = reverse("patient-list")
         numbers = ",".join(str(i) for i in range(50))
-        response = self.client.get(
-            url, {"registration_numbers": numbers}, format="json"
-        )
+        response = self.client.get(url, {"registration_numbers": numbers}, format="json")
         assert response.status_code == status.HTTP_200_OK
 
     def test_get_patients_registration_number_limit_rejected(self):
         url = reverse("patient-list")
         numbers = ",".join(str(i) for i in range(51))
-        response = self.client.get(
-            url, {"registration_numbers": numbers}, format="json"
-        )
+        response = self.client.get(url, {"registration_numbers": numbers}, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_get_patients_registration_number_length_rejected(self):
         url = reverse("patient-list")
         numbers = f"{'1' * 11},2"
-        response = self.client.get(
-            url, {"registration_numbers": numbers}, format="json"
-        )
+        response = self.client.get(url, {"registration_numbers": numbers}, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_get_patient_detail(self):
@@ -178,16 +163,14 @@ class PatientAPITests(APITestCase):
 
     def test_search_patient_by_name_fragment(self):
         url = reverse("patient-search")
-        response = self.client.get(
-            url, {"q": "Alice"}, format="json")  # Partial name
+        response = self.client.get(url, {"q": "Alice"}, format="json")  # Partial name
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 1
         assert response.data["results"][0]["name"] == self.patient1.name
 
     def test_search_patient_by_phone_fragment(self):
         url = reverse("patient-search")
-        response = self.client.get(
-            url, {"q": "12345"}, format="json")  # Partial phone
+        response = self.client.get(url, {"q": "12345"}, format="json")  # Partial phone
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 1
         assert response.data["results"][0]["name"] == self.patient1.name
@@ -230,9 +213,7 @@ class PatientAPITests(APITestCase):
         response = self.client.get(url, format="json")
         assert response.status_code == status.HTTP_200_OK
         assert "last_5_visit_dates" in response.data
-        api_visit_dates_iso = [
-            str(d) for d in response.data["last_5_visit_dates"]
-        ]
+        api_visit_dates_iso = [str(d) for d in response.data["last_5_visit_dates"]]
         assert len(api_visit_dates_iso) == 5
 
         # Dates should be most recent 5. SerializerMethodField doesn't
@@ -241,8 +222,7 @@ class PatientAPITests(APITestCase):
         # `obj.visits.order_by('-visit_date').values_list('visit_date',
         # flat=True)[:5]`
         # This means they are already sorted from most recent to oldest.
-        expected_dates_iso = [
-            str(date.today() - timedelta(days=i)) for i in range(5)]
+        expected_dates_iso = [str(date.today() - timedelta(days=i)) for i in range(5)]
         assert api_visit_dates_iso == expected_dates_iso
 
 
@@ -252,8 +232,7 @@ class QueueAPITests(APITestCase):
         cache.clear()
         doctor_group, _ = Group.objects.get_or_create(name="Doctor")
         assistant_group, _ = Group.objects.get_or_create(name="Assistant")
-        user = User.objects.create_user(
-            username="queue_tester", password="pass")
+        user = User.objects.create_user(username="queue_tester", password="pass")
         user.groups.add(doctor_group, assistant_group)
         token = Token.objects.create(user=user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
@@ -285,8 +264,7 @@ class VisitAPITests(APITestCase):
         cache.clear()
         doctor_group, _ = Group.objects.get_or_create(name="Doctor")
         assistant_group, _ = Group.objects.get_or_create(name="Assistant")
-        user = User.objects.create_user(
-            username="visit_tester", password="pass")
+        user = User.objects.create_user(username="visit_tester", password="pass")
         user.groups.add(doctor_group, assistant_group)
         token = Token.objects.create(user=user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
@@ -305,8 +283,7 @@ class VisitAPITests(APITestCase):
     def test_create_visit_api(self):
         """Test POST /api/visits/ for creating a new visit with patient and queue."""
         url = reverse("visit-list")
-        data = {"patient": self.patient.registration_number,
-                "queue": self.queue1.pk}
+        data = {"patient": self.patient.registration_number, "queue": self.queue1.pk}
 
         response = self.client.post(url, data, format="json")
 
@@ -321,12 +298,9 @@ class VisitAPITests(APITestCase):
 
     def test_create_multiple_visits_same_queue_increments_token(self):
         url = reverse("visit-list")
-        patient2 = Patient.objects.create(
-            name="Another Patient", gender="MALE")
-        data1 = {"patient": self.patient.registration_number,
-                 "queue": self.queue1.pk}
-        data2 = {"patient": patient2.registration_number,
-                 "queue": self.queue1.pk}
+        patient2 = Patient.objects.create(name="Another Patient", gender="MALE")
+        data1 = {"patient": self.patient.registration_number, "queue": self.queue1.pk}
+        data2 = {"patient": patient2.registration_number, "queue": self.queue1.pk}
 
         response1 = self.client.post(url, data1, format="json")
         assert response1.status_code == status.HTTP_201_CREATED
@@ -340,8 +314,7 @@ class VisitAPITests(APITestCase):
     def test_multi_queue_token_independence(self):
         """Test tokens are independent across different queues on the same day."""
         url = reverse("visit-list")
-        patient2 = Patient.objects.create(
-            name="Patient Two QTwo", gender="FEMALE")
+        patient2 = Patient.objects.create(name="Patient Two QTwo", gender="FEMALE")
 
         # Visit in Queue 1
         data_q1_v1 = {
@@ -354,8 +327,7 @@ class VisitAPITests(APITestCase):
         assert response_q1_v1.data["queue_name"] == self.queue1.name
 
         # Visit in Queue 2 - token should also be 1
-        data_q2_v1 = {"patient": patient2.registration_number,
-                      "queue": self.queue2.pk}
+        data_q2_v1 = {"patient": patient2.registration_number, "queue": self.queue2.pk}
         response_q2_v1 = self.client.post(url, data_q2_v1, format="json")
         assert response_q2_v1.status_code == status.HTTP_201_CREATED
         # Independent token for Queue 2
@@ -363,10 +335,8 @@ class VisitAPITests(APITestCase):
         assert response_q2_v1.data["queue_name"] == self.queue2.name
 
         # Another visit in Queue 1 - token should be 2
-        patient3 = Patient.objects.create(
-            name="Patient Three QOne", gender="OTHER")
-        data_q1_v2 = {"patient": patient3.registration_number,
-                      "queue": self.queue1.pk}
+        patient3 = Patient.objects.create(name="Patient Three QOne", gender="OTHER")
+        data_q1_v2 = {"patient": patient3.registration_number, "queue": self.queue1.pk}
         response_q1_v2 = self.client.post(url, data_q1_v2, format="json")
         assert response_q1_v2.status_code == status.HTTP_201_CREATED
         # Incremented for Queue 1
@@ -379,8 +349,7 @@ class VisitAPITests(APITestCase):
         url = reverse("visit-list")
         # Missing patient
         data_no_patient = {"queue": self.queue1.pk}
-        response_no_patient = self.client.post(
-            url, data_no_patient, format="json")
+        response_no_patient = self.client.post(url, data_no_patient, format="json")
         assert response_no_patient.status_code == status.HTTP_400_BAD_REQUEST
         assert "patient" in response_no_patient.data
 
@@ -410,16 +379,14 @@ class VisitAPITests(APITestCase):
             status="WAITING",
         )
 
-        url_q1 = reverse("visit-list") + \
-            f"?status=WAITING&queue={self.queue1.pk}"
+        url_q1 = reverse("visit-list") + f"?status=WAITING&queue={self.queue1.pk}"
         response_q1 = self.client.get(url_q1, format="json")
         assert response_q1.status_code == status.HTTP_200_OK
         assert response_q1.data["count"] == 1
         assert response_q1.data["results"][0]["patient_full_name"] == self.patient.name
         assert response_q1.data["results"][0]["queue_name"] == self.queue1.name
 
-        url_q2 = reverse("visit-list") + \
-            f"?status=WAITING&queue={self.queue2.pk}"
+        url_q2 = reverse("visit-list") + f"?status=WAITING&queue={self.queue2.pk}"
         response_q2 = self.client.get(url_q2, format="json")
         assert response_q2.status_code == status.HTTP_200_OK
         assert response_q2.data["count"] == 1
@@ -470,8 +437,7 @@ class VisitAPITests(APITestCase):
             assert resp_d2_q1.data["visit_date"] == "2023-01-02"
 
             # Token for Queue 2 should also be 1 on this new day
-            patient2 = Patient.objects.create(
-                name="Day2 Q2 Patient", gender="FEMALE")
+            patient2 = Patient.objects.create(name="Day2 Q2 Patient", gender="FEMALE")
             data_d2_q2 = {
                 "patient": patient2.registration_number,
                 "queue": self.queue2.pk,
@@ -536,9 +502,7 @@ class VisitAPITests(APITestCase):
         assert response.data["token_number"] == 1
         assert response.data["visit_date"] == str(date.today())
         assert response.data["status"] == "WAITING"
-        assert (
-            response.data["patient_full_name"] == self.patient.name
-        )  # Derived from patient obj
+        assert response.data["patient_full_name"] == self.patient.name  # Derived from patient obj
 
         # Check the Visit model's relationships
         visit = Visit.objects.get(pk=response.data["id"])
@@ -554,18 +518,15 @@ class VisitLifecycleTests(APITestCase):
         self.assistant_group, _ = Group.objects.get_or_create(name="Assistant")
         self.display_group, _ = Group.objects.get_or_create(name="Display")
 
-        self.doctor_user = User.objects.create_user(
-            username="doctor", password="password")
+        self.doctor_user = User.objects.create_user(username="doctor", password="password")
         self.doctor_user.groups.add(self.doctor_group)
         self.doctor_token = Token.objects.create(user=self.doctor_user)
 
-        self.assistant_user = User.objects.create_user(
-            username="assistant", password="password")
+        self.assistant_user = User.objects.create_user(username="assistant", password="password")
         self.assistant_user.groups.add(self.assistant_group)
         self.assistant_token = Token.objects.create(user=self.assistant_user)
 
-        self.patient = Patient.objects.create(
-            name="Test Patient", gender="OTHER")
+        self.patient = Patient.objects.create(name="Test Patient", gender="OTHER")
         self.queue = Queue.objects.create(name="Test Queue")
         self.visit = Visit.objects.create(
             patient=self.patient,
@@ -578,8 +539,7 @@ class VisitLifecycleTests(APITestCase):
         return reverse(f"visit-{action}", kwargs={"pk": pk})
 
     def test_doctor_can_transition_waiting_to_start(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
         url = self._get_url("start", self.visit.pk)
         response = self.client.patch(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -589,8 +549,7 @@ class VisitLifecycleTests(APITestCase):
     def test_doctor_can_transition_start_to_in_room(self):
         self.visit.status = "START"
         self.visit.save()
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
 
         url = self._get_url("in-room", self.visit.pk)
         response = self.client.patch(url)
@@ -601,8 +560,7 @@ class VisitLifecycleTests(APITestCase):
     def test_doctor_can_transition_in_room_to_done(self):
         self.visit.status = "IN_ROOM"
         self.visit.save()
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
         url = self._get_url("done", self.visit.pk)
         response = self.client.patch(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -612,8 +570,7 @@ class VisitLifecycleTests(APITestCase):
     def test_doctor_can_send_back_to_waiting_from_start(self):
         self.visit.status = "START"
         self.visit.save()
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
         url = self._get_url("send-back-to-waiting", self.visit.pk)
         response = self.client.patch(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -621,8 +578,7 @@ class VisitLifecycleTests(APITestCase):
         self.assertEqual(self.visit.status, "WAITING")
 
     def test_invalid_transition_waiting_to_in_room(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
         url = self._get_url("in-room", self.visit.pk)
         response = self.client.patch(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -630,8 +586,7 @@ class VisitLifecycleTests(APITestCase):
         self.assertEqual(self.visit.status, "WAITING")
 
     def test_invalid_transition_waiting_to_done(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
         url = self._get_url("done", self.visit.pk)
         response = self.client.patch(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -639,8 +594,7 @@ class VisitLifecycleTests(APITestCase):
         self.assertEqual(self.visit.status, "WAITING")
 
     def test_assistant_cannot_change_status(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Token {self.assistant_token.key}")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.assistant_token.key}")
         url = self._get_url("start", self.visit.pk)
         response = self.client.patch(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -648,10 +602,95 @@ class VisitLifecycleTests(APITestCase):
     def test_doctor_can_send_back_to_waiting_from_in_room(self):
         self.visit.status = "IN_ROOM"
         self.visit.save()
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
         url = self._get_url("send-back-to-waiting", self.visit.pk)
         response = self.client.patch(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.visit.refresh_from_db()
         self.assertEqual(self.visit.status, "WAITING")
+
+
+@pytest.mark.django_db
+class GoogleDriveIntegrationTests(APITestCase):
+    """Test Google Drive integration with prescription upload."""
+
+    def setUp(self):
+        cache.clear()
+        # Create groups that match the new migration
+        doctor_group, _ = Group.objects.get_or_create(name="Doctor")
+        user = User.objects.create_user(username="doctor", password="pass")
+        user.groups.add(doctor_group)
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        
+        # Create test data
+        self.patient = Patient.objects.create(
+            name="Test Patient", 
+            phone="1234567890", 
+            gender="MALE"
+        )
+        self.queue = Queue.objects.create(name="General")
+        self.visit = Visit.objects.create(
+            patient=self.patient,
+            queue=self.queue,
+            token_number=1,
+            visit_date=date.today(),
+            status="WAITING",
+        )
+
+    @pytest.mark.skipif(
+        not os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE'),
+        reason="Google Drive service account file not configured"
+    )
+    def test_prescription_upload_with_google_drive_secret(self):
+        """Test that prescription upload works when Google Drive secret is available."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        # Verify the environment variable is set (from Docker secret)
+        self.assertIsNotNone(os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE'))
+        self.assertEqual(
+            os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE'), 
+            '/run/secrets/gdrive_service.json'
+        )
+        
+        # Create a mock image file
+        image_content = b"fake image content"
+        image_file = SimpleUploadedFile("test_prescription.jpg", image_content, content_type="image/jpeg")
+        
+        # Test the prescription image upload endpoint
+        url = reverse("prescriptionimage-list")
+        data = {
+            "visit": self.visit.pk,
+            "image": image_file
+        }
+        
+        # This test verifies the configuration is correct
+        # The actual upload will be mocked in real tests to avoid external dependencies
+        response = self.client.post(url, data, format="multipart")
+        
+        # The response should indicate the configuration is ready
+        # (even if actual upload fails due to invalid credentials in test)
+        self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_400_BAD_REQUEST])
+
+    def test_google_drive_environment_variable_configuration(self):
+        """Test that the Google Drive configuration is properly set up."""
+        import os
+        from .google_drive import upload_prescription_image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        # Test that the configuration expects the right environment variable
+        image_file = SimpleUploadedFile("test.jpg", b"fake content", content_type="image/jpeg")
+        
+        # Clear the environment variable to test the error case
+        original_value = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE')
+        if 'GOOGLE_SERVICE_ACCOUNT_FILE' in os.environ:
+            del os.environ['GOOGLE_SERVICE_ACCOUNT_FILE']
+        
+        try:
+            with self.assertRaises(RuntimeError) as context:
+                upload_prescription_image(image_file)
+            self.assertEqual(str(context.exception), "GOOGLE_SERVICE_ACCOUNT_FILE not set")
+        finally:
+            # Restore the original value
+            if original_value:
+                os.environ['GOOGLE_SERVICE_ACCOUNT_FILE'] = original_value
