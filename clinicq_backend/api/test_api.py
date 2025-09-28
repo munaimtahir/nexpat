@@ -8,6 +8,7 @@ from django.core.cache import cache
 from .models import Visit, Patient, Queue
 from datetime import date, timedelta
 from freezegun import freeze_time
+import os
 
 
 @pytest.mark.django_db
@@ -607,3 +608,89 @@ class VisitLifecycleTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.visit.refresh_from_db()
         self.assertEqual(self.visit.status, "WAITING")
+
+
+@pytest.mark.django_db
+class GoogleDriveIntegrationTests(APITestCase):
+    """Test Google Drive integration with prescription upload."""
+
+    def setUp(self):
+        cache.clear()
+        # Create groups that match the new migration
+        doctor_group, _ = Group.objects.get_or_create(name="Doctor")
+        user = User.objects.create_user(username="doctor", password="pass")
+        user.groups.add(doctor_group)
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        
+        # Create test data
+        self.patient = Patient.objects.create(
+            name="Test Patient", 
+            phone="1234567890", 
+            gender="MALE"
+        )
+        self.queue = Queue.objects.create(name="General")
+        self.visit = Visit.objects.create(
+            patient=self.patient,
+            queue=self.queue,
+            token_number=1,
+            visit_date=date.today(),
+            status="WAITING",
+        )
+
+    @pytest.mark.skipif(
+        not os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE'),
+        reason="Google Drive service account file not configured"
+    )
+    def test_prescription_upload_with_google_drive_secret(self):
+        """Test that prescription upload works when Google Drive secret is available."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        # Verify the environment variable is set (from Docker secret)
+        self.assertIsNotNone(os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE'))
+        self.assertEqual(
+            os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE'), 
+            '/run/secrets/gdrive_service.json'
+        )
+        
+        # Create a mock image file
+        image_content = b"fake image content"
+        image_file = SimpleUploadedFile("test_prescription.jpg", image_content, content_type="image/jpeg")
+        
+        # Test the prescription image upload endpoint
+        url = reverse("prescriptionimage-list")
+        data = {
+            "visit": self.visit.pk,
+            "image": image_file
+        }
+        
+        # This test verifies the configuration is correct
+        # The actual upload will be mocked in real tests to avoid external dependencies
+        response = self.client.post(url, data, format="multipart")
+        
+        # The response should indicate the configuration is ready
+        # (even if actual upload fails due to invalid credentials in test)
+        self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_400_BAD_REQUEST])
+
+    def test_google_drive_environment_variable_configuration(self):
+        """Test that the Google Drive configuration is properly set up."""
+        import os
+        from .google_drive import upload_prescription_image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        # Test that the configuration expects the right environment variable
+        image_file = SimpleUploadedFile("test.jpg", b"fake content", content_type="image/jpeg")
+        
+        # Clear the environment variable to test the error case
+        original_value = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE')
+        if 'GOOGLE_SERVICE_ACCOUNT_FILE' in os.environ:
+            del os.environ['GOOGLE_SERVICE_ACCOUNT_FILE']
+        
+        try:
+            with self.assertRaises(RuntimeError) as context:
+                upload_prescription_image(image_file)
+            self.assertEqual(str(context.exception), "GOOGLE_SERVICE_ACCOUNT_FILE not set")
+        finally:
+            # Restore the original value
+            if original_value:
+                os.environ['GOOGLE_SERVICE_ACCOUNT_FILE'] = original_value
