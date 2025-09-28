@@ -52,9 +52,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "api.apps.ApiConfig",  # Or just 'api'
+    "corsheaders",
 ]
-
-INSTALLED_APPS += ["corsheaders"]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
