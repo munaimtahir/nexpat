@@ -149,7 +149,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STATICFILES_DIRS: list[Path] = []
+STATICFILES_DIRS: list[Path] = [
+    BASE_DIR / "server" / "static",  # Common static files
+]
 
 _frontend_dist = BASE_DIR.parent / "clinicq_frontend" / "dist"
 if _frontend_dist.exists():
