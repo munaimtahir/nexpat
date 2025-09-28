@@ -644,7 +644,6 @@ class GoogleDriveIntegrationTests(APITestCase):
     )
     def test_prescription_upload_with_google_drive_secret(self):
         """Test that prescription upload works when Google Drive secret is available."""
-        import os
         from django.core.files.uploadedfile import SimpleUploadedFile
         
         # Verify the environment variable is set (from Docker secret)
