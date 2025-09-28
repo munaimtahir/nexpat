@@ -31,14 +31,25 @@ const DoctorPage = () => {
 
       let patientsByRegNum = {};
       if (registrationNumbers.length > 0) {
-        const patientsResp = await api.get(
-          `/patients/?registration_numbers=${registrationNumbers.join(',')}`,
+        const CHUNK_SIZE = 50;
+        const registrationChunks = [];
+        for (let i = 0; i < registrationNumbers.length; i += CHUNK_SIZE) {
+          registrationChunks.push(registrationNumbers.slice(i, i + CHUNK_SIZE));
+        }
+
+        const patientResponses = await Promise.all(
+          registrationChunks.map((chunk) =>
+            api.get(`/patients/?registration_numbers=${chunk.join(',')}`),
+          ),
         );
-        const patientList = unwrapListResponse(patientsResp.data);
-        patientsByRegNum = patientList.reduce((acc, patient) => {
-          if (patient?.registration_number !== undefined) {
-            acc[String(patient.registration_number)] = patient;
-          }
+
+        patientsByRegNum = patientResponses.reduce((acc, resp) => {
+          const patientList = unwrapListResponse(resp.data);
+          patientList.forEach((patient) => {
+            if (patient?.registration_number !== undefined) {
+              acc[String(patient.registration_number)] = patient;
+            }
+          });
           return acc;
         }, {});
       }
