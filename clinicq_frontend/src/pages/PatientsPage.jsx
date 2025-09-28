@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api.js';
 import { unwrapListResponse } from '../utils/api.js';
+import { TimeStamp } from '../components/index.js';
 
 const PatientsPage = () => {
   const [patients, setPatients] = useState([]);
@@ -85,26 +86,50 @@ const PatientsPage = () => {
                 <th className="p-2">Name</th>
                 <th className="p-2">Gender</th>
                 <th className="p-2">Phone</th>
+                <th className="p-2">Last Visits</th>
+                <th className="p-2">Created</th>
                 <th className="p-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {patients.map((patient) => (
-                <tr key={patient.registration_number} className="border-t">
-                  <td className="p-2">{patient.registration_number}</td>
-                  <td className="p-2">{patient.name}</td>
-                  <td className="p-2">{patient.gender}</td>
-                  <td className="p-2">{patient.phone || '-'}</td>
+                <tr key={patient.registration_number} className="border-t hover:bg-gray-50">
+                  <td className="p-2 font-mono text-sm">{patient.registration_number}</td>
+                  <td className="p-2 font-medium">{patient.name}</td>
+                  <td className="p-2">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      patient.gender === 'MALE' ? 'bg-blue-100 text-blue-800' :
+                      patient.gender === 'FEMALE' ? 'bg-pink-100 text-pink-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {patient.gender}
+                    </span>
+                  </td>
+                  <td className="p-2 text-sm">{patient.phone || '—'}</td>
+                  <td className="p-2 text-xs text-gray-600">
+                    {patient.last_5_visit_dates && patient.last_5_visit_dates.length > 0 
+                      ? patient.last_5_visit_dates.slice(0, 3).join(', ')
+                      : 'None'
+                    }
+                    {patient.last_5_visit_dates && patient.last_5_visit_dates.length > 3 && '...'}
+                  </td>
+                  <td className="p-2">
+                    <TimeStamp 
+                      date={patient.created_at} 
+                      format="date" 
+                      className="text-xs"
+                    />
+                  </td>
                   <td className="p-2 space-x-2">
                     <button
                       onClick={() => navigate(`/patients/${patient.registration_number}/edit`)}
-                      className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                      className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-xs"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(patient.registration_number)}
-                      className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                      className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
                     >
                       Delete
                     </button>

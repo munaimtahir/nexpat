@@ -29,10 +29,12 @@ SECRET_KEY = os.getenv(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes", "on")
+DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes", "on")
 
 _raw_allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost")
-ALLOWED_HOSTS: list[str] = [host.strip() for host in _raw_allowed_hosts.split(",") if host.strip()]
+ALLOWED_HOSTS: list[str] = [
+    host.strip() for host in _raw_allowed_hosts.split(",") if host.strip()
+]
 
 
 # Application definition
@@ -44,14 +46,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
     "api.apps.ApiConfig",  # Or just 'api'
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -60,6 +61,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+MIDDLEWARE.insert(0, "corsheaders.middleware.CorsMiddleware")
 
 ROOT_URLCONF = "clinicq_backend.urls"
 
@@ -97,7 +100,7 @@ else:
     sanitized_database_url = _database_url.strip()
     if not sanitized_database_url:
         raise ImproperlyConfigured(
-            "DATABASE_URL is set but empty. Please provide a valid " "database connection URL."
+
         )
 
     try:
@@ -108,7 +111,9 @@ else:
             )
         }
     except ValueError as exc:
-        raise ImproperlyConfigured(f"DATABASE_URL is set but could not be parsed: {exc}.") from exc
+        raise ImproperlyConfigured(
+            f"DATABASE_URL is set but could not be parsed: {exc}."
+        ) from exc
 
 
 # Password validation
@@ -116,7 +121,10 @@ else:
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": ("django.contrib.auth.password_validation." "UserAttributeSimilarityValidator"),
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        ),
     },
     {
         "NAME": ("django.contrib.auth.password_validation." "MinimumLengthValidator"),
@@ -148,7 +156,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STATICFILES_DIRS: list[Path] = []
+STATICFILES_DIRS: list[Path] = [
+    BASE_DIR / "server" / "static",  # Common static files
+]
 
 _frontend_dist = BASE_DIR.parent / "clinicq_frontend" / "dist"
 if _frontend_dist.exists():
@@ -199,18 +209,25 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
 }
-
-# CORS Configuration
-# Allow both development (frontend on different port) and production origins
+CORS Configuration
+Allow both development (frontend on different port) and production origins
 _cors_allowed_origins = os.getenv(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 )
 CORS_ALLOWED_ORIGINS = [
-    origin.strip() for origin in _cors_allowed_origins.split(",") if origin.strip()
+    origin.strip() for origin in _cors_allowed_origins.split(",") if origin.strip(
 ]
+# For quick local smoke tests only (remove in prod):
+# CORS_ALLOW_ALL_ORIGINS = True
 
-# For development, allow credentials (cookies, authorization headers)
-CORS_ALLOW_CREDENTIALS = True
+# Allow environment variable override for production
+_cors_allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS")
+if _cors_allowed_origins:
+    CORS_ALLOWED_ORIGINS = [
+        origin.strip()
+        for origin in _cors_allowed_origins.split(",")
+        if origin.strip()
+    ]
 
 # Allow common headers used by the frontend
 CORS_ALLOW_HEADERS = [
@@ -231,7 +248,9 @@ CORS_ALLOW_HEADERS = [
 # CSRF trusted origins (for production domains)
 _csrf_origins = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 if _csrf_origins:
-    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in _csrf_origins.split(",") if origin.strip()]
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip() for origin in _csrf_origins.split(",") if origin.strip()
+    ]
 
 # Security middleware settings (enabled in production)
 SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "false").lower() in (
@@ -241,7 +260,9 @@ SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "false").lower() in (
     "on",
 )
 SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "0"))
-SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv("SECURE_HSTS_INCLUDE_SUBDOMAINS", "false").lower() in (
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", "false"
+).lower() in (
     "true",
     "1",
     "yes",
@@ -253,7 +274,9 @@ SECURE_HSTS_PRELOAD = os.getenv("SECURE_HSTS_PRELOAD", "false").lower() in (
     "yes",
     "on",
 )
-SECURE_CONTENT_TYPE_NOSNIFF = os.getenv("SECURE_CONTENT_TYPE_NOSNIFF", "true").lower() in (
+SECURE_CONTENT_TYPE_NOSNIFF = os.getenv(
+    "SECURE_CONTENT_TYPE_NOSNIFF", "true"
+).lower() in (
     "true",
     "1",
     "yes",
@@ -266,7 +289,9 @@ SECURE_BROWSER_XSS_FILTER = os.getenv("SECURE_BROWSER_XSS_FILTER", "true").lower
     "on",
 )
 X_FRAME_OPTIONS = os.getenv("X_FRAME_OPTIONS", "SAMEORIGIN")
-SECURE_REFERRER_POLICY = os.getenv("SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin")
+SECURE_REFERRER_POLICY = os.getenv(
+    "SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin"
+)
 
 # Session security
 SESSION_COOKIE_SECURE = SECURE_SSL_REDIRECT
