@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 import { Link } from 'react-router-dom';
+import { TimeStamp } from '../components/index.js';
 
 const REFRESH_INTERVAL = 5000; // 5 seconds
 
@@ -111,9 +112,16 @@ const PublicDisplayPage = ({ initialQueue = '' }) => {
                   <p className="text-3xl sm:text-4xl font-extrabold text-yellow-300">
                     {visit.token_number}
                   </p>
-                  <p className="text-sm sm:text-base font-medium text-purple-100">
-                    {visit.patient_full_name}
-                  </p>
+                  <div className="text-right">
+                    <p className="text-sm sm:text-base font-medium text-purple-100">
+                      {visit.patient_full_name}
+                    </p>
+                    <TimeStamp 
+                      date={visit.created_at} 
+                      relative={true} 
+                      className="text-xs text-purple-200"
+                    />
+                  </div>
                 </div>
                 <p className="mt-1 text-sm text-center text-purple-200 animate-pulse">
                   Please proceed to the consultation room.
@@ -140,9 +148,16 @@ const PublicDisplayPage = ({ initialQueue = '' }) => {
                   <p className="text-3xl sm:text-4xl font-extrabold text-blue-500">
                     {visit.token_number}
                   </p>
-                  <p className="text-sm sm:text-base font-medium text-gray-500">
-                    {visit.patient_full_name}
-                  </p>
+                  <div className="text-right">
+                    <p className="text-sm sm:text-base font-medium text-gray-500">
+                      {visit.patient_full_name}
+                    </p>
+                    <TimeStamp 
+                      date={visit.created_at} 
+                      relative={true} 
+                      className="text-xs text-gray-400"
+                    />
+                  </div>
                 </div>
               </div>
             ))}
