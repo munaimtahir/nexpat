@@ -96,4 +96,4 @@ class Command(BaseCommand):
         # Log completion
         logger.info(f"Audit log export completed. Exported {len(patients)} patients, {len(visits)} visits, {len(queues)} queues")
         
-        self.style.SUCCESS(f"Successfully exported audit data for {days} days")
+        self.stdout.write(self.style.SUCCESS(f"Successfully exported audit data for {days} days"))
