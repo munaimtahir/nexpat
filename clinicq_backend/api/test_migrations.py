@@ -259,3 +259,65 @@ def test_0002_schema_migration_creates_indexes_and_unique_constraint(migrator):
     assert (
         found_constraints
     ), "Unique constraint ('token_number', 'visit_date', 'queue') not found on Visit model after migration 0002"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_0009_bootstrap_groups_creates_doctor_and_assistant(migrator):
+    """
+    Test that the 0009_bootstrap_groups migration creates "Doctor" and "Assistant" groups.
+    """
+    # Apply migrations up to the state before 0009
+    migrator.apply_initial_migration(
+        ("api", "0009_bootstrap_groups")
+    )
+
+    # Apply the tested migration
+    migrator.apply_tested_migration(
+        ("api", "0009_bootstrap_groups")
+    )
+
+    # After migration, query using live runtime models
+    from django.contrib.auth.models import Group
+
+    # Verify that both groups exist
+    assert Group.objects.filter(name="Doctor").exists()
+    assert Group.objects.filter(name="Assistant").exists()
+
+    doctor_group = Group.objects.get(name="Doctor")
+    assistant_group = Group.objects.get(name="Assistant")
+    
+    assert doctor_group.name == "Doctor"
+    assert assistant_group.name == "Assistant"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_0009_bootstrap_groups_is_idempotent(migrator):
+    """
+    Test that running the 0009_bootstrap_groups migration multiple times is safe.
+    """
+    # Apply migrations up to the state before 0009
+    migrator.apply_initial_migration(
+        ("api", "0009_bootstrap_groups")
+    )
+
+    # Apply the tested migration first time
+    migrator.apply_tested_migration(
+        ("api", "0009_bootstrap_groups")
+    )
+
+    from django.contrib.auth.models import Group
+
+    # Verify groups exist
+    assert Group.objects.filter(name="Doctor").count() == 1
+    assert Group.objects.filter(name="Assistant").count() == 1
+
+    # Apply the migration again by calling the function directly
+    # (simulating multiple runs)
+    from clinicq_backend.api.migrations.0009_bootstrap_groups import create_groups
+    from django.apps import apps
+    
+    create_groups(apps, None)  # schema_editor not used in this function
+    
+    # Verify still only one of each group exists due to get_or_create
+    assert Group.objects.filter(name="Doctor").count() == 1
+    assert Group.objects.filter(name="Assistant").count() == 1
