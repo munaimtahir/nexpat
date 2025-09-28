@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes", "on")
+DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes", "on")
 
 _raw_allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost")
 ALLOWED_HOSTS: list[str] = [
@@ -49,14 +49,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
     "api.apps.ApiConfig",  # Or just 'api'
 ]
 
+INSTALLED_APPS += ["corsheaders"]
+
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -65,6 +65,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware", *MIDDLEWARE]
 
 ROOT_URLCONF = "clinicq_backend.urls"
 
@@ -221,19 +223,22 @@ REST_FRAMEWORK = {
 }
 
 # CORS Configuration
-# Allow both development (frontend on different port) and production origins
-_cors_allowed_origins = os.getenv(
-    "CORS_ALLOWED_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173"
-)
-CORS_ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in _cors_allowed_origins.split(",")
-    if origin.strip()
-]
-
-# For development, allow credentials (cookies, authorization headers)
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Vite dev
+    # "https://app.example.com",  # prod
+]
+# For quick local smoke tests only (remove in prod):
+# CORS_ALLOW_ALL_ORIGINS = True
+
+# Allow environment variable override for production
+_cors_allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS")
+if _cors_allowed_origins:
+    CORS_ALLOWED_ORIGINS = [
+        origin.strip()
+        for origin in _cors_allowed_origins.split(",")
+        if origin.strip()
+    ]
 
 # Allow common headers used by the frontend
 CORS_ALLOW_HEADERS = [
