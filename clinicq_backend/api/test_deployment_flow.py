@@ -7,6 +7,9 @@ These tests verify that the commands specified in the issue work correctly:
 3. Migration execution
 4. Superuser creation
 """
+import os
+from unittest import mock
+
 import pytest
 from django.test import TestCase, TransactionTestCase
 from django.core.management import call_command
@@ -37,13 +40,14 @@ class DeploymentFlowTest(TransactionTestCase):
         # Ensure we start with no users
         User.objects.all().delete()
         
-        # Create superuser using management command
-        call_command(
-            'createsuperuser',
-            '--noinput',
-            username='deploytest',
-            email='deploytest@example.com'
-        )
+        # Create superuser using management command with password provided via env var
+        with mock.patch.dict(os.environ, {'DJANGO_SUPERUSER_PASSWORD': 'testpass'}, clear=False):
+            call_command(
+                'createsuperuser',
+                '--noinput',
+                username='deploytest',
+                email='deploytest@example.com'
+            )
         
         # Verify superuser was created
         user = User.objects.get(username='deploytest')
