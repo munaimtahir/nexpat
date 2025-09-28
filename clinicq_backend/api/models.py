@@ -56,7 +56,7 @@ class Visit(models.Model):
         ordering = ["visit_date", "queue", "token_number"]
 
     def __str__(self):
-copilot/fix-4f4f38f6-a06c-4659-a54b-f19c0e62ad75
+        # copilot/fix-4f4f38f6-a06c-4659-a54b-f19c0e62ad75
         return (
             f"Token {self.token_number} - {self.patient.name} " f"({self.visit_date})"
         )
