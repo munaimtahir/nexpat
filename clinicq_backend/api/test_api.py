@@ -61,7 +61,8 @@ class PatientAPITests(APITestCase):
     def test_get_patients_by_registration_numbers(self):
         url = reverse("patient-list")
         numbers = (
-            f"{self.patient1.registration_number}," f"{self.patient2.registration_number},9999"
+            f"{self.patient1.registration_number},"
+            f"{self.patient2.registration_number},9999"
         )
         response = self.client.get(
             url,
@@ -78,7 +79,8 @@ class PatientAPITests(APITestCase):
     def test_get_patients_by_mixed_registration_numbers(self):
         url = reverse("patient-list")
         query = (
-            f"{self.patient1.registration_number}, abc ," f"{self.patient2.registration_number},xyz"
+            f"{self.patient1.registration_number}, abc ,"
+            f"{self.patient2.registration_number},xyz"
         )
         response = self.client.get(url, {"registration_numbers": query}, format="json")
         assert response.status_code == status.HTTP_200_OK
@@ -103,19 +105,25 @@ class PatientAPITests(APITestCase):
     def test_get_patients_registration_number_limit_accepted(self):
         url = reverse("patient-list")
         numbers = ",".join(str(i) for i in range(50))
-        response = self.client.get(url, {"registration_numbers": numbers}, format="json")
+        response = self.client.get(
+            url, {"registration_numbers": numbers}, format="json"
+        )
         assert response.status_code == status.HTTP_200_OK
 
     def test_get_patients_registration_number_limit_rejected(self):
         url = reverse("patient-list")
         numbers = ",".join(str(i) for i in range(51))
-        response = self.client.get(url, {"registration_numbers": numbers}, format="json")
+        response = self.client.get(
+            url, {"registration_numbers": numbers}, format="json"
+        )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_get_patients_registration_number_length_rejected(self):
         url = reverse("patient-list")
         numbers = f"{'1' * 11},2"
-        response = self.client.get(url, {"registration_numbers": numbers}, format="json")
+        response = self.client.get(
+            url, {"registration_numbers": numbers}, format="json"
+        )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_get_patient_detail(self):
@@ -502,7 +510,9 @@ class VisitAPITests(APITestCase):
         assert response.data["token_number"] == 1
         assert response.data["visit_date"] == str(date.today())
         assert response.data["status"] == "WAITING"
-        assert response.data["patient_full_name"] == self.patient.name  # Derived from patient obj
+        assert (
+            response.data["patient_full_name"] == self.patient.name
+        )  # Derived from patient obj
 
         # Check the Visit model's relationships
         visit = Visit.objects.get(pk=response.data["id"])
@@ -518,11 +528,15 @@ class VisitLifecycleTests(APITestCase):
         self.assistant_group, _ = Group.objects.get_or_create(name="Assistant")
         self.display_group, _ = Group.objects.get_or_create(name="Display")
 
-        self.doctor_user = User.objects.create_user(username="doctor", password="password")
+        self.doctor_user = User.objects.create_user(
+            username="doctor", password="password"
+        )
         self.doctor_user.groups.add(self.doctor_group)
         self.doctor_token = Token.objects.create(user=self.doctor_user)
 
-        self.assistant_user = User.objects.create_user(username="assistant", password="password")
+        self.assistant_user = User.objects.create_user(
+            username="assistant", password="password"
+        )
         self.assistant_user.groups.add(self.assistant_group)
         self.assistant_token = Token.objects.create(user=self.assistant_user)
 
