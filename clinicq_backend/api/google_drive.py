@@ -15,9 +15,7 @@ def upload_prescription_image(file_obj):
     credentials_path = os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE")
     if not credentials_path:
         raise RuntimeError("GOOGLE_SERVICE_ACCOUNT_FILE not set")
-    creds = service_account.Credentials.from_service_account_file(
-        credentials_path, scopes=SCOPES
-    )
+    creds = service_account.Credentials.from_service_account_file(credentials_path, scopes=SCOPES)
     service = build("drive", "v3", credentials=creds)
     file_metadata = {"name": file_obj.name}
     media = MediaIoBaseUpload(

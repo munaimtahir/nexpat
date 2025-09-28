@@ -13,9 +13,7 @@ def ensure_patient_queue(apps, schema_editor):
     Queue = apps.get_model("api", "Queue")
     db_alias = schema_editor.connection.alias
 
-    general_queue, _ = Queue.objects.using(db_alias).get_or_create(
-        name=DEFAULT_QUEUE_NAME
-    )
+    general_queue, _ = Queue.objects.using(db_alias).get_or_create(name=DEFAULT_QUEUE_NAME)
 
     visits = Visit.objects.using(db_alias).filter(
         models.Q(patient__isnull=True) | models.Q(queue__isnull=True)
