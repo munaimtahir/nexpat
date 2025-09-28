@@ -130,8 +130,8 @@ def test_0003_backfill_migrates_existing_visits(migrator):
 
     OldVisit = old_state.apps.get_model("api", "Visit")
 
-    # Ensure a clean slate and insert a legacy visit using the historical model so that
-    # the data is stored in the same database connection that migrations
+    # Ensure a clean slate and insert a legacy visit using the historical model
+    # so that the data is stored in the same database connection that migrations
     # operate on.
     OldVisit.objects.all().delete()
     OldVisit.objects.create(

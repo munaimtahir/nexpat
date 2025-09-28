@@ -120,19 +120,14 @@ class PatientFilterTests(APITestCase):
         self.p3 = Patient.objects.create(name="P3", gender="MALE")
 
     def test_filter_valid_numbers(self):
-        resp = self.client.get(
-            f"/api/patients/?registration_numbers={
-                self.p1.registration_number},{
-                self.p3.registration_number}"
-        )
+        query = f"{self.p1.registration_number},{self.p3.registration_number}"
+        resp = self.client.get(f"/api/patients/?registration_numbers={query}")
         self.assertEqual(resp.status_code, 200)
         numbers = [p["registration_number"] for p in resp.data["results"]]
         self.assertEqual(numbers, [self.p1.registration_number, self.p3.registration_number])
 
     def test_filter_mixed_numbers(self):
-        query = f"{
-            self.p1.registration_number}, abc ,{
-            self.p2.registration_number},xyz"
+        query = f"{self.p1.registration_number}, abc ," f"{self.p2.registration_number},xyz"
         resp = self.client.get(f"/api/patients/?registration_numbers={query}")
         self.assertEqual(resp.status_code, 200)
         numbers = [p["registration_number"] for p in resp.data["results"]]
@@ -162,9 +157,7 @@ class PatientFilterTests(APITestCase):
         p1 = Patient.objects.create(name="P1", gender="MALE")
         p2 = Patient.objects.create(name="P2", gender="MALE")
 
-        query = f"{
-            p1.registration_number}, invalid_format ,{
-            p2.registration_number},xyz"
+        query = f"{p1.registration_number}, invalid_format ," f"{p2.registration_number},xyz"
         resp = self.client.get(f"/api/patients/?registration_numbers={query}")
         self.assertEqual(resp.status_code, 200)
         numbers = [p["registration_number"] for p in resp.data["results"]]

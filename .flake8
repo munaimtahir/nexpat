@@ -1,6 +1,12 @@
 [flake8]
 max-line-length = 100
 extend-ignore = E203,W503
-per-file-ignores =
-    api/migrations/*: E501
-    tests/*: E501
+
+exclude =
+    .git,
+    __pycache__,
+    clinicq_frontend/node_modules,
+    clinicq_frontend/.next,
+    clinicq_frontend/build,
+    */migrations/
+main

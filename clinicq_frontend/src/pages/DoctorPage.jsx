@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api.js';
 import { unwrapListResponse } from '../utils/api.js';
+import { StatusBadge, TimeStamp } from '../components/index.js';
 
 const DoctorPage = () => {
   const [visits, setVisits] = useState([]);
@@ -246,16 +247,32 @@ const DoctorPage = () => {
               }`}
             >
               <div>
-                <p className="text-2xl font-bold text-blue-600">
-                  Token: {visit.token_number}{' '}
-                  <span className="text-lg font-medium text-gray-600">({visit.status})</span>
+                <div className="flex items-center gap-3 mb-2">
+                  <p className="text-2xl font-bold text-blue-600">
+                    Token: {visit.token_number}
+                  </p>
+                  <StatusBadge status={visit.status} size="md" />
                   {visit.queue_name && (
-                    <span className="text-base text-gray-500"> - {visit.queue_name}</span>
+                    <span className="text-base text-gray-500">- {visit.queue_name}</span>
                   )}
-                </p>
+                </div>
                 <p className="text-gray-700">Patient: {visit.patient_full_name}</p>
                 <p className="text-sm text-gray-500">Gender: {visit.patient_details?.gender}</p>
-                <p className="text-xs text-gray-500">
+                <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                  <TimeStamp 
+                    date={visit.created_at} 
+                    format="datetime" 
+                    prefix="Created:" 
+                    className="text-xs"
+                  />
+                  <TimeStamp 
+                    date={visit.updated_at} 
+                    format="datetime" 
+                    prefix="Updated:" 
+                    className="text-xs"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
                   Last Visits:{' '}
                   {visit.patient_details?.last_5_visit_dates?.length > 0
                     ? visit.patient_details.last_5_visit_dates.join(', ')

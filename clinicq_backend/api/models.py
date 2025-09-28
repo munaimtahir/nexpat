@@ -54,7 +54,9 @@ class Visit(models.Model):
         ordering = ["visit_date", "queue", "token_number"]
 
     def __str__(self):
-        return f"Token {self.token_number} - {self.patient.name} ({self.visit_date})"
+ 
+        return f"Token {self.token_number} - {self.patient.name} " f"({self.visit_date})"
+
 
 
 class Patient(models.Model):
