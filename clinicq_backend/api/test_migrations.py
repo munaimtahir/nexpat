@@ -247,9 +247,7 @@ def test_0002_schema_migration_creates_indexes_and_unique_constraint(migrator):
                     found_constraints = True
                     break
 
-    assert (
-        found_constraints
-    ), (
+    assert found_constraints, (
         "Unique constraint ('token_number', 'visit_date', 'queue') "
         "not found on Visit model after migration 0002"
     )
