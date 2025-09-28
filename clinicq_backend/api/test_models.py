@@ -156,7 +156,6 @@ class TestVisitModel:
         # This test might be redundant if the field is only for data migration.
 
     # Removed tests that directly tested VisitSerializer's old create()
-    copilot/fix-00a3112f-93d2-4af5-a587-73b7b86b29aa
     # behavior for token/date generation
     # as this logic is now in VisitViewSet.perform_create() and covered by API
     # tests.
