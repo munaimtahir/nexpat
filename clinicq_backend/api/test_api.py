@@ -639,7 +639,7 @@ class GoogleDriveIntegrationTests(APITestCase):
         )
 
     @pytest.mark.skipif(
-        "not os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE')",
+        not os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE'),
         reason="Google Drive service account file not configured"
     )
     def test_prescription_upload_with_google_drive_secret(self):
