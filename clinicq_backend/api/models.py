@@ -7,9 +7,9 @@ import re
 
 def validate_registration_number_format(value):
     """Validate that registration number follows xx-xx-xxx format"""
-    if not re.match(r'^\d{2}-\d{2}-\d{3}$', value):
+    if not re.match(r"^\d{2}-\d{2}-\d{3}$", value):
         raise ValidationError(
-            'Registration number must be in format xx-xx-xxx (e.g., 01-23-456)'
+            "Registration number must be in format xx-xx-xxx (e.g., 01-23-456)"
         )
 
 
@@ -57,8 +57,7 @@ class Visit(models.Model):
 
     def __str__(self):
         return (
-            f"Token {self.token_number} - {self.patient.name} "
-            f"({self.visit_date})"
+            f"Token {self.token_number} - {self.patient.name} " f"({self.visit_date})"
         )
 
 
@@ -69,7 +68,7 @@ class Patient(models.Model):
         max_length=8,
         primary_key=True,
         unique=True,
-        validators=[validate_registration_number_format]
+        validators=[validate_registration_number_format],
     )
     name = models.CharField(max_length=255)
     phone = models.CharField(
@@ -89,14 +88,14 @@ class Patient(models.Model):
     def generate_next_registration_number(cls):
         """Generate the next registration number in xx-xx-xxx format"""
         # Get the highest existing registration number
-        last_patient = cls.objects.order_by('-registration_number').first()
+        last_patient = cls.objects.order_by("-registration_number").first()
 
         if not last_patient:
             # First patient gets 01-00-001
             return "01-00-001"
 
         # Extract numeric value from existing format (remove dashes)
-        last_number_str = last_patient.registration_number.replace('-', '')
+        last_number_str = last_patient.registration_number.replace("-", "")
         last_number = int(last_number_str)
 
         # Increment and format as xx-xx-xxx

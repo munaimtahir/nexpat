@@ -19,9 +19,9 @@ class PatientSerializer(serializers.ModelSerializer):
         read_only_fields = ["registration_number", "created_at", "updated_at"]
 
     def get_last_5_visit_dates(self, obj):
-        return obj.visits.order_by("-visit_date").values_list(
-            "visit_date", flat=True
-        )[:5]
+        return obj.visits.order_by("-visit_date").values_list("visit_date", flat=True)[
+            :5
+        ]
 
 
 class QueueSerializer(serializers.ModelSerializer):

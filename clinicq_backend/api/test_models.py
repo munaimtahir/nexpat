@@ -16,8 +16,7 @@ class TestPatientModel:
         assert str(patient) == f"John Doe (ID: {patient.registration_number})"
 
     def test_patient_creation_defaults(self):
-        patient = Patient.objects.create(
-            name="Jane Smith")  # Gender defaults to OTHER
+        patient = Patient.objects.create(name="Jane Smith")  # Gender defaults to OTHER
         assert patient.gender == "OTHER"
         assert patient.phone is None  # Optional field
 
@@ -46,8 +45,7 @@ class TestVisitModel:
     def test_visit_creation_defaults_and_relations(self):
         # setUp is not automatically called by pytest for methods in a class unless it's a TestCase subclass
         # or specific pytest fixtures are used. For simplicity, creating here.
-        patient = Patient.objects.create(
-            name="Default Patient", gender="FEMALE")
+        patient = Patient.objects.create(name="Default Patient", gender="FEMALE")
         queue = Queue.objects.create(name="Default Queue")
 
         visit = Visit.objects.create(
