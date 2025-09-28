@@ -16,8 +16,7 @@ class TestPatientModel:
         assert str(patient) == f"John Doe (ID: {patient.registration_number})"
 
     def test_patient_creation_defaults(self):
-        patient = Patient.objects.create(
-            name="Jane Smith")  # Gender defaults to OTHER
+        patient = Patient.objects.create(name="Jane Smith")  # Gender defaults to OTHER
         assert patient.gender == "OTHER"
         assert patient.phone is None  # Optional field
 
@@ -37,17 +36,15 @@ class TestQueueModel:
 @pytest.mark.django_db
 class TestVisitModel:
     def setUp(self):
-        self.patient = Patient.objects.create(
-            name="Test Patient", gender="MALE", phone="12345"
-        )
+        self.patient = Patient.objects.create(name="Test Patient", gender="MALE", phone="12345")
         self.queue = Queue.objects.create(name="Test Queue")
 
     # Tests for model field defaults and basic properties
     def test_visit_creation_defaults_and_relations(self):
-        # setUp is not automatically called by pytest for methods in a class unless it's a TestCase subclass
-        # or specific pytest fixtures are used. For simplicity, creating here.
-        patient = Patient.objects.create(
-            name="Default Patient", gender="FEMALE")
+        # setUp is not automatically called by pytest for methods in a class
+        # unless it's a TestCase subclass or specific pytest fixtures are used.
+        # For simplicity, creating here.
+        patient = Patient.objects.create(name="Default Patient", gender="FEMALE")
         queue = Queue.objects.create(name="Default Queue")
 
         visit = Visit.objects.create(
@@ -106,7 +103,8 @@ class TestVisitModel:
         # Order by visit_date, then queue__name, then token_number
         # (assuming default ordering includes queue.name now)
         # The model Meta.ordering is ['visit_date', 'queue', 'token_number']
-        # This orders by queue PK by default for FK. If we want queue name, query needs .order_by('queue__name')
+        # This orders by queue PK by default for FK. If we want queue name,
+        # query needs .order_by('queue__name')
         # Let's assume test checks default model ordering.
 
         v1_yesterday_q1_t1 = Visit.objects.create(
@@ -153,8 +151,9 @@ class TestVisitModel:
         assert patient_other.get_gender_display() == "Other"
         # This test might be redundant if the field is only for data migration.
 
-    # Removed tests that directly tested VisitSerializer's old create() behavior for token/date generation
-    # as this logic is now in VisitViewSet.perform_create() and covered by API
+    # Removed tests that directly tested VisitSerializer's old create()
+    # behavior for token/date generation as this logic is now in
+    # VisitViewSet.perform_create() and covered by API
     # tests.
 
     # Test for visit_date defaulting to today via model field default
