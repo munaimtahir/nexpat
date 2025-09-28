@@ -114,14 +114,31 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         cache.clear()
+        patient = serializer.save()
+        logger.info(
+            f"Patient created: {patient.registration_number} ({patient.name}) by user {self.request.user.username}"
+        )
         return super().perform_create(serializer)
 
     def perform_update(self, serializer):
         cache.clear()
+        old_data = {
+            'name': self.get_object().name,
+            'phone': self.get_object().phone,
+            'gender': self.get_object().gender
+        }
+        patient = serializer.save()
+        logger.info(
+            f"Patient updated: {patient.registration_number} by user {self.request.user.username}. "
+            f"Old data: {old_data}, New data: {{name: {patient.name}, phone: {patient.phone}, gender: {patient.gender}}}"
+        )
         return super().perform_update(serializer)
 
     def perform_destroy(self, instance):
         cache.clear()
+        logger.warning(
+            f"Patient deleted: {instance.registration_number} ({instance.name}) by user {self.request.user.username}"
+        )
         return super().perform_destroy(instance)
 
     @method_decorator(cache_page(60 * 5))
@@ -237,15 +254,27 @@ class VisitViewSet(viewsets.ModelViewSet):
         if last_visit_in_queue_today:
             next_token_number = last_visit_in_queue_today.token_number + 1
 
-        serializer.save(
+        visit = serializer.save(
             token_number=next_token_number,
             visit_date=today,
             status="WAITING",
         )
+        
+        logger.info(
+            f"Visit created: Token {visit.token_number} for patient {visit.patient.registration_number} "
+            f"in queue {visit.queue.name} by user {self.request.user.username}"
+        )
 
     def _update_status(self, request, pk, new_status, expected_current_statuses):
         visit = self.get_object()
+        old_status = visit.status
+        
         if visit.status not in expected_current_statuses:
+            logger.warning(
+                f"Invalid status transition attempted: Visit {visit.id} (Token {visit.token_number}) "
+                f"from {old_status} to {new_status} by user {request.user.username}. "
+                f"Expected current status to be one of: {expected_current_statuses}"
+            )
             return Response(
                 {
                     "detail": f"Visit must be in one of the following "
@@ -260,6 +289,7 @@ class VisitViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             serializer.save()
             full_visit_serializer = VisitSerializer(visit, context={"request": request})
+
             return Response(full_visit_serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

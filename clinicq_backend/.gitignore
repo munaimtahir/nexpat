@@ -1,0 +1,10 @@
+# Django static files collected directory (should not be committed)
+staticfiles/
+
+# Database
+db.sqlite3
+*.db
+
+# Python cache
+__pycache__/
+*.pyc
