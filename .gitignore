@@ -106,8 +106,6 @@ node_modules/
 secrets/*.json
 !secrets/*.example
 !secrets/.gitkeep
-deploy/*.json
-!deploy/*.example
 
 # Environment files with sensitive data
 .env
