@@ -97,7 +97,7 @@ else:
     sanitized_database_url = _database_url.strip()
     if not sanitized_database_url:
         raise ImproperlyConfigured(
-            "DATABASE_URL is set but empty. Please provide a valid " "database connection URL."
+            "DATABASE_URL is set but empty. Please provide a valid database connection URL."
         )
 
     try:
