@@ -61,9 +61,7 @@ def forwards_func(apps, schema_editor):
     db_alias = schema_editor.connection.alias
 
     # 1. Create the default 'General' queue
-    general_queue, created = Queue.objects.using(db_alias).get_or_create(
-        name=DEFAULT_QUEUE_NAME
-    )
+    general_queue, created = Queue.objects.using(db_alias).get_or_create(name=DEFAULT_QUEUE_NAME)
     if created:
         print(f"\nCreated default queue: '{DEFAULT_QUEUE_NAME}'")
     else:
@@ -83,9 +81,7 @@ def forwards_func(apps, schema_editor):
 
     migrated_count = 0
     while True:
-        visit_ids = list(
-            visits_base_qs.values_list("pk", flat=True)[:VISIT_BATCH_SIZE]
-        )
+        visit_ids = list(visits_base_qs.values_list("pk", flat=True)[:VISIT_BATCH_SIZE])
         if not visit_ids:
             break
 
@@ -100,18 +96,14 @@ def forwards_func(apps, schema_editor):
             for visit in batch_visits:
                 update_kwargs = {}
 
-                gender = _normalise_gender(
-                    getattr(visit, "patient_gender", None)
-                )
-                if (hasattr(visit, "patient_gender") and
-                        visit.patient_gender != gender):
+                gender = _normalise_gender(getattr(visit, "patient_gender", None))
+                if hasattr(visit, "patient_gender") and visit.patient_gender != gender:
                     update_kwargs["patient_gender"] = gender
 
                 if visit.patient_id is None:
                     name = (
-                        (getattr(visit, "patient_name", "") or "").strip() or
-                        ANONYMOUS_NAME_FALLBACK
-                    )
+                        getattr(visit, "patient_name", "") or ""
+                    ).strip() or ANONYMOUS_NAME_FALLBACK
                     patient = Patient.objects.using(db_alias).create(
                         name=name,
                         gender=gender,
@@ -123,9 +115,7 @@ def forwards_func(apps, schema_editor):
                     update_kwargs["queue_id"] = general_queue.pk
 
                 if update_kwargs:
-                    Visit.objects.using(db_alias).filter(
-                        pk=visit.pk
-                    ).update(**update_kwargs)
+                    Visit.objects.using(db_alias).filter(pk=visit.pk).update(**update_kwargs)
                     migrated_count += 1
 
     if migrated_count:
@@ -155,12 +145,8 @@ def backwards_func(apps, schema_editor):
     db_alias = schema_editor.connection.alias
 
     try:
-        general_queue = Queue.objects.using(db_alias).get(
-            name=DEFAULT_QUEUE_NAME
-        )
-        visits_to_revert = Visit.objects.using(db_alias).filter(
-            queue=general_queue
-        )
+        general_queue = Queue.objects.using(db_alias).get(name=DEFAULT_QUEUE_NAME)
+        visits_to_revert = Visit.objects.using(db_alias).filter(queue=general_queue)
 
         reverted_count = 0
         for visit in visits_to_revert:
@@ -174,14 +160,10 @@ def backwards_func(apps, schema_editor):
 
         if reverted_count > 0:
             print(
-                f"\nReverted {reverted_count} visits, setting their patient "
-                f"and queue to NULL."
+                f"\nReverted {reverted_count} visits, setting their patient " f"and queue to NULL."
             )
         else:
-            print(
-                "\nNo visits found associated with the 'General' queue to "
-                "revert."
-            )
+            print("\nNo visits found associated with the 'General' queue to " "revert.")
 
     except Queue.DoesNotExist:
         print(
@@ -193,10 +175,7 @@ def backwards_func(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        (
-            "api",
-            "0002_queue_alter_visit_options_patient_visit_patient_and_more"
-        ),
+        ("api", "0002_queue_alter_visit_options_patient_visit_patient_and_more"),
     ]
 
     operations = [
