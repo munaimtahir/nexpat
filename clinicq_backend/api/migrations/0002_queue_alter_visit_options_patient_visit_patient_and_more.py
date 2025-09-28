@@ -40,10 +40,7 @@ class Migration(migrations.Migration):
                     models.AutoField(primary_key=True, serialize=False),
                 ),
                 ("name", models.CharField(max_length=255)),
-                (
-                    "phone",
-                    models.CharField(blank=True, max_length=20, null=True)
-                ),
+                ("phone", models.CharField(blank=True, max_length=20, null=True)),
                 (
                     "gender",
                     models.CharField(
@@ -61,12 +58,8 @@ class Migration(migrations.Migration):
             ],
             options={
                 "indexes": [
-                    models.Index(
-                        fields=["phone"], name="api_patient_phone_9d1c6b_idx"
-                    ),
-                    models.Index(
-                        fields=["name"], name="api_patient_name_8aa05a_idx"
-                    ),
+                    models.Index(fields=["phone"], name="api_patient_phone_9d1c6b_idx"),
+                    models.Index(fields=["name"], name="api_patient_name_8aa05a_idx"),
                 ],
             },
         ),

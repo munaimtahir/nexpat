@@ -20,9 +20,10 @@ WORKDIR /app/backend
 # Install Python dependencies
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies with SSL certificate handling for CI environments
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
 # Also install Gunicorn for running the app
-RUN pip install --no-cache-dir gunicorn
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org gunicorn
 
 # Copy the rest of the backend application code
 COPY . .

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
@@ -39,7 +37,10 @@ services:
       - DJANGO_SUPERUSER_USERNAME=admin
       - DJANGO_SUPERUSER_EMAIL=admin@example.com
       - DJANGO_SUPERUSER_PASSWORD=adminpass
+      - GOOGLE_SERVICE_ACCOUNT_FILE=/run/secrets/gdrive_service.json
       # Add other necessary env vars for local dev
+    secrets:
+      - gdrive_service.json
     depends_on:
       db:
         condition: service_healthy
@@ -66,6 +67,10 @@ services:
 
 volumes:
   clinicq_postgres_data:
+
+secrets:
+  gdrive_service.json:
+    file: ./deploy/gdrive_service.json
 
 # Note for Linux users regarding file permissions on mounted volumes:
 # You might want to uncomment the 'user: "${UID_GID}"' line in the backend service
