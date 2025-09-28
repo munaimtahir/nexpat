@@ -32,8 +32,8 @@ def initial_visit_data_before_migration(db, migrator):
 
     # A more pragmatic approach for this test:
     # 1. Ensure migrations are at 0001_initial.
-    # 2. Manually create some data that *would* exist (e.g. directly via SQL
-    #    or ORM if the model is simple enough).
+    # 2. Manually create some data that *would* exist
+    #    (e.g. directly via SQL or ORM if model is simple enough).
     #    The issue is that the current Visit model in tests already has patient and queue fields.
     #    To work around this, we'd need to use the historical model from the migration.
     #
@@ -247,7 +247,7 @@ def test_0002_schema_migration_creates_indexes_and_unique_constraint(migrator):
                     found_constraints = True
                     break
 
-<assert found_constraints, (
-    "Unique constraint ('token_number', 'visit_date', 'queue') not found on Visit model "
-    "after migration 0002"
-)
+    assert found_constraints, (
+        "Unique constraint ('token_number', 'visit_date', 'queue') "
+        "not found on Visit model after migration 0002"
+    )

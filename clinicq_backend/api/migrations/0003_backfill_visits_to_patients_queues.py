@@ -160,10 +160,11 @@ def backwards_func(apps, schema_editor):
 
         if reverted_count > 0:
             print(
-                f"\nReverted {reverted_count} visits, setting their patient " f"and queue to NULL."
+                f"\nReverted {reverted_count} visits, setting their patient and queue to NULL."
             )
         else:
-            print("\nNo visits found associated with the 'General' queue to " "revert.")
+            print("\nNo visits found associated with the 'General' queue to revert.")
+=
 
     except Queue.DoesNotExist:
         print(

@@ -98,6 +98,7 @@ else:
     sanitized_database_url = _database_url.strip()
     if not sanitized_database_url:
         raise ImproperlyConfigured(
+<\
             "DATABASE_URL is set but empty. Please provide a valid " "database connection URL."
         )
 
@@ -208,8 +209,7 @@ _cors_allowed_origins = os.getenv(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 )
 CORS_ALLOWED_ORIGINS = [
-    origin.strip() for origin in _cors_allowed_origins.split(",") if origin.strip()
-main
+    origin.strip() for origin in _cors_allowed_origins.split(",") if origin.strip(
 ]
 # For quick local smoke tests only (remove in prod):
 # CORS_ALLOW_ALL_ORIGINS = True

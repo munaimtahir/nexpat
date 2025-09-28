@@ -284,16 +284,8 @@ class VisitViewSet(viewsets.ModelViewSet):
         serializer = VisitStatusSerializer(visit, data={"status": new_status}, partial=True)
         if serializer.is_valid():
             serializer.save()
+            full_visit_serializer = VisitSerializer(visit, context={"request": request})
 
-            
-            logger.info(
-                f"Visit status updated: Visit {visit.id} (Token {visit.token_number}) "
-                f"from {old_status} to {new_status} by user {request.user.username}"
-            )
-            full_visit_serializer = VisitSerializer(
-                visit, context={"request": request}
-            )
-main
             return Response(full_visit_serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
