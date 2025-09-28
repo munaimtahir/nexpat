@@ -8,7 +8,9 @@ def create_groups(apps, schema_editor):
     canonical_groups = ["admin", "doctor", "assistant", "display"]
 
     for group_name in canonical_groups:
-        existing_group = Group.objects.filter(name__iexact=group_name).order_by("id").first()
+        existing_group = (
+            Group.objects.filter(name__iexact=group_name).order_by("id").first()
+        )
         if existing_group:
             if existing_group.name != group_name:
                 existing_group.name = group_name

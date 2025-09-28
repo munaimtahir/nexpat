@@ -170,7 +170,9 @@ def test_0003_backfill_migrates_existing_visits(migrator):
 
     # Fetch the visit that was inserted via SQL and should have been updated
     # by the migration
-    migrated_sql_visit = RuntimeVisit.objects.get(token_number=101, visit_date="2023-01-01")
+    migrated_sql_visit = RuntimeVisit.objects.get(
+        token_number=101, visit_date="2023-01-01"
+    )
 
     assert migrated_sql_visit.patient_id == anonymous_patient.pk
     assert migrated_sql_visit.queue_id == general_queue.pk
@@ -184,7 +186,9 @@ def test_0003_backfill_handles_no_existing_visits(migrator):
     Test that the data migration runs cleanly if there are no existing visits to migrate.
     """
     # Sets DB schema to state of 0002_...
-    old_state = migrator.apply_initial_migration(("api", "0003_backfill_visits_to_patients_queues"))
+    old_state = migrator.apply_initial_migration(
+        ("api", "0003_backfill_visits_to_patients_queues")
+    )
 
     OldVisitHistorical = old_state.apps.get_model("api", "Visit")
     old_state.apps.get_model("api", "Patient")
