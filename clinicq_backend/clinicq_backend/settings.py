@@ -209,13 +209,13 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
 }
-CORS Configuration
-Allow both development (frontend on different port) and production origins
+# CORS configuration
+# Allow both development (frontend on different port) and production origins
 _cors_allowed_origins = os.getenv(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 )
 CORS_ALLOWED_ORIGINS = [
-    origin.strip() for origin in _cors_allowed_origins.split(",") if origin.strip(
+    origin.strip() for origin in _cors_allowed_origins.split(",") if origin.strip()
 ]
 # For quick local smoke tests only (remove in prod):
 # CORS_ALLOW_ALL_ORIGINS = True
