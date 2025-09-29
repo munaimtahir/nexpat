@@ -54,6 +54,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # WhiteNoise middleware for serving static files in production
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -163,6 +165,11 @@ STATICFILES_DIRS: list[Path] = [
 _frontend_dist = BASE_DIR.parent / "clinicq_frontend" / "dist"
 if _frontend_dist.exists():
     STATICFILES_DIRS.append(_frontend_dist)
+
+# Use WhiteNoise to serve static files in production. This storage class
+# will compress and version static files for efficient caching. Ensure
+# whitenoise is installed in requirements.txt.
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
