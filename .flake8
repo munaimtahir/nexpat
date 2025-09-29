@@ -9,4 +9,4 @@ exclude =
     clinicq_frontend/.next,
     clinicq_frontend/build,
     */migrations/
-main
+
