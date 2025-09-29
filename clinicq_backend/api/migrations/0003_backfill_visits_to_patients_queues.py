@@ -169,7 +169,6 @@ def backwards_func(apps, schema_editor):
             )
         else:
             print("\nNo visits found associated with the 'General' queue to revert.")
-=
 
     except Queue.DoesNotExist:
         print(

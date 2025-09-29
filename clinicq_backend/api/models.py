@@ -56,7 +56,7 @@ class Visit(models.Model):
         ordering = ["visit_date", "queue", "token_number"]
 
     def __str__(self):
-    codex/refactor-visit.__str__-implementation
+        """Readable representation shown in admin and logs."""
         return f"Token {self.token_number} - {self.patient.name} ({self.visit_date})"
 
 
