@@ -1,0 +1,80 @@
+# Ignore version control and editor settings
+.git
+.gitignore
+.gitattributes
+.vscode/
+.idea/
+
+# Python cache and build artifacts
+__pycache__/
+*.# Ignore version control and editor settings
+.git
+.gitignore
+.gitattributes
+.vscode/
+.idea/
+
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# Virtual environment
+venv/
+.venv/
+
+# Node modules (if accidentally added)
+node_modules/
+npm-debug.log*
+yarn.lock
+coverage/
+.cache/
+tmp/
+*.log
+*.map
+
+# Django runtime files
+media/
+static/
+staticfiles/
+logs/
+*.sqlite3
+
+# Secret and environment files
+.env
+.env.*
+py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# Virtual environment
+venv/
+.venv/
+
+# Node modules (if accidentally added)
+node_modules/
+npm-debug.log*
+yarn.lock
+coverage/
+.cache/
+tmp/
+*.log
+*.map
+
+# Django runtime files
+media/
+static/
+staticfiles/
+logs/
+*.sqlite3
+
+# Secret and environment files
+.env
+.env.*
