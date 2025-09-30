@@ -1,0 +1,80 @@
+# VCS & editor
+.git
+.gitignore
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.e# VCS & editor
+.git
+.gitignore
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+venv/
+.env
+.env.*
+
+# Node / Frontend
+node_modules/
+**/node_modules/
+*.log
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+coverage/
+.frontend_cache/
+.browserslistrc
+.eslint*
+.stylelint*
+.cache/
+tmp/
+*.map
+
+# Django runtime
+media/
+staticfiles/
+static/
+*.sqlite3
+logs/
+gg-info/
+dist/
+build/
+venv/
+.env
+.env.*
+
+# Node / Frontend
+node_modules/
+**/node_modules/
+*.log
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+coverage/
+.frontend_cache/
+.browserslistrc
+.eslint*
+.stylelint*
+.cache/
+tmp/
+*.map
+
+# Django runtime
+media/
+staticfiles/
+static/
+*.sqlite3
+logs/
