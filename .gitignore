@@ -60,6 +60,12 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# Runtime artefacts not meant for version control
+logs/
+static/
+staticfiles/
+media/
+
 # Scrapy stuff
 .scrapy
 
