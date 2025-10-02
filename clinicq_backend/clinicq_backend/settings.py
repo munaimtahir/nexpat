@@ -259,6 +259,9 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
+# Allow credentials (cookies, authorization headers) in CORS requests
+CORS_ALLOW_CREDENTIALS = True
+
 # Production Security Settings
 # Configure these based on environment variables for production deployment
 
