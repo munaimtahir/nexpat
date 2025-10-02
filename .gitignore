@@ -110,6 +110,10 @@ deploy/*.json
 !deploy/*.example
 
 # Environment files with sensitive data
-.env
 .env.local
 .env.production
+
+# Allow development env files (no secrets)
+!clinicq_backend/.env
+!clinicq_frontend/.env
+!clinicq_frontend/.env.development

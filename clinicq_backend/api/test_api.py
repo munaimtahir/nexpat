@@ -12,6 +12,19 @@ import os
 
 
 @pytest.mark.django_db
+class HealthEndpointTests(APITestCase):
+    """Test the health endpoint for basic connectivity checks."""
+
+    def test_health_endpoint_returns_ok(self):
+        """Health endpoint should return 200 OK without authentication."""
+        url = reverse("health")
+        response = self.client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["status"] == "ok"
+        assert "timestamp" in response.data
+
+
+@pytest.mark.django_db
 class PatientAPITests(APITestCase):
     def setUp(self):
         cache.clear()

@@ -41,6 +41,25 @@ def me(request):
     return Response({"username": request.user.username, "roles": roles})
 
 
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def health(request):
+    """
+    Health check endpoint for monitoring and connectivity testing.
+
+    Parameters:
+        request (Request): The HTTP request object.
+
+    Returns:
+        Response: A JSON response containing the service status, name, and current timestamp.
+    """
+    return Response({
+        "status": "ok",
+        "service": "clinicq-backend",
+        "timestamp": timezone.now().isoformat(),
+    })
+
+
 @method_decorator(cache_page(60 * 5), name="list")
 @method_decorator(cache_page(60 * 5), name="retrieve")
 class QueueViewSet(viewsets.ReadOnlyModelViewSet):
