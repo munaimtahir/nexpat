@@ -44,7 +44,15 @@ def me(request):
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def health(request):
-    """Health check endpoint for monitoring and connectivity testing."""
+    """
+    Health check endpoint for monitoring and connectivity testing.
+
+    Parameters:
+        request (Request): The HTTP request object.
+
+    Returns:
+        Response: A JSON response containing the service status, name, and current timestamp.
+    """
     return Response({
         "status": "ok",
         "service": "clinicq-backend",
