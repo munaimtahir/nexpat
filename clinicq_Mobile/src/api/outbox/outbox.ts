@@ -1,0 +1,60 @@
+import { STORAGE_KEYS } from '@/constants';
+import { secureStore } from '@/storage/secureStore';
+import type { OutboxEntry, OutboxMethod } from './types';
+
+const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const serializeBody = (body: unknown) => {
+  if (!body) return body;
+  if (typeof body === 'object' && body !== null && Array.isArray((body as any)._parts)) {
+    const parts = (body as any)._parts as [string, any][];
+    return {
+      __type: 'FormData',
+      parts: parts.map(([key, value]) => [key, value])
+    };
+  }
+  return body;
+};
+
+const getEntries = async (): Promise<OutboxEntry[]> => {
+  const raw = await secureStore.getString(STORAGE_KEYS.outbox);
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw) as OutboxEntry[];
+  } catch (error) {
+    return [];
+  }
+};
+
+const saveEntries = async (entries: OutboxEntry[]) => {
+  await secureStore.setString(STORAGE_KEYS.outbox, JSON.stringify(entries));
+};
+
+export const outbox = {
+  async enqueue(method: OutboxMethod, url: string, body?: unknown, headers?: Record<string, string>) {
+    const entries = await getEntries();
+    const entry: OutboxEntry = {
+      id: generateId(),
+      method,
+      url,
+      body: serializeBody(body),
+      headers,
+      createdAt: new Date().toISOString(),
+      attempt: 0
+    };
+    entries.push(entry);
+    await saveEntries(entries);
+    return entry;
+  },
+  async remove(id: string) {
+    const entries = await getEntries();
+    const next = entries.filter((entry) => entry.id !== id);
+    await saveEntries(next);
+  },
+  async clear() {
+    await saveEntries([]);
+  },
+  async list() {
+    return getEntries();
+  }
+};
