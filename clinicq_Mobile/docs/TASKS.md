@@ -1,0 +1,13 @@
+# Tasks
+- [ ] Scaffold Expo app; commit baseline.
+- [ ] Add navigation + theme.
+- [ ] Axios client with interceptors; secure token storage.
+- [ ] Login screen; `/auth/me` check; role routing.
+- [ ] Patients: list/search/detail/form.
+- [ ] Visits: list/enqueue/update.
+- [ ] Uploads (camera/gallery) with progress & retry.
+- [ ] Offline cache + write outbox.
+- [ ] Diagnostics screen.
+- [ ] i18n (en/ur), accessibility.
+- [ ] E2E (Detox), CI pipeline, Sentry.
+- [ ] Play listing assets; internal release.
