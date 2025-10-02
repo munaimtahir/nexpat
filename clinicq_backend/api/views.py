@@ -41,6 +41,17 @@ def me(request):
     return Response({"username": request.user.username, "roles": roles})
 
 
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def health(request):
+    """Health check endpoint for monitoring and connectivity testing."""
+    return Response({
+        "status": "ok",
+        "service": "clinicq-backend",
+        "timestamp": timezone.now().isoformat(),
+    })
+
+
 @method_decorator(cache_page(60 * 5), name="list")
 @method_decorator(cache_page(60 * 5), name="retrieve")
 class QueueViewSet(viewsets.ReadOnlyModelViewSet):
