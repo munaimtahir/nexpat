@@ -21,6 +21,7 @@
 ## Phase 4 - Quality & Release
 - [x] Sentry integration (configured).
 - [x] i18n setup (en only).
+- [ ] i18n Urdu translations.
 - [ ] Accessibility (screen reader labels).
 - [ ] E2E (Detox) tests.
 - [ ] Unit tests.

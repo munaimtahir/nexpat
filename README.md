@@ -10,7 +10,12 @@ This project is being developed in **stages** using AI coding agents (Jules + Gi
 - **Stage 2**: Missing features build-out
 - **Stage 3**: Deep testing and debugging
 
-See `development_plan.md` and `task_graph.md` for details.
+See `docs/decisions/development_plan.md` and `docs/decisions/task_graph.md` for details.
+
+## Repository Structure Improvements
+
+- Review the proposed re-organization plan in [`docs/references/REPO_STRUCTURE_IMPROVEMENTS.md`](docs/references/REPO_STRUCTURE_IMPROVEMENTS.md) for guidance on consolidating apps, documentation, and infrastructure assets into a cleaner monorepo layout.
+
 
 ## Local Development Quick Start
 
@@ -19,11 +24,33 @@ See `development_plan.md` and `task_graph.md` for details.
 - Node.js 20+
 - pip and npm
 
+### Docker Setup (Recommended)
+
+The easiest way to run the full stack locally is using Docker Compose:
+
+```bash
+cd infra
+docker-compose up
+```
+
+This will start all services (PostgreSQL, Django backend, React frontend) with a single command.
+
+**⚠️ Important:** The docker-compose files use relative paths and must be run from the `infra/` directory. See [infra/README.md](infra/README.md) for details.
+
+Alternatively, from the repository root:
+```bash
+docker-compose -f infra/docker-compose.yml up
+```
+
+### Manual Setup
+
+If you prefer to run services individually without Docker:
+
 ### Backend Setup
 
 1. Navigate to the backend directory:
    ```bash
-   cd clinicq_backend
+   cd apps/backend
    ```
 
 2. Create and activate a virtual environment:
@@ -64,7 +91,7 @@ See `development_plan.md` and `task_graph.md` for details.
 
 1. Navigate to the frontend directory:
    ```bash
-   cd clinicq_frontend
+   cd apps/web
    ```
 
 2. Install dependencies:
@@ -119,7 +146,7 @@ curl -X POST http://127.0.0.1:8000/api/auth/login/ \
 
 **Note**: Browsers treat `localhost` and `127.0.0.1` as different origins. Both must be configured in CORS settings during development.
 
-## Authentication Flow
+## 🔐 Authentication Flow
 
 The backend exposes Django REST Framework's token authentication via
 `POST /api/auth/login/`. The frontend keeps the returned access token in memory
@@ -140,4 +167,4 @@ This application is production-ready with the following features:
 - **Environment-based configuration** with comprehensive `.env` variables
 - **Security hardening** with configurable HTTPS, HSTS, and security headers
 
-See `DEPLOYMENT_GUIDE.md` for detailed deployment instructions.
+See `docs/ops/DEPLOYMENT_GUIDE.md` for detailed deployment instructions.
