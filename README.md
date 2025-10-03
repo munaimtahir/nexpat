@@ -12,6 +12,10 @@ This project is being developed in **stages** using AI coding agents (Jules + Gi
 
 See `development_plan.md` and `task_graph.md` for details.
 
+## Repository Structure Improvements
+
+- Review the proposed re-organization plan in [`docs/REPO_STRUCTURE_IMPROVEMENTS.md`](docs/REPO_STRUCTURE_IMPROVEMENTS.md) for guidance on consolidating apps, documentation, and infrastructure assets into a cleaner monorepo layout.
+
 ## Local Development Quick Start
 
 ### Prerequisites
