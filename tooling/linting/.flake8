@@ -6,8 +6,7 @@ exclude =
     .git,
     __pycache__,
     apps/web/node_modules,
-    apps/web/.next,
-    apps/web/build,
+    apps/web/dist,
     apps/mobile/node_modules,
     apps/mobile/.expo,
     */migrations/
