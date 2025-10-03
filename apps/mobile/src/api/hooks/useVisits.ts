@@ -1,16 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/constants/queryKeys';
-import type { VisitRequest } from '@/api/generated/client';
+import type { PaginatedResponse, Visit, VisitRequest } from '@/api/generated/types';
 
 export const useVisits = (params: { status?: string; page?: number }) =>
-  useQuery({
+  useQuery<PaginatedResponse<Visit>>({
     queryKey: queryKeys.visits(params),
     queryFn: async () => {
       const response = await apiClient.listVisits(params);
       return response.data;
     },
-    keepPreviousData: true
+    placeholderData: (previousData) => previousData
   });
 
 export const useVisit = (id: number) =>

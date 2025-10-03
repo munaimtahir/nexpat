@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosHeaders, type AxiosRequestHeaders } from 'axios';
 import { env } from '@/utils/environment';
 import { logger } from '@/utils/logger';
 import { outbox } from './outbox';
@@ -11,10 +11,9 @@ const client = axios.create({ baseURL: env.serverUrl });
 client.interceptors.request.use(async (config) => {
   const token = await secureStore.getString(STORAGE_KEYS.token);
   if (token) {
-    config.headers = {
-      ...(config.headers ?? {}),
-      Authorization: `Bearer ${token}`
-    };
+    const headers = AxiosHeaders.from((config.headers ?? {}) as AxiosRequestHeaders);
+    headers.set('Authorization', `Bearer ${token}`);
+    config.headers = headers;
   }
   return config;
 });
@@ -32,7 +31,8 @@ const deserializeBody = (body: unknown) => {
 
 const executeEntry = async (entry: OutboxEntry) => {
   const { method, url, body, headers } = entry;
-  await client.request({ method, url, data: deserializeBody(body), headers });
+  const requestHeaders = headers ? AxiosHeaders.from(headers as AxiosRequestHeaders) : undefined;
+  await client.request({ method, url, data: deserializeBody(body), headers: requestHeaders });
 };
 
 export const replayOutbox = async () => {

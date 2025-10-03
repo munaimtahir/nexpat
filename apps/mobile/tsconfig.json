@@ -14,6 +14,7 @@
     "types": ["jest", "node"],
     "baseUrl": "./",
     "paths": {
+      "@/*": ["src/*"],
       "@/api/*": ["src/api/*"],
       "@/components/*": ["src/components/*"],
       "@/hooks/*": ["src/hooks/*"],
@@ -22,7 +23,16 @@
       "@/theme/*": ["src/theme/*"],
       "@/utils/*": ["src/utils/*"],
       "@/features/*": ["src/features/*"],
-      "@/providers/*": ["src/providers/*"]
+      "@/providers/*": ["src/providers/*"],
+      "@/storage/*": ["src/storage/*"],
+      "@/constants/*": ["src/constants/*"],
+      "@/i18n/*": ["src/i18n/*"],
+      "@/theme": ["src/theme/index"],
+      "@/navigation": ["src/navigation/index"],
+      "@/constants": ["src/constants/index"],
+      "@/storage/secureStore": ["src/storage/secureStore"],
+      "@/providers": ["src/providers/index"],
+      "@/i18n": ["src/i18n/index"]
     }
   },
   "include": ["src", "App.tsx", "app.config.ts", "jest.setup.ts"],
