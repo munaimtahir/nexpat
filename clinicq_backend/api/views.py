@@ -53,11 +53,13 @@ def health(request):
     Returns:
         Response: A JSON response containing the service status, name, and current timestamp.
     """
-    return Response({
-        "status": "ok",
-        "service": "clinicq-backend",
-        "timestamp": timezone.now().isoformat(),
-    })
+    return Response(
+        {
+            "status": "ok",
+            "service": "clinicq-backend",
+            "timestamp": timezone.now().isoformat(),
+        }
+    )
 
 
 @method_decorator(cache_page(60 * 5), name="list")
@@ -100,9 +102,7 @@ class PatientViewSet(viewsets.ModelViewSet):
 
             if len(raw_numbers) > 50:
                 raise ValidationError(
-                    {
-                        "registration_numbers": "A maximum of 50 registration numbers are allowed."
-                    }
+                    {"registration_numbers": "A maximum of 50 registration numbers are allowed."}
                 )
 
             numbers = []
@@ -135,28 +135,33 @@ class PatientViewSet(viewsets.ModelViewSet):
         cache.clear()
         patient = serializer.save()
         logger.info(
-            f"Patient created: {patient.registration_number} ({patient.name}) by user {self.request.user.username}"
+            f"Patient created: {patient.registration_number} ({patient.name}) "
+            f"by user {self.request.user.username}"
         )
         return super().perform_create(serializer)
 
     def perform_update(self, serializer):
         cache.clear()
         old_data = {
-            'name': self.get_object().name,
-            'phone': self.get_object().phone,
-            'gender': self.get_object().gender
+            "name": self.get_object().name,
+            "phone": self.get_object().phone,
+            "gender": self.get_object().gender,
         }
         patient = serializer.save()
         logger.info(
-            f"Patient updated: {patient.registration_number} by user {self.request.user.username}. "
-            f"Old data: {old_data}, New data: {{name: {patient.name}, phone: {patient.phone}, gender: {patient.gender}}}"
+            f"Patient updated: {patient.registration_number} "
+            f"by user {self.request.user.username}. "
+            f"Old data: {old_data}, "
+            f"New data: {{name: {patient.name}, phone: {patient.phone}, "
+            f"gender: {patient.gender}}}"
         )
         return super().perform_update(serializer)
 
     def perform_destroy(self, instance):
         cache.clear()
         logger.warning(
-            f"Patient deleted: {instance.registration_number} ({instance.name}) by user {self.request.user.username}"
+            f"Patient deleted: {instance.registration_number} ({instance.name}) "
+            f"by user {self.request.user.username}"
         )
         return super().perform_destroy(instance)
 
@@ -278,20 +283,24 @@ class VisitViewSet(viewsets.ModelViewSet):
             visit_date=today,
             status="WAITING",
         )
-        
+
         logger.info(
-            f"Visit created: Token {visit.token_number} for patient {visit.patient.registration_number} "
-            f"in queue {visit.queue.name} by user {self.request.user.username}"
+            f"Visit created: Token {visit.token_number} "
+            f"for patient {visit.patient.registration_number} "
+            f"in queue {visit.queue.name} "
+            f"by user {self.request.user.username}"
         )
 
     def _update_status(self, request, pk, new_status, expected_current_statuses):
         visit = self.get_object()
         old_status = visit.status
-        
+
         if visit.status not in expected_current_statuses:
             logger.warning(
-                f"Invalid status transition attempted: Visit {visit.id} (Token {visit.token_number}) "
-                f"from {old_status} to {new_status} by user {request.user.username}. "
+                f"Invalid status transition attempted: "
+                f"Visit {visit.id} (Token {visit.token_number}) "
+                f"from {old_status} to {new_status} "
+                f"by user {request.user.username}. "
                 f"Expected current status to be one of: {expected_current_statuses}"
             )
             return Response(
@@ -302,9 +311,7 @@ class VisitViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = VisitStatusSerializer(
-            visit, data={"status": new_status}, partial=True
-        )
+        serializer = VisitStatusSerializer(visit, data={"status": new_status}, partial=True)
         if serializer.is_valid():
             serializer.save()
             full_visit_serializer = VisitSerializer(visit, context={"request": request})
