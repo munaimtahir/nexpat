@@ -1,3 +1,12 @@
+# Docker Compose configuration for local development
+#
+# IMPORTANT: This file must be run from the infra/ directory:
+#   cd infra && docker-compose up
+#
+# The relative paths (../apps/*) are designed to work from this location.
+# If you need to run from a different directory, use the -f flag with absolute paths
+# or adjust the working directory accordingly.
+
 services:
   db:
     image: postgres:15-alpine

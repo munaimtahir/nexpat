@@ -2,6 +2,12 @@ version: '3.8'
 
 # Production Docker Compose configuration
 # This extends the base docker-compose.yml with production-specific settings
+#
+# IMPORTANT: This file must be run from the infra/ directory:
+#   cd infra && docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+#
+# The base file (docker-compose.yml) uses relative paths (../apps/*) designed to work
+# from the infra/ directory location.
 
 services:
   db:

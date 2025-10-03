@@ -24,6 +24,28 @@ See `docs/decisions/development_plan.md` and `docs/decisions/task_graph.md` for 
 - Node.js 20+
 - pip and npm
 
+### Docker Setup (Recommended)
+
+The easiest way to run the full stack locally is using Docker Compose:
+
+```bash
+cd infra
+docker-compose up
+```
+
+This will start all services (PostgreSQL, Django backend, React frontend) with a single command.
+
+**⚠️ Important:** The docker-compose files use relative paths and must be run from the `infra/` directory. See [infra/README.md](infra/README.md) for details.
+
+Alternatively, from the repository root:
+```bash
+docker-compose -f infra/docker-compose.yml up
+```
+
+### Manual Setup
+
+If you prefer to run services individually without Docker:
+
 ### Backend Setup
 
 1. Navigate to the backend directory:

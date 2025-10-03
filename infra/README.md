@@ -22,29 +22,43 @@ Templates and examples for credential management:
 Located in this directory for easier organization:
 
 - **`docker-compose.yml`** - Local development environment
-  ```bash
-  docker-compose up
-  ```
-
 - **`docker-compose.prod.yml`** - Production configuration
-  ```bash
-  docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
-  ```
+
+**⚠️ IMPORTANT:** These files use relative paths and **must be run from the `infra/` directory**:
+
+```bash
+cd infra
+docker-compose up
+```
+
+The relative paths (`../apps/backend`, `../apps/web`) are designed to work from this location. If you need to run docker-compose from a different directory, use the `-f` flag with the full path to the compose files:
+
+```bash
+# From repository root:
+docker-compose -f infra/docker-compose.yml up
+```
 
 ## Usage
 
 ### Local Development
 
-From the repository root:
+**Run from the infra directory:**
 ```bash
 cd infra
 docker-compose up
+```
+
+**Or from the repository root using -f flag:**
+```bash
+docker-compose -f infra/docker-compose.yml up
 ```
 
 This starts:
 - PostgreSQL database (port 54320)
 - Django backend (port 8000)
 - React frontend (port 5173)
+
+**Note:** The docker-compose.yml file uses relative paths (`../apps/*`) that are resolved from the `infra/` directory. Always run docker-compose from `infra/` or use the `-f` flag with the full path when running from other locations.
 
 ### Production Deployment
 
