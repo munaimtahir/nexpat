@@ -41,7 +41,9 @@ class DeploymentFlowTest(TransactionTestCase):
         User.objects.all().delete()
 
         # Create superuser using management command with password provided via env var
-        with mock.patch.dict(os.environ, {"DJANGO_SUPERUSER_PASSWORD": "testpass"}, clear=False):
+        with mock.patch.dict(
+            os.environ, {"DJANGO_SUPERUSER_PASSWORD": "testpass"}, clear=False
+        ):
             call_command(
                 "createsuperuser",
                 "--noinput",
@@ -67,7 +69,9 @@ class DeploymentFlowTest(TransactionTestCase):
         out = StringIO()
         err = StringIO()
 
-        with pytest.raises(Exception):  # Django raises CommandError for existing username
+        with pytest.raises(
+            Exception
+        ):  # Django raises CommandError for existing username
             call_command(
                 "createsuperuser",
                 "--noinput",
@@ -131,7 +135,9 @@ class MigrationValidationTest(TestCase):
 
         # Test that we can create visits with the expected relationships
         patient = Patient.objects.create(
-            registration_number="02-34-56", name="Migration Test Patient", gender="FEMALE"
+            registration_number="02-34-56",
+            name="Migration Test Patient",
+            gender="FEMALE",
         )
 
         visit = Visit.objects.create(

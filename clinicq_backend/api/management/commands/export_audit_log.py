@@ -9,7 +9,9 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Export audit log data for verification and demonstrate import/export pipeline"
+    help = (
+        "Export audit log data for verification and demonstrate import/export pipeline"
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -30,12 +32,16 @@ class Command(BaseCommand):
         end_date = timezone.now()
         start_date = end_date - timedelta(days=days)
 
-        logger.info(f"Starting audit log export for {days} days ({start_date} to {end_date})")
+        logger.info(
+            f"Starting audit log export for {days} days ({start_date} to {end_date})"
+        )
 
         # Export patient data
         patients = Patient.objects.filter(
             created_at__gte=start_date, created_at__lte=end_date
-        ).values("registration_number", "name", "gender", "phone", "created_at", "updated_at")
+        ).values(
+            "registration_number", "name", "gender", "phone", "created_at", "updated_at"
+        )
 
         # Export visit data
         visits = (
@@ -60,7 +66,10 @@ class Command(BaseCommand):
         audit_data = {
             "export_metadata": {
                 "timestamp": timezone.now().isoformat(),
-                "date_range": {"start": start_date.isoformat(), "end": end_date.isoformat()},
+                "date_range": {
+                    "start": start_date.isoformat(),
+                    "end": end_date.isoformat(),
+                },
                 "record_counts": {
                     "patients": len(patients),
                     "visits": len(visits),
@@ -105,4 +114,6 @@ class Command(BaseCommand):
             f"{len(visits)} visits, {len(queues)} queues"
         )
 
-        self.stdout.write(self.style.SUCCESS(f"Successfully exported audit data for {days} days"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Successfully exported audit data for {days} days")
+        )
