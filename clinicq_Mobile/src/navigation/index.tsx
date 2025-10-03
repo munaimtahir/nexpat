@@ -11,6 +11,7 @@ import { VisitsQueueScreen } from '@/screens/VisitsQueueScreen';
 import { DoctorQueueScreen } from '@/screens/DoctorQueueScreen';
 import { UploadManagerScreen } from '@/screens/UploadManagerScreen';
 import { DiagnosticsScreen } from '@/screens/DiagnosticsScreen';
+import { PublicDisplayScreen } from '@/screens/PublicDisplayScreen';
 import { LoadingIndicator } from '@/components/LoadingIndicator';
 import { ROLES } from '@/constants';
 import type { AppStackParamList, AssistantTabParamList, AuthStackParamList, DoctorTabParamList } from './types';
@@ -43,6 +44,11 @@ const AssistantStack = () => (
     <App.Screen name="PatientDetail" component={PatientDetailScreen} options={{ title: 'Patient detail' }} />
     <App.Screen name="PatientForm" component={PatientFormScreen} options={{ title: 'Patient form' }} />
     <App.Screen name="VisitDetail" component={VisitDetailScreen} options={{ title: 'Visit detail' }} />
+    <App.Screen
+      name="PublicDisplay"
+      component={PublicDisplayScreen}
+      options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false }}
+    />
   </App.Navigator>
 );
 
@@ -52,6 +58,11 @@ const DoctorStack = () => (
     <App.Screen name="PatientDetail" component={PatientDetailScreen} options={{ title: 'Patient detail' }} />
     <App.Screen name="PatientForm" component={PatientFormScreen} options={{ title: 'Patient form' }} />
     <App.Screen name="VisitDetail" component={VisitDetailScreen} options={{ title: 'Visit detail' }} />
+    <App.Screen
+      name="PublicDisplay"
+      component={PublicDisplayScreen}
+      options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false }}
+    />
   </App.Navigator>
 );
 

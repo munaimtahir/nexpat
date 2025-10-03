@@ -5,11 +5,15 @@ import { useHealth, useVersion } from '@/api/hooks/useDiagnostics';
 import { LoadingIndicator } from '@/components/LoadingIndicator';
 import { ErrorState } from '@/components/ErrorState';
 import { useAuth } from '@/features/auth/AuthContext';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '@/navigation/types';
 
 export const DiagnosticsScreen: React.FC = () => {
   const health = useHealth();
   const version = useVersion();
   const { refreshProfile, logout } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
 
   if (health.isLoading || version.isLoading) {
     return <LoadingIndicator />;
@@ -37,6 +41,13 @@ export const DiagnosticsScreen: React.FC = () => {
 
       <Button mode="outlined" onPress={() => { health.refetch(); version.refetch(); }} style={{ marginBottom: 12 }}>
         Refresh diagnostics
+      </Button>
+      <Button
+        mode="outlined"
+        onPress={() => navigation.navigate('PublicDisplay')}
+        style={{ marginBottom: 12 }}
+      >
+        Open public display
       </Button>
       <Button mode="outlined" onPress={() => refreshProfile()} style={{ marginBottom: 12 }}>
         Refresh profile
