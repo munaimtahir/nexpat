@@ -18,7 +18,7 @@ services:
 
   backend:
     build:
-      context: ./clinicq_backend
+      context: ../apps/backend
       dockerfile: Dockerfile
     container_name: clinicq_backend
     # Command is now executed by entrypoint.sh, which handles migrations.
@@ -26,7 +26,7 @@ services:
     # The entrypoint script will receive this as "$@"
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./clinicq_backend:/app/backend # Mount code for hot-reloading
+      - ../apps/backend:/app/backend # Mount code for hot-reloading
     ports:
       - "8000:8000"
     environment:
@@ -48,12 +48,12 @@ services:
 
   frontend:
     build:
-      context: ./clinicq_frontend
+      context: ../apps/web
       dockerfile: Dockerfile # This Dockerfile is for production; for dev, we override command
     container_name: clinicq_frontend
     command: npm run dev -- --host # Runs Vite dev server, accessible externally
     volumes:
-      - ./clinicq_frontend:/app/frontend # Mount code for hot-reloading
+      - ../apps/web:/app/frontend # Mount code for hot-reloading
       - /app/frontend/node_modules # Don't mount over node_modules from host
     ports:
       - "5173:5173" # Default Vite port
@@ -70,7 +70,7 @@ volumes:
 
 secrets:
   gdrive_service.json:
-    file: ./deploy/gdrive_service.json
+    file: ./secrets/gdrive_service.json
 
 # Note for Linux users regarding file permissions on mounted volumes:
 # You might want to uncomment the 'user: "${UID_GID}"' line in the backend service

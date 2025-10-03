@@ -23,26 +23,26 @@ jobs:
         python-version: '3.12'
 
     - name: Install backend dependencies
-      working-directory: ./clinicq_backend
+      working-directory: ./apps/backend
       run: |
         pip install --upgrade pip
         pip install -r requirements.txt
         pip install -U -r requirements-dev.txt # -U to upgrade if needed
 
     - name: Format with Black (Backend)
-      working-directory: ./clinicq_backend
+      working-directory: ./apps/backend
       run: black --line-length 100 .
 
     - name: Lint with Flake8 (Backend)
-      working-directory: ./clinicq_backend
+      working-directory: ./apps/backend
       run: flake8 .
 
     - name: Check formatting with Black (Backend)
-      working-directory: ./clinicq_backend
+      working-directory: ./apps/backend
       run: black . --check --diff
 
     - name: Run backend tests (Pytest)
-      working-directory: ./clinicq_backend
+      working-directory: ./apps/backend
       # Assuming 'api' is the main app to target for coverage, adjust if needed
       run: python -m pytest --cov=api --cov-report=xml --cov-report=term-missing --cov-fail-under=80
 
@@ -50,7 +50,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y xmlstarlet
 
     - name: Check backend coverage
-      working-directory: ./clinicq_backend
+      working-directory: ./apps/backend
       run: |
         COVERAGE_VALUE=$(xmlstarlet sel -t -v "concat(round(/coverage/@line-rate * 100), '')" coverage.xml)
         echo "Backend coverage is $COVERAGE_VALUE%"
@@ -65,27 +65,27 @@ jobs:
         node-version: '20'
 
     - name: Install frontend dependencies
-      working-directory: ./clinicq_frontend
+      working-directory: ./apps/web
       run: npm ci --prefer-offline --no-audit --progress=false
 
     - name: Lint with ESLint (Frontend)
-      working-directory: ./clinicq_frontend
+      working-directory: ./apps/web
       run: npm run lint
 
     - name: Run frontend tests (Jest)
-      working-directory: ./clinicq_frontend
+      working-directory: ./apps/web
       # Use npx for cross-env if it's not globally available in CI runner
       run: npx cross-env NODE_ENV=test jest --runInBand --coverage --watchAll=false
       # Note: One frontend test is currently failing due to axios/MSW interaction issues.
       # Coverage threshold is set in jest.config.cjs and will cause failure if not met.
 
     - name: Build frontend application
-      working-directory: ./clinicq_frontend
+      working-directory: ./apps/web
       run: npm run build
 
     - name: Archive frontend build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: frontend-build
-        path: clinicq_frontend/dist/ # Default Vite build output directory
+        path: apps/web/dist/ # Default Vite build output directory
         if-no-files-found: error # Fail if build output is missing

@@ -4,33 +4,50 @@ This document describes the organization and structure of the ClinicQ project, a
 
 ## Overview
 
-ClinicQ is a monorepo containing three main applications:
-- **Backend API** (Django REST Framework)
-- **Web Frontend** (React + Vite)
-- **Mobile App** (React Native + Expo)
+ClinicQ is a monorepo organized around deployable applications, with clear separation between product code, infrastructure, documentation, and tooling.
+
+## Guiding Principles
+
+- **Group by deployable unit** - All runtime applications live under `apps/` with consistent structure
+- **Separate delivery tooling** - DevOps assets in `infra/` to reduce root-level clutter
+- **Curate documentation** - Organized in `docs/` by purpose (guides, references, decisions, ops)
+- **Centralize tooling** - Shared configs in `tooling/` for consistent development experience
 
 ## Repository Root
 
 ```
 nexpat/
-├── clinicq_backend/        # Django REST API backend
-├── clinicq_frontend/       # React web application
-├── clinicq_Mobile/         # React Native mobile app
-├── deploy/                 # Deployment scripts and configurations
-├── docs/                   # Shared documentation
-├── secrets/                # Credentials and service account files (gitignored)
-├── .github/                # GitHub Actions workflows and configurations
-├── docker-compose.yml      # Local development environment
-├── docker-compose.prod.yml # Production Docker setup
-└── [configuration files]   # Root-level configs (pytest, mypy, flake8, etc.)
+├── apps/                   # Deployable applications
+│   ├── backend/           # Django REST API (formerly clinicq_backend)
+│   ├── web/               # React web app (formerly clinicq_frontend)
+│   └── mobile/            # React Native app (formerly clinicq_Mobile)
+├── docs/                   # All documentation
+│   ├── guides/            # Quick starts, tutorials, onboarding
+│   ├── references/        # API docs, data models, architecture
+│   ├── decisions/         # ADRs, roadmap, planning docs
+│   └── ops/               # Deployment, CI/CD, infrastructure
+├── infra/                  # Infrastructure and deployment
+│   ├── deploy/            # Deployment scripts and configs
+│   ├── secrets/           # Secret templates (actual secrets gitignored)
+│   ├── docker-compose.yml # Local development environment
+│   └── docker-compose.prod.yml # Production configuration
+├── tooling/                # Developer tooling
+│   └── linting/           # Shared linting/testing configs
+├── .github/                # GitHub Actions workflows
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE.md
+├── README.md
+├── SECURITY.md
+└── STRUCTURE.md           # This file
 ```
 
-## Backend: `clinicq_backend/`
+## Backend: `apps/backend/`
 
 Django-based REST API handling authentication, patient management, queue operations, and file uploads.
 
 ```
-clinicq_backend/
+apps/backend/
 ├── api/                           # Main API application
 │   ├── models.py                  # Database models (Patient, Visit, Queue, etc.)
 │   ├── serializers.py             # DRF serializers for API responses
@@ -73,12 +90,12 @@ clinicq_backend/
 - **Permissions**: Role-based access control (Doctor, Assistant, Admin)
 - **API Endpoints**: RESTful endpoints under `/api/`
 
-## Frontend: `clinicq_frontend/`
+## Frontend: `apps/web/`
 
 React-based single-page application for desktop/web access.
 
 ```
-clinicq_frontend/
+apps/web/
 ├── src/
 │   ├── App.jsx                    # Root component with routing
 │   ├── main.jsx                   # Application entry point
@@ -136,12 +153,12 @@ clinicq_frontend/
 - **Patient management**: CRUD operations with search
 - **Prescription uploads**: Doctor-only feature via Google Drive
 
-## Mobile: `clinicq_Mobile/`
+## Mobile: `apps/mobile/`
 
 React Native application built with Expo for iOS and Android.
 
 ```
-clinicq_Mobile/
+apps/mobile/
 ├── src/
 │   ├── api/                       # API integration layer
 │   │   ├── client.ts              # Axios client with interceptors
@@ -235,62 +252,87 @@ clinicq_Mobile/
 - **Internationalization**: Multi-language support ready
 - **Error tracking**: Sentry integration
 
-## Deployment: `deploy/`
+## Infrastructure: `infra/`
 
-Production deployment scripts and configurations.
+Deployment configurations, Docker Compose files, and infrastructure assets.
 
 ```
-deploy/
-├── deploy_backend.sh              # Backend deployment script
-├── build_frontend.sh              # Frontend build script
-├── clinicq.service                # systemd service file
-└── clinicq.nginx                  # Nginx reverse proxy config
+infra/
+├── deploy/                        # Deployment automation
+│   ├── deploy_backend.sh         # Backend deployment script
+│   ├── build_frontend.sh         # Frontend build script
+│   ├── clinicq.service           # systemd service file
+│   ├── clinicq.nginx             # Nginx reverse proxy config
+│   └── .env.example              # Environment variable template
+│
+├── secrets/                       # Secret templates
+│   ├── .gitkeep                  # Maintain directory
+│   └── gdrive_service_account.json.example
+│
+├── docker-compose.yml             # Local development setup
+├── docker-compose.prod.yml        # Production configuration
+└── README.md                      # Infrastructure documentation
 ```
 
 ## Documentation: `docs/`
 
-Shared documentation not specific to any single application.
+Organized documentation by purpose for easier discovery.
 
 ```
 docs/
-├── api.md                         # API documentation
-├── deployment.md                  # Deployment guide
-└── stack_assessment.md            # Technology stack overview
+├── guides/                        # Tutorials and how-tos
+│   └── (future: setup guides, troubleshooting)
+│
+├── references/                    # Technical references
+│   ├── api.md                    # API documentation
+│   ├── stack_assessment.md       # Technology choices
+│   ├── TEST_PLAN.md              # Testing strategy
+│   ├── API_CHECKLIST.md          # API completeness
+│   └── REPO_STRUCTURE_IMPROVEMENTS.md  # This restructuring plan
+│
+├── decisions/                     # Historical context
+│   ├── PROJECT_BRIEF.md          # Project overview
+│   ├── ROADMAP.md                # Feature roadmap
+│   ├── BACKLOG.md                # Work backlog
+│   ├── development_plan.md       # Development stages
+│   ├── decision_log.md           # Key decisions
+│   ├── task_graph.md             # Task dependencies
+│   ├── Agent.md                  # AI agent instructions
+│   ├── TASKS.yaml                # Task definitions
+│   ├── LOGIN_FIX_SUMMARY.md      # Historical fixes
+│   └── PR_39_REVIEW.md           # PR review archive
+│
+├── ops/                           # Operations documentation
+│   ├── DEPLOYMENT_GUIDE.md       # Production deployment
+│   ├── DEPLOYMENT_VALIDATION.md  # Deployment checks
+│   ├── deployment.md             # Deployment overview
+│   ├── CI_CD.md                  # CI/CD documentation
+│   └── DEPLOY.md                 # Deployment summary
+│
+└── README.md                      # Documentation index
 ```
 
-## Configuration Files (Root Level)
+## Tooling: `tooling/`
+
+Shared developer tooling and configuration.
 
 ```
-├── .flake8                        # Python linting configuration
-├── mypy.ini                       # Python type checking configuration
-├── pytest.ini                     # Python test configuration
-├── .gitignore                     # Git ignore patterns
-├── docker-compose.yml             # Local development setup
-├── docker-compose.prod.yml        # Production Docker setup
-├── ENV.sample                     # Example environment variables
-└── .github/                       # GitHub Actions CI/CD workflows
+tooling/
+├── linting/                       # Code quality configs
+│   ├── .flake8                   # Python linting rules
+│   ├── mypy.ini                  # Python type checking
+│   └── pytest.ini                # Python test configuration
+│
+└── README.md                      # Tooling documentation
 ```
 
-## Documentation Files (Root Level)
-
-```
-├── README.md                      # Main project README
-├── STRUCTURE.md                   # This file
-├── CHANGELOG.md                   # Version history
-├── CONTRIBUTING.md                # Contribution guidelines
-├── SECURITY.md                    # Security policies
-├── DEPLOYMENT_GUIDE.md            # Detailed deployment instructions
-├── PROJECT_BRIEF.md               # Project overview
-├── development_plan.md            # Development stages
-├── task_graph.md                  # Task dependencies
-└── [other docs]                   # Various planning and review docs
-```
+**Note:** GitHub Actions workflows remain in `.github/workflows/` at repository root (GitHub requirement).
 
 ## Environment Variables
 
 Each application uses environment variables for configuration:
 
-### Backend (`clinicq_backend/.env`)
+### Backend (`apps/backend/.env`)
 - `DJANGO_DEBUG`: Debug mode (true/false)
 - `DJANGO_SECRET_KEY`: Django secret key
 - `DATABASE_URL`: PostgreSQL connection string
@@ -298,39 +340,39 @@ Each application uses environment variables for configuration:
 - `CORS_ALLOWED_ORIGINS`: Comma-separated CORS origins
 - `GOOGLE_DRIVE_CREDENTIALS_FILE`: Path to service account JSON
 
-### Frontend (`clinicq_frontend/.env`)
+### Frontend (`apps/web/.env`)
 - `VITE_API_BASE_URL`: Backend API URL
 - `VITE_SENTRY_DSN`: Sentry error tracking DSN (optional)
 
-### Mobile (`clinicq_Mobile/.env`)
+### Mobile (`apps/mobile/.env`)
 - `SERVER_URL`: Backend API URL
 - `SENTRY_DSN`: Sentry error tracking DSN (optional)
 
 ## Development Workflow
 
-1. **Local Development**: Use `docker-compose.yml` for full-stack local setup
-2. **Backend Development**: `cd clinicq_backend && python manage.py runserver`
-3. **Frontend Development**: `cd clinicq_frontend && npm run dev`
-4. **Mobile Development**: `cd clinicq_Mobile && npx expo start`
+1. **Local Development**: Use `infra/docker-compose.yml` for full-stack local setup
+2. **Backend Development**: `cd apps/backend && python manage.py runserver`
+3. **Frontend Development**: `cd apps/web && npm run dev`
+4. **Mobile Development**: `cd apps/mobile && npx expo start`
 5. **Testing**: Each app has its own test suite (pytest, Jest, Jest+Testing Library)
 6. **CI/CD**: GitHub Actions workflows in `.github/workflows/`
 
 ## Testing Structure
 
-- **Backend**: Pytest tests in `clinicq_backend/api/test_*.py` and `clinicq_backend/tests/`
-- **Frontend**: Jest tests in `clinicq_frontend/src/__tests__/` and `*.test.jsx` files
-- **Mobile**: Jest tests colocated with components (TBD based on needs)
+- **Backend**: Pytest tests in `apps/backend/api/test_*.py` and `apps/backend/tests/`
+- **Frontend**: Jest tests in `apps/web/src/__tests__/` and `*.test.jsx` files
+- **Mobile**: Jest tests colocated with components
 
 ## Build Artifacts (Gitignored)
 
-- `clinicq_backend/__pycache__/`, `*.pyc`: Python bytecode
-- `clinicq_backend/.pytest_cache/`: Pytest cache
-- `clinicq_backend/db.sqlite3`: Local SQLite database
-- `clinicq_frontend/node_modules/`: npm packages
-- `clinicq_frontend/dist/`: Production build output
-- `clinicq_Mobile/node_modules/`: npm packages
-- `clinicq_Mobile/.expo/`: Expo cache
-- `secrets/`: Service account credentials
+- `apps/backend/__pycache__/`, `*.pyc`: Python bytecode
+- `apps/backend/.pytest_cache/`: Pytest cache
+- `apps/backend/db.sqlite3`: Local SQLite database
+- `apps/web/node_modules/`: npm packages
+- `apps/web/dist/`: Production build output
+- `apps/mobile/node_modules/`: npm packages
+- `apps/mobile/.expo/`: Expo cache
+- `infra/secrets/`: Service account credentials (except examples)
 
 ## Key Design Decisions
 
@@ -344,10 +386,12 @@ Each application uses environment variables for configuration:
 
 ## Additional Resources
 
-- [Main README](README.md) - Quick start guide
-- [Deployment Guide](DEPLOYMENT_GUIDE.md) - Production deployment
+- [Main README](../README.md) - Quick start guide
+- [Deployment Guide](docs/ops/DEPLOYMENT_GUIDE.md) - Production deployment
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute
 - [Changelog](CHANGELOG.md) - Version history
-- [Frontend README](clinicq_frontend/README.md) - Frontend details
-- [Mobile README](clinicq_Mobile/README.md) - Mobile app details
-- [Mobile Docs](clinicq_Mobile/docs/) - Mobile-specific documentation
+- [Frontend README](apps/web/README.md) - Frontend details
+- [Mobile README](apps/mobile/README.md) - Mobile app details
+- [Mobile Docs](apps/mobile/docs/) - Mobile-specific documentation
+- [Infrastructure README](infra/README.md) - Deployment and Docker setup
+- [Documentation Index](docs/README.md) - All documentation organized by purpose

@@ -1,56 +1,23 @@
-# ClinicQ - OPD Queue Manager
+# OPD Queue Manager
 
-A comprehensive healthcare queue management system built with Django, React, and React Native.
+This is a Django + React application for managing outpatient department (OPD) queues.
 
-## 📋 Project Overview
-
-ClinicQ is a full-stack monorepo application for managing outpatient department (OPD) queues, featuring:
-- **Backend API**: Django REST Framework with token authentication
-- **Web Frontend**: React + Vite single-page application
-- **Mobile App**: React Native + Expo for iOS and Android
-
-## 🏗️ Project Structure
-
-This is a monorepo containing three main applications:
-
-```
-nexpat/
-├── clinicq_backend/     # Django REST API
-├── clinicq_frontend/    # React web app
-├── clinicq_Mobile/      # React Native mobile app
-├── deploy/              # Deployment scripts
-├── docs/                # Shared documentation
-└── [configs]            # Root-level configuration files
-```
-
-**📖 For detailed directory structure and organization, see [STRUCTURE.md](STRUCTURE.md)**
-
-## 🚀 Current Status
-
+## Current Status
 This project is being developed in **stages** using AI coding agents (Jules + GitHub Copilot).
 
-### Development Workflow
-- **Stage 1**: Core fixes and polishing ✅
-- **Stage 2**: Missing features build-out 🔄
-- **Stage 3**: Deep testing and debugging 📋
+## Workflow
+- **Stage 1**: Core fixes and polishing
+- **Stage 2**: Missing features build-out
+- **Stage 3**: Deep testing and debugging
 
-See `development_plan.md` and `task_graph.md` for details.
+See `docs/decisions/development_plan.md` and `docs/decisions/task_graph.md` for details.
 
-## 📚 Documentation
+## Repository Structure Improvements
 
-- **[STRUCTURE.md](STRUCTURE.md)** - Detailed directory structure and organization
-- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Production deployment instructions
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
-- **[SECURITY.md](SECURITY.md)** - Security policies and reporting
+- Review the proposed re-organization plan in [`docs/references/REPO_STRUCTURE_IMPROVEMENTS.md`](docs/references/REPO_STRUCTURE_IMPROVEMENTS.md) for guidance on consolidating apps, documentation, and infrastructure assets into a cleaner monorepo layout.
 
-### Component-Specific Documentation
-- **[Backend README](clinicq_backend/README.md)** - Django API details (if exists)
-- **[Frontend README](clinicq_frontend/README.md)** - React app details and features
-- **[Mobile README](clinicq_Mobile/README.md)** - React Native app details
-- **[Mobile Docs](clinicq_Mobile/docs/)** - Mobile-specific documentation
 
-## 🏗️ Local Development Quick Start
+## Local Development Quick Start
 
 ### Prerequisites
 - Python 3.12+
@@ -61,7 +28,7 @@ See `development_plan.md` and `task_graph.md` for details.
 
 1. Navigate to the backend directory:
    ```bash
-   cd clinicq_backend
+   cd apps/backend
    ```
 
 2. Create and activate a virtual environment:
@@ -102,7 +69,7 @@ See `development_plan.md` and `task_graph.md` for details.
 
 1. Navigate to the frontend directory:
    ```bash
-   cd clinicq_frontend
+   cd apps/web
    ```
 
 2. Install dependencies:
@@ -166,30 +133,7 @@ endpoint—when the server responds with `401 Unauthorized`, the frontend clears
 any cached token state and redirects users back to the login screen so they can
 authenticate again.
 
-## ⚙️ Technology Stack
-
-### Backend
-- **Framework**: Django 5.1 + Django REST Framework
-- **Database**: PostgreSQL (production) / SQLite (development)
-- **Authentication**: Token-based auth
-- **File Storage**: Google Drive API integration
-- **Deployment**: Gunicorn + Nginx
-
-### Frontend (Web)
-- **Framework**: React 19 with React Router 7
-- **Build Tool**: Vite 7
-- **Styling**: Tailwind CSS
-- **Testing**: Jest + Testing Library
-- **Deployment**: Docker + Nginx
-
-### Mobile
-- **Framework**: React Native + Expo
-- **Language**: TypeScript
-- **State Management**: React Query
-- **Navigation**: React Navigation
-- **Offline Support**: Outbox pattern with local storage
-
-## 🚀 Deployment
+## Deployment
 
 This application is production-ready with the following features:
 
@@ -201,21 +145,4 @@ This application is production-ready with the following features:
 - **Environment-based configuration** with comprehensive `.env` variables
 - **Security hardening** with configurable HTTPS, HSTS, and security headers
 
-See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for detailed deployment instructions.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## 📝 License
-
-See [LICENSE.md](LICENSE.md) for details.
-
-## 🔗 Quick Links
-
-- [Directory Structure Documentation](STRUCTURE.md)
-- [Deployment Guide](DEPLOYMENT_GUIDE.md)
-- [Development Plan](development_plan.md)
-- [Task Graph](task_graph.md)
-- [API Checklist](API_CHECKLIST.md)
-- [Test Plan](TEST_PLAN.md)
+See `docs/ops/DEPLOYMENT_GUIDE.md` for detailed deployment instructions.

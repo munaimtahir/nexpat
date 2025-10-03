@@ -35,7 +35,7 @@ services:
 
 secrets:
   gdrive_service.json:
-    file: ./deploy/gdrive_service.json
+    file: ./secrets/gdrive_service.json
 
 volumes:
   clinicq_postgres_prod_data:
