@@ -3,6 +3,7 @@ export type AppStackParamList = {
   PatientDetail: { patientId: number };
   PatientForm: { patientId?: number };
   VisitDetail: { visitId: number };
+  PublicDisplay: undefined;
 };
 
 export type AssistantTabParamList = {

@@ -7,5 +7,6 @@ export const queryKeys = {
   visit: (id: number | string) => ['visit', id] as const,
   uploads: ['uploads'] as const,
   health: ['diagnostics', 'health'] as const,
-  version: ['diagnostics', 'version'] as const
+  version: ['diagnostics', 'version'] as const,
+  publicDisplayQueue: () => ['public-display', 'queue'] as const
 };
