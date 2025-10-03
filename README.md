@@ -48,7 +48,7 @@ See `development_plan.md` and `task_graph.md` for details.
 - **[Backend README](clinicq_backend/README.md)** - Django API details (if exists)
 - **[Frontend README](clinicq_frontend/README.md)** - React app details and features
 - **[Mobile README](clinicq_Mobile/README.md)** - React Native app details
-- **[Mobile Status](clinicq_Mobile/docs/STATUS.md)** - Mobile development status
+- **[Mobile Docs](clinicq_Mobile/docs/)** - Mobile-specific documentation
 
 ## 🏗️ Local Development Quick Start
 

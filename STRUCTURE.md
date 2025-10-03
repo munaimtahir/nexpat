@@ -206,12 +206,14 @@ clinicq_Mobile/
 │       └── logger.ts              # Logging utilities
 │
 ├── docs/                          # Mobile-specific documentation
-│   ├── STATUS.md                  # Development status
+│   ├── README.md                  # Mobile docs overview
 │   ├── ARCHITECTURE.md            # Technical architecture
 │   ├── API.md                     # API integration docs
 │   ├── ROADMAP.md                 # Feature roadmap
 │   ├── SETUP.md                   # Setup instructions
 │   ├── TESTS.md                   # Testing guide
+│   ├── CONTRIBUTING.md            # Contribution guide
+│   ├── QA-Checklist.md            # Quality assurance checklist
 │   └── [other docs]
 │
 ├── App.tsx                        # Root component
@@ -348,4 +350,4 @@ Each application uses environment variables for configuration:
 - [Changelog](CHANGELOG.md) - Version history
 - [Frontend README](clinicq_frontend/README.md) - Frontend details
 - [Mobile README](clinicq_Mobile/README.md) - Mobile app details
-- [Mobile Status](clinicq_Mobile/docs/STATUS.md) - Mobile development status
+- [Mobile Docs](clinicq_Mobile/docs/) - Mobile-specific documentation
