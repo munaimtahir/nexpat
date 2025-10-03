@@ -61,13 +61,19 @@ export const AppProviders: React.FC = () => {
 
   React.useEffect(() => {
     const persister = createAsyncStoragePersister({ storage: AsyncStorage });
-    persistQueryClient({
+    const [unsubscribe, restorePromise] = persistQueryClient({
       queryClient,
       persister,
       maxAge: 1000 * 60 * 60 * 24
-    }).catch(() => {
+    });
+
+    restorePromise.catch(() => {
       // noop
     });
+
+    return () => {
+      unsubscribe();
+    };
   }, [queryClient]);
 
   return (

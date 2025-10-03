@@ -640,7 +640,7 @@ class GoogleDriveIntegrationTests(APITestCase):
         self.patient = Patient.objects.create(
             name="Test Patient", phone="1234567890", gender="MALE"
         )
-        self.queue = Queue.objects.create(name="General")
+        self.queue, _ = Queue.objects.get_or_create(name="General")
         self.visit = Visit.objects.create(
             patient=self.patient,
             queue=self.queue,

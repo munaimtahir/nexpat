@@ -1,4 +1,10 @@
-import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import axios, {
+  AxiosError,
+  AxiosHeaders,
+  type AxiosInstance,
+  type AxiosRequestConfig,
+  type AxiosRequestHeaders
+} from 'axios';
 import NetInfo from '@react-native-community/netinfo';
 import { STORAGE_KEYS } from '@/constants';
 import { secureStore } from '@/storage/secureStore';
@@ -45,21 +51,19 @@ http.interceptors.request.use(async (config) => {
     await loadTokens();
   }
   if (accessToken) {
-    config.headers = {
-      ...(config.headers ?? {}),
-      Authorization: `Bearer ${accessToken}`
-    };
+    const headers = AxiosHeaders.from((config.headers ?? {}) as AxiosRequestHeaders);
+    headers.set('Authorization', `Bearer ${accessToken}`);
+    config.headers = headers;
   }
   return config;
 });
 
 const retryRequest = async (config: AxiosRequestConfig, token: string) => {
+  const nextHeaders = AxiosHeaders.from((config.headers ?? {}) as AxiosRequestHeaders);
+  nextHeaders.set('Authorization', `Bearer ${token}`);
   const nextConfig = {
     ...config,
-    headers: {
-      ...(config.headers ?? {}),
-      Authorization: `Bearer ${token}`
-    }
+    headers: nextHeaders
   };
   return http(nextConfig);
 };

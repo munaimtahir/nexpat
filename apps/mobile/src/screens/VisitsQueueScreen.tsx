@@ -9,6 +9,7 @@ import { ErrorState } from '@/components/ErrorState';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '@/navigation/types';
+import type { Visit } from '@/api/generated/types';
 
 const statusOptions = [
   { value: 'waiting', label: 'Waiting' },
@@ -17,7 +18,7 @@ const statusOptions = [
   { value: 'all', label: 'All' }
 ];
 
-const nextStatus: Record<string, string | null> = {
+const nextStatus: Record<Visit['status'], Visit['status'] | null> = {
   waiting: 'in_progress',
   in_progress: 'completed',
   completed: null,
@@ -25,14 +26,14 @@ const nextStatus: Record<string, string | null> = {
 };
 
 export const VisitsQueueScreen: React.FC = () => {
-  const [status, setStatus] = useState('waiting');
+  const [status, setStatus] = useState<Visit['status'] | 'all'>('waiting');
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const visitsQuery = useVisits({ status: status === 'all' ? undefined : status });
   const { update } = useVisitMutation();
 
   const visits = visitsQuery.data?.results ?? [];
 
-  const onAdvance = (id: number, currentStatus: string) => {
+  const onAdvance = (id: number, currentStatus: Visit['status']) => {
     const target = nextStatus[currentStatus];
     if (target) {
       update.mutate({ id, status: target });
@@ -51,7 +52,7 @@ export const VisitsQueueScreen: React.FC = () => {
     <View style={{ flex: 1 }}>
       <SegmentedButtons
         value={status}
-        onValueChange={setStatus}
+        onValueChange={(newValue) => setStatus(newValue as Visit['status'] | 'all')}
         buttons={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
         style={{ margin: 16 }}
       />
