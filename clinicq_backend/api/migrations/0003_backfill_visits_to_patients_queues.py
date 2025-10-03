@@ -61,9 +61,7 @@ def forwards_func(apps, schema_editor):
     db_alias = schema_editor.connection.alias
 
     # 1. Create the default 'General' queue
-    general_queue, created = Queue.objects.using(db_alias).get_or_create(
-        name=DEFAULT_QUEUE_NAME
-    )
+    general_queue, created = Queue.objects.using(db_alias).get_or_create(name=DEFAULT_QUEUE_NAME)
     if created:
         print(f"\nCreated default queue: '{DEFAULT_QUEUE_NAME}'")
     else:
@@ -117,9 +115,7 @@ def forwards_func(apps, schema_editor):
                     update_kwargs["queue_id"] = general_queue.pk
 
                 if update_kwargs:
-                    Visit.objects.using(db_alias).filter(pk=visit.pk).update(
-                        **update_kwargs
-                    )
+                    Visit.objects.using(db_alias).filter(pk=visit.pk).update(**update_kwargs)
                     migrated_count += 1
 
     if migrated_count:
@@ -163,9 +159,7 @@ def backwards_func(apps, schema_editor):
             reverted_count += 1
 
         if reverted_count > 0:
-            print(
-                f"\nReverted {reverted_count} visits, setting their patient and queue to NULL."
-            )
+            print(f"\nReverted {reverted_count} visits, setting their patient and queue to NULL.")
         else:
             print("\nNo visits found associated with the 'General' queue to revert.")
 

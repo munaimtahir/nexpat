@@ -41,9 +41,7 @@ class DeploymentFlowTest(TransactionTestCase):
         User.objects.all().delete()
 
         # Create superuser using management command with password provided via env var
-        with mock.patch.dict(
-            os.environ, {"DJANGO_SUPERUSER_PASSWORD": "testpass"}, clear=False
-        ):
+        with mock.patch.dict(os.environ, {"DJANGO_SUPERUSER_PASSWORD": "testpass"}, clear=False):
             call_command(
                 "createsuperuser",
                 "--noinput",
@@ -69,9 +67,7 @@ class DeploymentFlowTest(TransactionTestCase):
         out = StringIO()
         err = StringIO()
 
-        with pytest.raises(
-            Exception
-        ):  # Django raises CommandError for existing username
+        with pytest.raises(Exception):  # Django raises CommandError for existing username
             call_command(
                 "createsuperuser",
                 "--noinput",
