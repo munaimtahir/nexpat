@@ -102,7 +102,9 @@ class PatientViewSet(viewsets.ModelViewSet):
 
             if len(raw_numbers) > 50:
                 raise ValidationError(
-                    {"registration_numbers": "A maximum of 50 registration numbers are allowed."}
+                    {
+                        "registration_numbers": "A maximum of 50 registration numbers are allowed."
+                    }
                 )
 
             numbers = []
@@ -311,7 +313,9 @@ class VisitViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = VisitStatusSerializer(visit, data={"status": new_status}, partial=True)
+        serializer = VisitStatusSerializer(
+            visit, data={"status": new_status}, partial=True
+        )
         if serializer.is_valid():
             serializer.save()
             full_visit_serializer = VisitSerializer(visit, context={"request": request})

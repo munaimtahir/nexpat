@@ -124,14 +124,20 @@ class PatientFilterTests(APITestCase):
         resp = self.client.get(f"/api/patients/?registration_numbers={query}")
         self.assertEqual(resp.status_code, 200)
         numbers = [p["registration_number"] for p in resp.data["results"]]
-        self.assertEqual(numbers, [self.p1.registration_number, self.p3.registration_number])
+        self.assertEqual(
+            numbers, [self.p1.registration_number, self.p3.registration_number]
+        )
 
     def test_filter_mixed_numbers(self):
-        query = f"{self.p1.registration_number}, abc ," f"{self.p2.registration_number},xyz"
+        query = (
+            f"{self.p1.registration_number}, abc ," f"{self.p2.registration_number},xyz"
+        )
         resp = self.client.get(f"/api/patients/?registration_numbers={query}")
         self.assertEqual(resp.status_code, 200)
         numbers = [p["registration_number"] for p in resp.data["results"]]
-        self.assertEqual(numbers, [self.p1.registration_number, self.p2.registration_number])
+        self.assertEqual(
+            numbers, [self.p1.registration_number, self.p2.registration_number]
+        )
 
     def test_filter_invalid_numbers(self):
         resp = self.client.get("/api/patients/?registration_numbers=abc, xyz")
@@ -150,18 +156,25 @@ class PatientFilterTests(APITestCase):
         resp = self.client.get(f"/api/patients/?registration_numbers={query}")
         self.assertEqual(resp.status_code, 200)
         numbers = [p["registration_number"] for p in resp.data["results"]]
-        self.assertEqual(sorted(numbers), sorted([p1.registration_number, p3.registration_number]))
+        self.assertEqual(
+            sorted(numbers), sorted([p1.registration_number, p3.registration_number])
+        )
 
     def test_filter_mixed_formatted_and_invalid_numbers(self):
         """Test filtering with mix of valid formatted and invalid numbers"""
         p1 = Patient.objects.create(name="P1", gender="MALE")
         p2 = Patient.objects.create(name="P2", gender="MALE")
 
-        query = f"{p1.registration_number}, invalid_format ," f"{p2.registration_number},xyz"
+        query = (
+            f"{p1.registration_number}, invalid_format ,"
+            f"{p2.registration_number},xyz"
+        )
         resp = self.client.get(f"/api/patients/?registration_numbers={query}")
         self.assertEqual(resp.status_code, 200)
         numbers = [p["registration_number"] for p in resp.data["results"]]
-        self.assertEqual(sorted(numbers), sorted([p1.registration_number, p2.registration_number]))
+        self.assertEqual(
+            sorted(numbers), sorted([p1.registration_number, p2.registration_number])
+        )
 
 
 class VisitTests(APITestCase):
@@ -179,7 +192,9 @@ class VisitTests(APITestCase):
         self.doctor.groups.add(doctor_group)
         self.doctor_token = Token.objects.create(user=self.doctor)
 
-        self.display_user = User.objects.create_user(username="displayuser", password="pass")
+        self.display_user = User.objects.create_user(
+            username="displayuser", password="pass"
+        )
         self.display_user.groups.add(display_group)
         self.display_token = Token.objects.create(user=self.display_user)
 
@@ -239,7 +254,9 @@ class VisitTests(APITestCase):
         self.assertEqual(start_resp.status_code, 200)
         self.assertEqual(start_resp.data["status"], "START")
 
-        send_back_resp = self.client.patch(f"/api/visits/{visit.id}/send_back_to_waiting/")
+        send_back_resp = self.client.patch(
+            f"/api/visits/{visit.id}/send_back_to_waiting/"
+        )
         self.assertEqual(send_back_resp.status_code, 200)
         self.assertEqual(send_back_resp.data["status"], "WAITING")
 
@@ -294,7 +311,9 @@ class PatientSearchTests(APITestCase):
 
     def test_search_by_formatted_registration_number(self):
         """Test searching by formatted registration number"""
-        resp = self.client.get(f"/api/patients/search/?q={self.patient1.registration_number}")
+        resp = self.client.get(
+            f"/api/patients/search/?q={self.patient1.registration_number}"
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data["count"], 1)
         self.assertEqual(

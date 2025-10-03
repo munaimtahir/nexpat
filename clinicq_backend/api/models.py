@@ -8,7 +8,9 @@ import re
 def validate_registration_number_format(value):
     """Validate that registration number follows xx-xx-xxx format"""
     if not re.match(r"^\d{2}-\d{2}-\d{3}$", value):
-        raise ValidationError("Registration number must be in format xx-xx-xxx (e.g., 01-23-456)")
+        raise ValidationError(
+            "Registration number must be in format xx-xx-xxx (e.g., 01-23-456)"
+        )
 
 
 class Visit(models.Model):
@@ -132,7 +134,9 @@ class Queue(models.Model):
 class PrescriptionImage(models.Model):
     """Stores a reference to a prescription image for a visit."""
 
-    visit = models.ForeignKey(Visit, on_delete=models.CASCADE, related_name="prescription_images")
+    visit = models.ForeignKey(
+        Visit, on_delete=models.CASCADE, related_name="prescription_images"
+    )
     drive_file_id = models.CharField(max_length=255, blank=True)
     image_url = models.URLField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

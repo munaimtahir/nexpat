@@ -74,7 +74,8 @@ class PatientAPITests(APITestCase):
     def test_get_patients_by_registration_numbers(self):
         url = reverse("patient-list")
         numbers = (
-            f"{self.patient1.registration_number}," f"{self.patient2.registration_number},9999"
+            f"{self.patient1.registration_number},"
+            f"{self.patient2.registration_number},9999"
         )
         response = self.client.get(
             url,
@@ -91,7 +92,8 @@ class PatientAPITests(APITestCase):
     def test_get_patients_by_mixed_registration_numbers(self):
         url = reverse("patient-list")
         query = (
-            f"{self.patient1.registration_number}, abc ," f"{self.patient2.registration_number},xyz"
+            f"{self.patient1.registration_number}, abc ,"
+            f"{self.patient2.registration_number},xyz"
         )
         response = self.client.get(url, {"registration_numbers": query}, format="json")
         assert response.status_code == status.HTTP_200_OK
@@ -116,19 +118,25 @@ class PatientAPITests(APITestCase):
     def test_get_patients_registration_number_limit_accepted(self):
         url = reverse("patient-list")
         numbers = ",".join(str(i) for i in range(50))
-        response = self.client.get(url, {"registration_numbers": numbers}, format="json")
+        response = self.client.get(
+            url, {"registration_numbers": numbers}, format="json"
+        )
         assert response.status_code == status.HTTP_200_OK
 
     def test_get_patients_registration_number_limit_rejected(self):
         url = reverse("patient-list")
         numbers = ",".join(str(i) for i in range(51))
-        response = self.client.get(url, {"registration_numbers": numbers}, format="json")
+        response = self.client.get(
+            url, {"registration_numbers": numbers}, format="json"
+        )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_get_patients_registration_number_length_rejected(self):
         url = reverse("patient-list")
         numbers = f"{'1' * 11},2"
-        response = self.client.get(url, {"registration_numbers": numbers}, format="json")
+        response = self.client.get(
+            url, {"registration_numbers": numbers}, format="json"
+        )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_get_patient_detail(self):
@@ -515,7 +523,9 @@ class VisitAPITests(APITestCase):
         assert response.data["token_number"] == 1
         assert response.data["visit_date"] == str(date.today())
         assert response.data["status"] == "WAITING"
-        assert response.data["patient_full_name"] == self.patient.name  # Derived from patient obj
+        assert (
+            response.data["patient_full_name"] == self.patient.name
+        )  # Derived from patient obj
 
         # Check the Visit model's relationships
         visit = Visit.objects.get(pk=response.data["id"])
@@ -531,11 +541,15 @@ class VisitLifecycleTests(APITestCase):
         self.assistant_group, _ = Group.objects.get_or_create(name="Assistant")
         self.display_group, _ = Group.objects.get_or_create(name="Display")
 
-        self.doctor_user = User.objects.create_user(username="doctor", password="password")
+        self.doctor_user = User.objects.create_user(
+            username="doctor", password="password"
+        )
         self.doctor_user.groups.add(self.doctor_group)
         self.doctor_token = Token.objects.create(user=self.doctor_user)
 
-        self.assistant_user = User.objects.create_user(username="assistant", password="password")
+        self.assistant_user = User.objects.create_user(
+            username="assistant", password="password"
+        )
         self.assistant_user.groups.add(self.assistant_group)
         self.assistant_token = Token.objects.create(user=self.assistant_user)
 
@@ -660,7 +674,8 @@ class GoogleDriveIntegrationTests(APITestCase):
         # Verify the environment variable is set (from Docker secret)
         self.assertIsNotNone(os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE"))
         self.assertEqual(
-            os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE"), "/run/secrets/gdrive_service.json"
+            os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE"),
+            "/run/secrets/gdrive_service.json",
         )
 
         # Create a mock image file
@@ -679,7 +694,9 @@ class GoogleDriveIntegrationTests(APITestCase):
 
         # The response should indicate the configuration is ready
         # (even if actual upload fails due to invalid credentials in test)
-        self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_400_BAD_REQUEST])
+        self.assertIn(
+            response.status_code, [status.HTTP_201_CREATED, status.HTTP_400_BAD_REQUEST]
+        )
 
     def test_google_drive_environment_variable_configuration(self):
         """Test that the Google Drive configuration is properly set up."""
@@ -688,7 +705,9 @@ class GoogleDriveIntegrationTests(APITestCase):
         from django.core.files.uploadedfile import SimpleUploadedFile
 
         # Test that the configuration expects the right environment variable
-        image_file = SimpleUploadedFile("test.jpg", b"fake content", content_type="image/jpeg")
+        image_file = SimpleUploadedFile(
+            "test.jpg", b"fake content", content_type="image/jpeg"
+        )
 
         # Clear the environment variable to test the error case
         original_value = os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE")
@@ -698,7 +717,9 @@ class GoogleDriveIntegrationTests(APITestCase):
         try:
             with self.assertRaises(RuntimeError) as context:
                 upload_prescription_image(image_file)
-            self.assertEqual(str(context.exception), "GOOGLE_SERVICE_ACCOUNT_FILE not set")
+            self.assertEqual(
+                str(context.exception), "GOOGLE_SERVICE_ACCOUNT_FILE not set"
+            )
         finally:
             # Restore the original value
             if original_value:
