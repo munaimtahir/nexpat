@@ -36,9 +36,7 @@ class TestQueueModel:
 @pytest.mark.django_db
 class TestVisitModel:
     def setUp(self):
-        self.patient = Patient.objects.create(
-            name="Test Patient", gender="MALE", phone="12345"
-        )
+        self.patient = Patient.objects.create(name="Test Patient", gender="MALE", phone="12345")
         self.queue = Queue.objects.create(name="Test Queue")
 
     # Tests for model field defaults and basic properties
