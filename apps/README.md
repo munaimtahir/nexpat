@@ -41,6 +41,8 @@ npm install
 npx expo start
 ```
 
+📊 **[View Development Status](mobile/docs/STATUS.md)** - Detailed mobile app development progress.
+
 See [mobile/README.md](mobile/README.md) for detailed setup instructions.
 
 ## Development

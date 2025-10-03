@@ -2,6 +2,8 @@
 
 React Native (Expo) mobile client for ClinicQ. The app uses the generated API client in `src/api/generated` and Axios interceptors for authentication, offline queueing, and upload retries.
 
+📊 **[View Development Status](docs/STATUS.md)** - See what's completed, what's working, and what's left to build.
+
 ## Getting started
 
 ```bash
