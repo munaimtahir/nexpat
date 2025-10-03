@@ -3,6 +3,8 @@
 
 This pack defines how to build a **separate Android app** that uses the **same Django/DRF backend** as ClinicQ Web. Web and Mobile stay **in sync** via a shared **OpenAPI contract**, common auth, and aligned release cadence. iOS is planned for the future via React Native (Expo EAS).
 
+📊 **[View Current Development Status](STATUS.md)** - Comprehensive status report showing completed features and remaining work.
+
 ## Repos
 - **clinicq-backend** — Django/DRF (source of truth).
 - **clinicq-web** — React/Vite SPA.
