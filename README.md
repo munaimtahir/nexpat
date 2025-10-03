@@ -168,3 +168,15 @@ This application is production-ready with the following features:
 - **Security hardening** with configurable HTTPS, HSTS, and security headers
 
 See `docs/ops/DEPLOYMENT_GUIDE.md` for detailed deployment instructions.
+
+## Documentation Hub
+Project-wide docs live in **`/docs`** at the repo root:
+
+- `docs/status/DEVELOPMENT_STATUS.md` — current phase & next steps
+- `docs/AGENT.md` — AI developer brief
+- `docs/Goals.md` — MVP → Beta → Production roadmap
+- `docs/CI-CD.md` — GitHub Actions + EAS Build
+- `docs/QA-Checklist.md` — Release QA
+- `docs/TASKS.md` — Backlog summary
+
+> App-specific docs remain under `apps/*/README.md`.
