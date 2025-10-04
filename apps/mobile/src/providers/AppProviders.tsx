@@ -14,6 +14,7 @@ import { useOutboxProcessor } from '@/api/outbox/useOutboxProcessor';
 import { StatusBar } from 'expo-status-bar';
 import { initSentry } from '@/providers/sentry';
 import { initI18n } from '@/i18n';
+import { SyncStatusBanner } from '@/components/SyncStatusBanner';
 
 initSentry();
 initI18n();
@@ -80,6 +81,7 @@ export const AppProviders: React.FC = () => {
     <PaperProvider theme={paperTheme}>
       <QueryClientProvider client={queryClient}>
         <NavigationContainer theme={navigationTheme}>
+          <SyncStatusBanner />
           <AuthProvider>
             <StatusBar style="auto" />
             <AppNavigator />

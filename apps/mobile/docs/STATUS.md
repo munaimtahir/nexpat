@@ -132,6 +132,10 @@ The application has completed all Phase 1 & 2 foundational work and core workflo
   - Automatic replay when connection restored
   - Request serialization including FormData
   - Persistent storage using secure store
+- **Sync Status Banner** (`src/components/SyncStatusBanner.tsx`)
+  - Surfaces offline mode with cached data context
+  - Shows queued mutation count and last sync/queue timestamps
+  - Uses portal overlay so status is visible on every screen
   
 - **Outbox Processor** (`src/api/outbox/useOutboxProcessor.ts`)
   - Background processing hook
