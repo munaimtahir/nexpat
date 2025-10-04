@@ -17,10 +17,9 @@
  */
 
 import React from 'react';
+import type { Text as RNTextType, View as RNViewType } from 'react-native';
 
 type ReactType = typeof React;
-type ReactNativeTextType = import('react-native').Text;
-type ReactNativeViewType = import('react-native').View;
 
 /**
  * Creates a basic react-native-paper mock with Icon, Text, and useTheme.
@@ -30,8 +29,8 @@ type ReactNativeViewType = import('react-native').View;
  */
 export function mockCreateReactNativePaperMock(
   React: ReactType,
-  RNText: typeof ReactNativeTextType,
-  _View?: typeof ReactNativeViewType
+  RNText: typeof RNTextType,
+  _View?: typeof RNViewType
 ) {
   return {
     Icon: () => null,
@@ -55,8 +54,8 @@ export function mockCreateReactNativePaperMock(
  */
 export function mockCreateReactNativePaperMockWithBanner(
   React: ReactType,
-  RNText: typeof ReactNativeTextType,
-  View: typeof ReactNativeViewType
+  RNText: typeof RNTextType,
+  View: typeof RNViewType
 ) {
   const BannerMock = ({
     children,
