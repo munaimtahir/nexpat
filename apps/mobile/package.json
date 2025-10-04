@@ -11,7 +11,10 @@
     "test": "jest --passWithNoTests",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "outbox:replay": "ts-node src/api/outbox/replay.ts"
+    "outbox:replay": "ts-node src/api/outbox/replay.ts",
+    "e2e:build:android": "detox build --configuration android.emu.debug",
+    "e2e:test:android": "detox test --configuration android.emu.debug",
+    "eas:build:preview": "eas build --platform android --profile preview --non-interactive"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",

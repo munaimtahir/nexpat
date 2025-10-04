@@ -1,7 +1,7 @@
 # Development Status
 
 **Last Updated:** 2025-03-14
-**Current Phase:** Phase 3 (Uploads & Offline) - Near Complete
+**Current Phase:** Phase 3 (Uploads & Offline) - Complete · Phase 4 (Quality & Release) In Progress
 
 ## Executive Summary
 
@@ -115,21 +115,23 @@ The application has completed all Phase 1 & 2 foundational work and core workflo
 - **Doctor Tabs**: Queue | Patients | Diagnostics
 - Consistent navigation with role-based content
 
-### Phase 3 — Uploads & Offline ✅ MOSTLY COMPLETE
+### Phase 3 — Uploads & Offline ✅ COMPLETE
 
 #### Upload Management
 - **Upload Manager Screen** (`src/screens/UploadManagerScreen.tsx`)
   - Camera integration for capturing prescriptions
-  - Gallery/photo library access
-  - File selection and preview
+  - Gallery/photo library access with multi-select batch capture
+  - File selection list with per-item removal and progress tracking
   - Upload progress tracking with progress bar
   - Associated uploads with patient and visit
-  - Optional description field
+  - Optional description field reused across batch
+  - In-app upload history with thumbnails, filters, and modal preview
   
 - **Upload API Hooks** (`src/api/hooks/useUploads.ts`)
   - Multipart form upload with progress tracking
   - Retry logic on failure
   - Queued uploads when offline
+  - Fetcher for prescription image history by visit or patient registration
 
 #### Offline Support
 - **Write Outbox** (`src/api/outbox/`)
@@ -140,7 +142,11 @@ The application has completed all Phase 1 & 2 foundational work and core workflo
 - **Sync Status Banner** (`src/components/SyncStatusBanner.tsx`)
   - Surfaces offline mode with cached data context
   - Shows queued mutation count and last sync/queue timestamps
+  - View queue action reveals pending requests with timestamps
   - Uses portal overlay so status is visible on every screen
+- **Cached Data Notice** (`src/components/CachedDataNotice.tsx`)
+  - Inline indicator on list screens when offline or replaying queued writes
+  - Communicates last-sync timing and queued operations
   
 - **Outbox Processor** (`src/api/outbox/useOutboxProcessor.ts`)
   - Background processing hook
@@ -153,11 +159,23 @@ The application has completed all Phase 1 & 2 foundational work and core workflo
   - 24-hour cache retention
   - Survives app restarts
   - Automatic rehydration on app launch
+  - Conflict alert surfaced on visit status changes (409 handling)
 
 - **Network-Aware Interceptors** (`src/api/client.ts`)
   - Detects offline state using @react-native-community/netinfo
   - Automatically queues mutations when offline
   - Shows user-friendly feedback (202 status for queued)
+
+### Phase 4 — Quality & Release ♻️ IN PROGRESS
+
+- **Automated Testing**
+  - Jest unit suites cover sync banner queue dialog and cached notice states
+  - Detox baseline smoke test validates login screen rendering
+- **CI/CD & Tooling**
+  - `eas.json` defines development/preview/production profiles
+  - GitHub Action (`.github/workflows/mobile-eas-build.yml`) runs lint/typecheck/tests and optional EAS build
+- **Release Operations**
+  - Package scripts for Detox build/test and EAS automation ready for pipeline integration
 
 #### Public Display (Kiosk Mode)
 - **Public Display Screen** (`src/screens/PublicDisplayScreen.tsx`)

@@ -66,6 +66,14 @@ export interface UploadRequest {
   file: any;
 }
 
+export interface PrescriptionImage {
+  id: number;
+  visit: number;
+  drive_file_id: string;
+  image_url: string;
+  created_at: string;
+}
+
 export interface HealthResponse {
   status: 'ok' | 'degraded' | 'down';
   uptime: number;

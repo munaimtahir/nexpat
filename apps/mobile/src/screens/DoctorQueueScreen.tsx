@@ -9,6 +9,7 @@ import { ErrorState } from '@/components/ErrorState';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '@/navigation/types';
+import { CachedDataNotice } from '@/components/CachedDataNotice';
 
 const statusOptions = [
   { value: 'in_progress', label: 'In progress' },
@@ -34,6 +35,9 @@ export const DoctorQueueScreen: React.FC = () => {
 
   return (
     <View style={{ flex: 1 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+        <CachedDataNotice />
+      </View>
       <SegmentedButtons
         value={status}
         onValueChange={setStatus}

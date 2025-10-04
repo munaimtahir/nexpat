@@ -1,9 +1,9 @@
 # Goals — MVP → Beta → Production
 
-## MVP (0–2 weeks)
+## MVP (0–2 weeks) ✅
 - Upload viewer with thumbnails and batch capture
-- Unit tests for API hooks; 1 Detox E2E
-- CI (lint/typecheck/tests) + EAS internal build
+- Baseline automated tests (sync/offline unit suites + Detox smoke)
+- CI (lint/typecheck/tests) + EAS internal build workflow
 
 ## Beta (2–6 weeks)
 - Accessibility pass; error boundaries
