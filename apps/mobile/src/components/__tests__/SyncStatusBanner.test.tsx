@@ -10,8 +10,8 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 jest.mock('react-native-paper', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-  const { Text: RNText, View } = jest.requireActual<typeof import('react-native')>('react-native');
+  const React = jest.requireActual('react');
+  const { Text: RNText, View } = jest.requireActual('react-native');
 
   const BannerMock = ({ children, actions }: { children: React.ReactNode; actions?: { label: string; onPress: () => void }[] }) => (
     <View>
