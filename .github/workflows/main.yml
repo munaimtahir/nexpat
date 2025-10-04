@@ -39,7 +39,7 @@ jobs:
 
     - name: Check formatting with Black (Backend)
       working-directory: ./apps/backend
-      run: black . --check --diff
+      run: black --line-length 100 . --check --diff
 
     - name: Run backend tests (Pytest)
       working-directory: ./apps/backend
