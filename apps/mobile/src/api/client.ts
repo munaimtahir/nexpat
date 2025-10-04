@@ -12,6 +12,11 @@ import { env } from '@/utils/environment';
 import { logger } from '@/utils/logger';
 import { GeneratedApiClient } from './generated/client';
 import { outbox } from './outbox/outbox';
+import type { OutboxMethod } from './outbox/types';
+
+function isOutboxMethod(method: string): method is OutboxMethod {
+  return ['post', 'put', 'patch', 'delete'].includes(method.toLowerCase());
+}
 
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
@@ -93,8 +98,15 @@ http.interceptors.response.use(
 
     if (nonGet && offlineOrNetworkError && originalRequest?.url) {
       const state = await NetInfo.fetch();
-      if (!state.isConnected) {
-        await outbox.enqueue(method as any, originalRequest.url, originalRequest.data, originalRequest.headers as any);
+      if (!state.isConnected && isOutboxMethod(method)) {
+        const headers = originalRequest.headers 
+          ? Object.fromEntries(
+              Object.entries(originalRequest.headers).filter(
+                ([_, value]) => typeof value === 'string'
+              ) as [string, string][]
+            )
+          : undefined;
+        await outbox.enqueue(method, originalRequest.url, originalRequest.data, headers);
         logger.warn('Request queued in outbox', { url: originalRequest.url });
         return Promise.resolve({ data: null, status: 202, statusText: 'queued', headers: {}, config: originalRequest });
       }

@@ -43,17 +43,17 @@ export const useVisitMutation = () => {
       };
       const previous = queryClient.getQueriesData({ queryKey: ['visits'] });
       previous.forEach(([key, data]) => {
-        if (data) {
+        if (data && typeof data === 'object' && 'results' in data && Array.isArray(data.results)) {
           queryClient.setQueryData(key, {
             ...data,
-            results: [optimisticVisit, ...(data as any).results]
+            results: [optimisticVisit, ...data.results]
           });
         }
       });
       return { previous };
     },
     onError: (_error, _variables, context) => {
-      context?.previous?.forEach(([key, data]: any) => {
+      context?.previous?.forEach(([key, data]) => {
         queryClient.setQueryData(key, data);
       });
     },
@@ -70,14 +70,24 @@ export const useVisitMutation = () => {
     onMutate: async ({ id, ...payload }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.visit(id) });
       const previousVisit = queryClient.getQueryData(queryKeys.visit(id));
-      queryClient.setQueryData(queryKeys.visit(id), (current: any) => ({ ...current, ...payload }));
+      queryClient.setQueryData(queryKeys.visit(id), (current: unknown) => {
+        if (current && typeof current === 'object') {
+          return { ...current, ...payload };
+        }
+        return current;
+      });
 
       const listSnapshots = queryClient.getQueriesData({ queryKey: ['visits'] });
       listSnapshots.forEach(([key, data]) => {
-        if (!data) return;
+        if (!data || typeof data !== 'object' || !('results' in data) || !Array.isArray(data.results)) return;
         queryClient.setQueryData(key, {
-          ...(data as any),
-          results: (data as any).results.map((visit: any) => (visit.id === id ? { ...visit, ...payload } : visit))
+          ...data,
+          results: data.results.map((visit: unknown) => {
+            if (visit && typeof visit === 'object' && 'id' in visit && visit.id === id) {
+              return { ...visit, ...payload };
+            }
+            return visit;
+          })
         });
       });
 
@@ -93,7 +103,7 @@ export const useVisitMutation = () => {
       if (context?.previousVisit) {
         queryClient.setQueryData(queryKeys.visit(variables.id), context.previousVisit);
       }
-      context?.listSnapshots?.forEach(([key, data]: any) => {
+      context?.listSnapshots?.forEach(([key, data]) => {
         queryClient.setQueryData(key, data);
       });
     },

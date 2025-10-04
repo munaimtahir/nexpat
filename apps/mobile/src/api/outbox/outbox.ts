@@ -1,17 +1,17 @@
 import { STORAGE_KEYS } from '@/constants';
 import { secureStore } from '@/storage/secureStore';
-import type { OutboxEntry, OutboxMethod } from './types';
+import type { OutboxEntry, OutboxMethod, SerializedFormData } from './types';
+import { isFormDataLike } from './types';
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-const serializeBody = (body: unknown) => {
+const serializeBody = (body: unknown): unknown | SerializedFormData => {
   if (!body) return body;
-  if (typeof body === 'object' && body !== null && Array.isArray((body as any)._parts)) {
-    const parts = (body as any)._parts as [string, any][];
+  if (isFormDataLike(body)) {
     return {
       __type: 'FormData',
-      parts: parts.map(([key, value]) => [key, value])
-    };
+      parts: body._parts.map(([key, value]) => [key, value])
+    } as SerializedFormData;
   }
   return body;
 };
