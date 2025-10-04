@@ -23,8 +23,8 @@
 - [ ] Startup/memory/FPS checks
 
 ## Observability
-- [ ] Error boundaries
-- [ ] Sentry production DSN
+- [x] Error boundaries
+- [x] Sentry production DSN
 - [ ] Crash‑free >99% (beta)
 
 ## Store
