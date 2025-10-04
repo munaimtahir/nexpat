@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { PatientsListScreen } from '../PatientsListScreen';
 import { usePatients } from '@/api/hooks/usePatients';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 
 jest.mock('@/api/hooks/usePatients', () => ({
   usePatients: jest.fn()

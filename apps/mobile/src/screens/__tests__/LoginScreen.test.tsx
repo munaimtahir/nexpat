@@ -11,25 +11,31 @@ jest.mock('react-native-paper', () => {
   const React = jest.requireActual('react');
   const { Text: RNText, View, TextInput: RNTextInput, TouchableOpacity } = jest.requireActual('react-native');
   
+  const Button = ({ children, onPress, loading, ...props }: any) => (
+    <TouchableOpacity onPress={onPress} disabled={loading} {...props}>
+      <RNText>{loading ? 'Loading...' : children}</RNText>
+    </TouchableOpacity>
+  );
+  Button.displayName = 'Button';
+  
+  const TextInput = React.forwardRef(({ label, value, onChangeText, error, ...props }: any, ref: any) => (
+    <View>
+      <RNText>{label}</RNText>
+      <RNTextInput
+        ref={ref}
+        value={value}
+        onChangeText={onChangeText}
+        testID={`input-${label}`}
+        {...props}
+      />
+      {error && <RNText>Error</RNText>}
+    </View>
+  ));
+  TextInput.displayName = 'TextInput';
+
   return {
-    Button: ({ children, onPress, loading, ...props }: any) => (
-      <TouchableOpacity onPress={onPress} disabled={loading} {...props}>
-        <RNText>{loading ? 'Loading...' : children}</RNText>
-      </TouchableOpacity>
-    ),
-    TextInput: React.forwardRef(({ label, value, onChangeText, error, ...props }: any, ref: any) => (
-      <View>
-        <RNText>{label}</RNText>
-        <RNTextInput
-          ref={ref}
-          value={value}
-          onChangeText={onChangeText}
-          testID={`input-${label}`}
-          {...props}
-        />
-        {error && <RNText>Error</RNText>}
-      </View>
-    ))
+    Button,
+    TextInput
   };
 });
 
@@ -45,13 +51,12 @@ describe('LoginScreen', () => {
       isLoading: false,
       logout: jest.fn(),
       user: null,
-      isAuthenticated: false,
-      role: null
+      refreshProfile: jest.fn()
     });
   });
 
   it('renders login form with username and password fields', () => {
-    const { getByText, getByTestId } = render(<LoginScreen />);
+    const { getByText } = render(<LoginScreen />);
 
     expect(getByText('login.username')).toBeTruthy();
     expect(getByText('login.password')).toBeTruthy();
@@ -103,8 +108,7 @@ describe('LoginScreen', () => {
       isLoading: true,
       logout: jest.fn(),
       user: null,
-      isAuthenticated: false,
-      role: null
+      refreshProfile: jest.fn()
     });
 
     const { getByText } = render(<LoginScreen />);

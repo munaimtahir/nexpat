@@ -1,7 +1,8 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { Text, View } from 'react-native';
+import { Sentry } from '@/providers/sentry';
 
 // Mock Sentry
 jest.mock('@/providers/sentry', () => ({
@@ -89,8 +90,6 @@ describe('ErrorBoundary', () => {
   });
 
   it('reports errors to Sentry', () => {
-    const { Sentry } = require('@/providers/sentry');
-
     render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />

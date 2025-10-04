@@ -61,8 +61,6 @@ export const PatientsListScreen: React.FC = () => {
         value={search} 
         onChange={setSearch} 
         placeholder="Search patients"
-        accessibilityLabel="Search patients by name, phone, or notes"
-        accessibilityHint="Type to filter the patient list"
       />
       <Button 
         mode="contained" 

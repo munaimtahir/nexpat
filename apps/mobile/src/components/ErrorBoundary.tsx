@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  static getDerivedStateFromError(error: Error): Partial<State> {
+  static getDerivedStateFromError(_error: Error): Partial<State> {
     return { hasError: true };
   }
 
@@ -62,7 +62,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <View style={styles.container}>
           <Text style={styles.title}>Something went wrong</Text>
           <Text style={styles.message}>
-            We're sorry, but something unexpected happened. The error has been reported to our team.
+            We&apos;re sorry, but something unexpected happened. The error has been reported to our team.
           </Text>
           <Button mode="contained" onPress={this.handleReset} style={styles.button}>
             Try Again

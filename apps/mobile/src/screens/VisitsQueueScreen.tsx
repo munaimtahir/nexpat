@@ -59,7 +59,6 @@ export const VisitsQueueScreen: React.FC = () => {
         onValueChange={(newValue) => setStatus(newValue as Visit['status'] | 'all')}
         buttons={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
         style={{ margin: 16 }}
-        accessibilityLabel="Filter visits by status"
       />
       <FlatList
         data={visits}
