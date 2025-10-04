@@ -30,9 +30,15 @@ jest.mock('react-native-paper', () => {
   );
   ButtonMock.displayName = 'ButtonMock';
 
-  interface DialogProps {
-    visible: boolean;
-    children: React.ReactNode;
+  type DialogComponentProps = { visible: boolean; children: React.ReactNode };
+  type DialogComponentType = React.FC<DialogComponentProps> & {
+    Title: React.FC<{ children: React.ReactNode }>;
+    Content: React.FC<{ children: React.ReactNode }>;
+    Actions: React.FC<{ children: React.ReactNode }>;
+  };
+  const DialogComponent: DialogComponentType = (({ visible, children }) => (
+    <View>{visible ? children : null}</View>
+  )) as DialogComponentType;
   }
   const DialogComponent = ({ visible, children }: DialogProps) => (
     <View>{visible ? children : null}</View>
