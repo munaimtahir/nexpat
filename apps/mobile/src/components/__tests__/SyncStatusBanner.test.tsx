@@ -9,115 +9,11 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 })
 }));
 
-// Resolved mock with full component stubs (keep this side)
 jest.mock('react-native-paper', () => {
   const React = jest.requireActual('react');
   const { Text: RNText, View } = jest.requireActual('react-native');
-
-  const BannerMock = ({
-    children,
-    actions
-  }: {
-    children: React.ReactNode;
-    actions?: { label: string; onPress: () => void }[];
-  }) => (
-    <View>
-      <View>{children}</View>
-      {actions?.map((action) => (
-        <RNText key={action.label} onPress={action.onPress}>
-          {action.label}
-        </RNText>
-      ))}
-    </View>
-  );
-  BannerMock.displayName = 'BannerMock';
-
-  const ButtonMock = ({
-    children,
-    onPress
-  }: {
-    children: React.ReactNode;
-    onPress?: () => void;
-  }) => <RNText onPress={onPress ?? (() => undefined)}>{children}</RNText>;
-  ButtonMock.displayName = 'ButtonMock';
-
-  type DialogComponentProps = { visible: boolean; children: React.ReactNode };
-  type DialogComponentType = React.FC<DialogComponentProps> & {
-    Title: React.FC<{ children: React.ReactNode }>;
-    Content: React.FC<{ children: React.ReactNode }>;
-    Actions: React.FC<{ children: React.ReactNode }>;
-  };
-
-  const DialogComponent = (({ visible, children }) => (
-    <View>{visible ? children : null}</View>
-  )) as DialogComponentType;
-  DialogComponent.displayName = 'DialogMock';
-
-  const DialogTitleMock = ({ children }: { children: React.ReactNode }) => (
-    <RNText>{children}</RNText>
-  );
-  DialogTitleMock.displayName = 'DialogTitleMock';
-
-  const DialogContentMock = ({
-    children
-  }: {
-    children: React.ReactNode;
-  }) => <View>{children}</View>;
-  DialogContentMock.displayName = 'DialogContentMock';
-
-  const DialogActionsMock = ({
-    children
-  }: {
-    children: React.ReactNode;
-  }) => <View>{children}</View>;
-  DialogActionsMock.displayName = 'DialogActionsMock';
-
-  DialogComponent.Title = DialogTitleMock;
-  DialogComponent.Content = DialogContentMock;
-  DialogComponent.Actions = DialogActionsMock;
-
-  const ListSectionMock = ({ children }: { children: React.ReactNode }) => (
-    <View>{children}</View>
-  );
-  ListSectionMock.displayName = 'ListSectionMock';
-
-  const ListItemMock = ({
-    title,
-    description
-  }: {
-    title: string;
-    description?: string;
-  }) => (
-    <View>
-      <RNText>{title}</RNText>
-      {description ? <RNText>{description}</RNText> : null}
-    </View>
-  );
-  ListItemMock.displayName = 'ListItemMock';
-
-  return {
-    Banner: BannerMock,
-    Button: ButtonMock,
-    Dialog: DialogComponent,
-    List: {
-      Icon: () => null,
-      Section: ListSectionMock,
-      Item: ListItemMock
-    },
-    Text: ({ children, ...props }: React.ComponentProps<typeof RNText>) => (
-      <RNText {...props}>{children}</RNText>
-    ),
-    Icon: () => null,
-    useTheme: () => ({
-      colors: {
-        errorContainer: '#fee',
-        onErrorContainer: '#900',
-        primaryContainer: '#eef',
-        onPrimaryContainer: '#006'
-      }
-    }),
-    Portal: ({ children }: { children: React.ReactNode }) => <>{children}</>
-  };
+  const { mockCreateReactNativePaperMockWithBanner } = jest.requireActual('@/utils/testUtils');
+  return mockCreateReactNativePaperMockWithBanner(React, RNText, View);
 });
 
 jest.mock('@/hooks/useNetworkStatus', () => ({
