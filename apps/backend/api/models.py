@@ -6,9 +6,9 @@ import re
 
 
 def validate_registration_number_format(value):
-    """Validate that registration number follows xx-xx-xxx format"""
-    if not re.match(r"^\d{2}-\d{2}-\d{3}$", value):
-        raise ValidationError("Registration number must be in format xx-xx-xxx (e.g., 01-23-456)")
+    """Validate that registration number follows xxx-xx-xxx format"""
+    if not re.match(r"^\d{3}-\d{2}-\d{3}$", value):
+        raise ValidationError("Registration number must be in format xxx-xx-xxx (e.g., 001-23-456)")
 
 
 class Visit(models.Model):
@@ -59,10 +59,10 @@ class Visit(models.Model):
 
 
 class Patient(models.Model):
-    # Using CharField with custom format xx-xx-xxx for registration_number
+    # Using CharField with custom format xxx-xx-xxx for registration_number
     # to ensure proper formatting and uniqueness
     registration_number = models.CharField(
-        max_length=8,
+        max_length=9,
         primary_key=True,
         unique=True,
         validators=[validate_registration_number_format],
@@ -83,29 +83,51 @@ class Patient(models.Model):
 
     @classmethod
     def generate_next_registration_number(cls):
-        """Generate the next registration number in xx-xx-xxx format"""
-        # Get the highest existing registration number
-        last_patient = cls.objects.order_by("-registration_number").first()
+        """Generate the next registration number in xxx-xx-xxx format with database locking"""
+        from django.db import transaction
+        
+        with transaction.atomic():
+            # Get the highest existing registration number with FOR UPDATE lock
+            # to prevent race conditions during concurrent patient creation
+            last_patient = cls.objects.select_for_update().order_by("-registration_number").first()
 
-        if not last_patient:
-            # First patient gets 01-00-001
-            return "01-00-001"
+            if not last_patient:
+                # First patient gets 001-00-001
+                return "001-00-001"
 
-        # Extract numeric value from existing format (remove dashes)
-        last_number_str = last_patient.registration_number.replace("-", "")
-        last_number = int(last_number_str)
+            # Extract numeric value from existing format (remove dashes)
+            last_number_str = last_patient.registration_number.replace("-", "")
+            last_number = int(last_number_str)
 
-        # Increment and format as xx-xx-xxx
-        next_number = last_number + 1
-        formatted = f"{next_number:07d}"  # Zero-pad to 7 digits
+            # Increment and format as xxx-xx-xxx
+            next_number = last_number + 1
+            formatted = f"{next_number:08d}"  # Zero-pad to 8 digits
 
-        return f"{formatted[:2]}-{formatted[2:4]}-{formatted[4:]}"
+            return f"{formatted[:3]}-{formatted[3:5]}-{formatted[5:]}"
 
     def save(self, *args, **kwargs):
+        from django.db import transaction
+        from django.db.utils import IntegrityError
+        
         # Auto-generate registration number if not provided
         if not self.registration_number:
-            self.registration_number = self.generate_next_registration_number()
-        super().save(*args, **kwargs)
+            # Retry up to 3 times in case of race conditions
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    self.registration_number = self.generate_next_registration_number()
+                    super().save(*args, **kwargs)
+                    return  # Success, exit the retry loop
+                except IntegrityError:
+                    if attempt == max_retries - 1:
+                        # Last attempt failed, re-raise the exception
+                        raise
+                    # Registration number collision, retry
+                    self.registration_number = None
+                    continue
+        else:
+            # Registration number provided explicitly, save normally
+            super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} (ID: {self.registration_number})"

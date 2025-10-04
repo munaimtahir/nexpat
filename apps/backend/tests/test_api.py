@@ -51,25 +51,25 @@ class RegistrationNumberFormatTests(APITestCase):
         cache.clear()
 
     def test_registration_number_auto_generation(self):
-        """Test that registration numbers are auto-generated in xx-xx-xxx format"""
+        """Test that registration numbers are auto-generated in xxx-xx-xxx format"""
         patient1 = Patient.objects.create(name="Patient 1", gender="MALE")
         patient2 = Patient.objects.create(name="Patient 2", gender="FEMALE")
 
         # Verify format
-        pattern = r"^\d{2}-\d{2}-\d{3}$"
+        pattern = r"^\d{3}-\d{2}-\d{3}$"
         self.assertRegex(patient1.registration_number, pattern)
         self.assertRegex(patient2.registration_number, pattern)
 
         # Verify sequential generation
-        self.assertEqual(patient1.registration_number, "01-00-001")
-        self.assertEqual(patient2.registration_number, "01-00-002")
+        self.assertEqual(patient1.registration_number, "001-00-001")
+        self.assertEqual(patient2.registration_number, "001-00-002")
 
     def test_registration_number_validation(self):
         """Test that invalid registration number formats are rejected"""
         from api.models import validate_registration_number_format
 
         # Valid formats
-        valid_formats = ["01-23-456", "99-99-999", "00-00-001"]
+        valid_formats = ["001-23-456", "999-99-999", "000-00-001"]
         for valid_format in valid_formats:
             try:
                 validate_registration_number_format(valid_format)
@@ -78,14 +78,15 @@ class RegistrationNumberFormatTests(APITestCase):
 
         # Invalid formats
         invalid_formats = [
-            "1-23-456",  # Missing leading zero
-            "01-2-456",  # Missing digit in middle
-            "01-23-45",  # Missing digit at end
-            "01-23-4567",  # Too many digits at end
-            "01-23456",  # Missing dash
-            "0123456",  # No dashes
-            "ab-cd-efg",  # Non-numeric
-            "01-23-45a",  # Mixed alphanumeric
+            "1-23-456",  # Missing leading zeros
+            "01-23-456",  # Old format (2 digits instead of 3)
+            "001-2-456",  # Missing digit in middle
+            "001-23-45",  # Missing digit at end
+            "001-23-4567",  # Too many digits at end
+            "001-23456",  # Missing dash
+            "00123456",  # No dashes
+            "abc-de-fgh",  # Non-numeric
+            "001-23-45a",  # Mixed alphanumeric
         ]
 
         for invalid_format in invalid_formats:
@@ -97,13 +98,13 @@ class RegistrationNumberFormatTests(APITestCase):
     def test_patient_creation_with_explicit_registration_number(self):
         """Test that patients can be created with explicit registration numbers"""
         patient = Patient.objects.create(
-            registration_number="05-67-890", name="Test Patient", gender="OTHER"
+            registration_number="005-67-890", name="Test Patient", gender="OTHER"
         )
-        self.assertEqual(patient.registration_number, "05-67-890")
+        self.assertEqual(patient.registration_number, "005-67-890")
 
         # Next auto-generated patient should continue from this number
         next_patient = Patient.objects.create(name="Next Patient", gender="MALE")
-        self.assertEqual(next_patient.registration_number, "05-67-891")
+        self.assertEqual(next_patient.registration_number, "005-67-891")
 
 
 class PatientFilterTests(APITestCase):
@@ -283,7 +284,7 @@ class PatientSearchTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
 
         self.patient1 = Patient.objects.create(
-            registration_number="01-23-456",
+            registration_number="001-23-456",
             name="John Doe",
             phone="1234567890",
             gender="MALE",

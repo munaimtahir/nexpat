@@ -107,8 +107,8 @@ class PatientViewSet(viewsets.ModelViewSet):
 
             numbers = []
             for num in raw_numbers:
-                # Accept formatted registration numbers (xx-xx-xxx pattern)
-                if re.match(r"^\d{2}-\d{2}-\d{3}$", num):
+                # Accept formatted registration numbers (xxx-xx-xxx pattern)
+                if re.match(r"^\d{3}-\d{2}-\d{3}$", num):
                     numbers.append(num)
                 # Also accept old numeric format for backward compatibility
                 # during transition
@@ -188,8 +188,8 @@ class PatientViewSet(viewsets.ModelViewSet):
 
         filters = Q(name__icontains=query) | Q(phone__icontains=query)
 
-        # Check if query matches registration number format (xx-xx-xxx)
-        if re.match(r"^\d{2}-\d{2}-\d{3}$", query):
+        # Check if query matches registration number format (xxx-xx-xxx)
+        if re.match(r"^\d{3}-\d{2}-\d{3}$", query):
             filters |= Q(registration_number=query)
         # Also check for old numeric format for backward compatibility
         elif query.isdigit():
@@ -263,33 +263,51 @@ class VisitViewSet(viewsets.ModelViewSet):
         - Auto-assign token_number (per queue, per day).
         - Set visit_date to today.
         - Set status to 'WAITING'.
+        - Use database locking to prevent race conditions.
         """
+        from django.db import transaction
+        from django.db.utils import IntegrityError
+        
         today = datetime.date.today()
         queue_instance = serializer.validated_data["queue"]
+        
+        # Retry logic to handle race conditions under concurrent load
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                with transaction.atomic():
+                    # Determine next token number for this specific queue and date
+                    # Use select_for_update() to lock the row and prevent race conditions
+                    last_visit_in_queue_today = (
+                        Visit.objects.select_for_update()
+                        .filter(queue=queue_instance, visit_date=today)
+                        .order_by("-token_number")
+                        .first()
+                    )
 
-        # Determine next token number for this specific queue and date
-        last_visit_in_queue_today = (
-            Visit.objects.filter(queue=queue_instance, visit_date=today)
-            .order_by("-token_number")
-            .first()
-        )
+                    next_token_number = 1
+                    if last_visit_in_queue_today:
+                        next_token_number = last_visit_in_queue_today.token_number + 1
 
-        next_token_number = 1
-        if last_visit_in_queue_today:
-            next_token_number = last_visit_in_queue_today.token_number + 1
+                    visit = serializer.save(
+                        token_number=next_token_number,
+                        visit_date=today,
+                        status="WAITING",
+                    )
 
-        visit = serializer.save(
-            token_number=next_token_number,
-            visit_date=today,
-            status="WAITING",
-        )
-
-        logger.info(
-            f"Visit created: Token {visit.token_number} "
-            f"for patient {visit.patient.registration_number} "
-            f"in queue {visit.queue.name} "
-            f"by user {self.request.user.username}"
-        )
+                    logger.info(
+                        f"Visit created: Token {visit.token_number} "
+                        f"for patient {visit.patient.registration_number} "
+                        f"in queue {visit.queue.name} "
+                        f"by user {self.request.user.username}"
+                    )
+                    return  # Success, exit retry loop
+            except IntegrityError:
+                if attempt == max_retries - 1:
+                    # Last attempt failed, re-raise the exception
+                    raise
+                # Token number collision due to race condition, retry
+                continue
 
     def _update_status(self, request, pk, new_status, expected_current_statuses):
         visit = self.get_object()
