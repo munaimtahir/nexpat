@@ -1,6 +1,6 @@
 # Development Status
 
-**Last Updated:** 2025-03-14 (reviewed and validated)
+**Last Updated:** 2025-03-21 (reviewed and validated)
 **Current Phase:** Phase 3 (Uploads & Offline) ✅ Complete · Phase 4 (Quality & Release) 🚧 In Progress
 
 ## Executive Summary
@@ -42,7 +42,7 @@ The application has completed all Phase 1 & 2 foundational work and the Phase 3 
 
 - **Localization Expansion** – English-only content; Urdu/RTL and locale-specific formatting deferred post v1. (`src/i18n/index.ts`, `apps/mobile/docs/STATUS.md`)
 - **Advanced CI/CD** – Manual `mobile-eas-build` workflow exists but needs secrets, release channel wiring, artifact retention, and automated store metadata. (`.github/workflows/mobile-eas-build.yml`, `docs/CI-CD.md`)
-- **Production Readiness Tasks** – Push notifications (FCM), deep links, legal docs, marketing assets, and crash-free KPI tracking are outstanding. (`apps/mobile/docs/STATUS.md`, `apps/mobile/docs/QA-Checklist.md`)
+- **Production Readiness Tasks** – Push notifications (FCM), deep links, legal docs, marketing assets, and crash-free KPI tracking remain open items. Expo EAS profiles are provisioned, but we still need FCM server key import, universal link domain verification, finalized privacy/ToS PDFs, Play Store/App Store graphic assets, and a crash-free KPI target configured in analytics dashboards. (`apps/mobile/docs/STATUS.md`, `apps/mobile/docs/QA-Checklist.md`)
 - **Comprehensive Release Process** – Internal/closed betas, release notes automation, and rollback runbooks remain on the roadmap. (`apps/mobile/docs/STATUS.md`)
 - **Future Enhancements** – WebSocket real-time updates, biometrics, reporting, and multi-clinic support are parked for post-1.0. (`apps/mobile/docs/STATUS.md`)
 
