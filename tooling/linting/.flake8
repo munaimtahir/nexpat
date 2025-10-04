@@ -9,5 +9,5 @@ exclude =
     apps/web/dist,
     apps/mobile/node_modules,
     apps/mobile/.expo,
-    */migrations/
+    */migrations/*
 
