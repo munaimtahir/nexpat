@@ -1,28 +1,17 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Banner, Portal, Text, useTheme } from 'react-native-paper';
+import { Banner, Button, Dialog, List, Portal, Text, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { formatDistanceToNow } from 'date-fns';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useOutboxStatus } from '@/api/outbox/useOutboxStatus';
-
-const formatRelativeTime = (isoDate?: string) => {
-  if (!isoDate) {
-    return undefined;
-  }
-
-  try {
-    return formatDistanceToNow(new Date(isoDate), { addSuffix: true });
-  } catch (error) {
-    return undefined;
-  }
-};
+import { formatRelativeTime } from '@/utils/time';
 
 export const SyncStatusBanner: React.FC = () => {
   const { isOffline } = useNetworkStatus();
-  const { pendingCount, lastQueuedAt, lastSyncedAt } = useOutboxStatus();
+  const { entries, pendingCount, lastQueuedAt, lastSyncedAt } = useOutboxStatus();
   const show = isOffline || pendingCount > 0;
   const [visible, setVisible] = React.useState(show);
+  const [detailsVisible, setDetailsVisible] = React.useState(false);
   const insets = useSafeAreaInsets();
   const theme = useTheme();
 
@@ -35,7 +24,7 @@ export const SyncStatusBanner: React.FC = () => {
   }
 
   const queuedDescriptor = pendingCount > 0 ? `${pendingCount} update${pendingCount === 1 ? '' : 's'} queued` : undefined;
-  const statusDescriptor = isOffline ? 'Offline mode · showing cached data' : 'Back online';
+  const statusDescriptor = isOffline ? 'Offline mode · showing cached data' : pendingCount > 0 ? 'Syncing changes' : 'Back online';
   const lastQueuedRelative = formatRelativeTime(lastQueuedAt);
   const lastSyncedRelative = !isOffline && pendingCount === 0 ? formatRelativeTime(lastSyncedAt) : undefined;
 
@@ -60,19 +49,50 @@ export const SyncStatusBanner: React.FC = () => {
   return (
     <Portal>
       <View pointerEvents="box-none" style={[styles.wrapper, { paddingTop: insets.top + 8 }]}> 
-        <Banner visible={visible} style={[styles.banner, { backgroundColor }]} icon={icon}>
-          <View style={styles.content}> 
-            <Text variant="titleSmall" style={[styles.message, { color: textColor }]}>
+        <Banner
+          visible={visible}
+          style={[styles.banner, { backgroundColor }]}
+          icon={icon}
+          actions={pendingCount > 0 ? [{ label: 'View queue', onPress: () => setDetailsVisible(true) }] : []}
+        >
+          <View style={styles.content}>
+            <Text testID="sync-status-message" variant="titleSmall" style={[styles.message, { color: textColor }]}>
               {message}
             </Text>
             {supportingText ? (
-              <Text variant="bodySmall" style={[styles.supporting, { color: textColor }]}> 
+              <Text
+                testID="sync-status-supporting"
+                variant="bodySmall"
+                style={[styles.supporting, { color: textColor }]}
+              >
                 {supportingText}
               </Text>
             ) : null}
           </View>
         </Banner>
       </View>
+      <Dialog visible={detailsVisible} onDismiss={() => setDetailsVisible(false)}>
+        <Dialog.Title>Queued updates</Dialog.Title>
+        <Dialog.Content>
+          {entries.length === 0 ? (
+            <Text>All updates have been synced.</Text>
+          ) : (
+            <List.Section>
+              {entries.map((entry) => (
+                <List.Item
+                  key={entry.id}
+                  title={`${entry.method.toUpperCase()} ${entry.url}`}
+                  description={formatRelativeTime(entry.createdAt) ? `Queued ${formatRelativeTime(entry.createdAt)}` : 'Queued moments ago'}
+                  left={(props) => <List.Icon {...props} icon="clock-outline" />}
+                />
+              ))}
+            </List.Section>
+          )}
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button onPress={() => setDetailsVisible(false)}>Close</Button>
+        </Dialog.Actions>
+      </Dialog>
     </Portal>
   );
 };

@@ -9,6 +9,7 @@ import { Card } from '@/components/Card';
 import { Button } from 'react-native-paper';
 import { LoadingIndicator } from '@/components/LoadingIndicator';
 import { ErrorState } from '@/components/ErrorState';
+import { CachedDataNotice } from '@/components/CachedDataNotice';
 
 export const PatientsListScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
@@ -45,6 +46,9 @@ export const PatientsListScreen: React.FC = () => {
 
   return (
     <View style={{ flex: 1 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+        <CachedDataNotice />
+      </View>
       <SearchBar value={search} onChange={setSearch} placeholder="Search patients" />
       <Button mode="contained" onPress={() => navigation.navigate('PatientForm', {})} style={{ marginHorizontal: 16, marginBottom: 16 }}>
         Add patient
