@@ -15,16 +15,8 @@ jest.mock('@/api/outbox/useOutboxStatus', () => ({
 jest.mock('react-native-paper', () => {
   const React = jest.requireActual('react');
   const { Text: RNText } = jest.requireActual('react-native');
-  return {
-    Icon: () => null,
-    Text: ({ children, ...props }: React.ComponentProps<typeof RNText>) => <RNText {...props}>{children}</RNText>,
-    useTheme: () => ({
-      colors: {
-        secondaryContainer: '#eee',
-        onSecondaryContainer: '#111'
-      }
-    })
-  };
+  const { mockCreateReactNativePaperMock } = jest.requireActual('@/utils/testUtils');
+  return mockCreateReactNativePaperMock(React, RNText);
 });
 
 const mockedUseNetworkStatus = useNetworkStatus as jest.MockedFunction<typeof useNetworkStatus>;
