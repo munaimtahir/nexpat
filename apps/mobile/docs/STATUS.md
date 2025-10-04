@@ -1,7 +1,7 @@
 # Development Status
 
-**Last Updated:** 2025-03-14
-**Current Phase:** Phase 3 (Uploads & Offline) - Complete · Phase 4 (Quality & Release) In Progress
+**Last Updated:** 2025-03-14 (reviewed and validated)
+**Current Phase:** Phase 3 (Uploads & Offline) ✅ Complete · Phase 4 (Quality & Release) 🚧 In Progress
 
 ## Executive Summary
 
@@ -9,7 +9,7 @@ The ClinicQ Mobile app is a React Native (Expo) application that provides a mobi
 
 ### Current Stage: **MVP Complete + Advanced Features**
 
-The application has completed all Phase 1 & 2 foundational work and core workflows, and has substantially completed Phase 3 (uploads and offline capabilities). Phase 4 (quality & release preparation) remains to be implemented.
+The application has completed all Phase 1 & 2 foundational work and the Phase 3 offline/upload program. Phase 4 focuses on stability, coverage, and release operations.
 
 ### Recent Validation (2025-03-14)
 - `npm run lint`
@@ -18,441 +18,79 @@ The application has completed all Phase 1 & 2 foundational work and core workflo
 
 ---
 
-## ✅ What's Working (Completed Features)
+## Feature Readiness Overview
 
-### Phase 1 — Foundations ✅ COMPLETE
+### ✅ Ready to Ship (feature-complete & stable in manual testing)
 
-#### Authentication & Authorization
-- **Login Screen** (`src/screens/LoginScreen.tsx`)
-  - Username/password authentication with JWT tokens
-  - Form validation using React Hook Form + Zod
-  - Internationalized UI (i18next)
-  - Error handling with user-friendly messages
-  
-- **Token Management** (`src/api/client.ts`)
-  - Secure token storage using Expo Secure Store
-  - Access token + refresh token flow
-  - Automatic token refresh on 401 responses
-  - Token persistence across app restarts
+- **Authentication & Role Routing** – Credential login with JWT storage/refresh and role-sensitive navigation across assistant and doctor tab stacks. (`src/screens/LoginScreen.tsx`, `src/api/client.ts`, `src/navigation/index.tsx`)
+- **Patient Management** – Searchable patient lists, detail view, and create/edit flows with optimistic cache updates and offline notices. (`src/screens/PatientsListScreen.tsx`, `src/screens/PatientDetailScreen.tsx`, `src/screens/PatientFormScreen.tsx`)
+- **Visit Queue Operations** – Assistant queue management, doctor workflow, detail drill-down, and conflict handling with optimistic updates. (`src/screens/VisitsQueueScreen.tsx`, `src/screens/DoctorQueueScreen.tsx`, `src/api/hooks/useVisits.ts`)
+- **Uploads Hub** – Camera/gallery intake, batch uploads with progress, offline queuing, and gallery of historical prescriptions. (`src/screens/UploadManagerScreen.tsx`, `src/api/hooks/useUploads.ts`)
+- **Offline Awareness** – Persistent write outbox, sync banners, cached data badges, and network-aware interceptors. (`src/api/outbox/outbox.ts`, `src/components/SyncStatusBanner.tsx`, `src/components/CachedDataNotice.tsx`, `src/api/client.ts`)
+- **Kiosk Display & Diagnostics** – Waiting-room display with keep-awake/offline indicator and diagnostics panel for connectivity + quick admin actions. (`src/screens/PublicDisplayScreen.tsx`, `src/screens/DiagnosticsScreen.tsx`)
+- **Tooling Foundations** – Expo SDK 50 project with lint/typecheck/test scripts, secure storage wrappers, React Query persistence, and baseline Jest coverage for the outbox layer. (`package.json`, `src/api/outbox/outbox.test.ts`)
 
-- **Role-Based Navigation** (`src/navigation/index.tsx`)
-  - Doctor navigation with dedicated dashboard
-  - Assistant navigation with queue management
-  - Automatic routing based on user roles from `/auth/me` endpoint
-  - Protected screens that require authentication
+### 🧪 Implemented but Requires Debugging / Hardening
 
-#### Infrastructure
-- **API Client** (`src/api/client.ts`, `src/api/generated/`)
-  - Axios-based HTTP client with interceptors
-  - Generated TypeScript client from OpenAPI schema
-  - Request/response logging for debugging
-  - Centralized error handling
+- **Automated Test Coverage** – Jest, RTL, and Detox scaffolding exists but suites beyond outbox smoke tests are missing, leaving workflows unguarded by CI. (`jest.config.js`, `jest.setup.ts`, `package.json`)
+- **Accessibility Pass** – Screens use Paper components but lack consistent `accessibilityLabel`/dynamic type validation, requiring manual audits. (`src/screens/LoginScreen.tsx`, `docs/QA-Checklist.md`)
+- **Performance Profiling** – Large FlatLists render synchronously without virtualization tweaks or skeleton states for hundreds of rows; needs stress testing. (`src/screens/PatientsListScreen.tsx`, `src/screens/VisitsQueueScreen.tsx`)
+- **Release Telemetry** – Sentry wiring is present but production DSN/environment configuration is unfinished, so crash monitoring isn't yet reliable. (`src/providers/sentry.ts`)
+- **Outbox Edge Cases** – Core queueing logic is implemented but lacks multi-device race-condition tests, especially for large media uploads and replay ordering. (`src/api/outbox/useOutboxProcessor.ts`, `docs/QA-Checklist.md`)
 
-- **React Query Integration** (`src/providers/AppProviders.tsx`)
-  - Cache management and persistence
-  - Optimistic updates for better UX
-  - Background refetching on focus/reconnect
-  - Query key management for cache invalidation
+### ⏳ Pending / Not Started
 
-- **Theme & Styling** (`src/theme/`)
-  - React Native Paper for UI components
-  - Consistent color scheme and typography
-  - Light theme (dark theme not implemented)
-  - Navigation theme integration
-
-### Phase 2 — Core Workflows ✅ COMPLETE
-
-#### Patient Management
-- **Patients List Screen** (`src/screens/PatientsListScreen.tsx`)
-  - Paginated list of all patients
-  - Real-time search by name/phone
-  - Pull-to-refresh functionality
-  - Navigation to patient details
-  
-- **Patient Detail Screen** (`src/screens/PatientDetailScreen.tsx`)
-  - View complete patient information
-  - Display patient's visit history
-  - Quick actions (edit, create visit)
-  
-- **Patient Form Screen** (`src/screens/PatientFormScreen.tsx`)
-  - Create new patients
-  - Edit existing patient information
-  - Form validation (first name, last name, phone, notes)
-  - Optimistic updates
-
-- **Patient API Hooks** (`src/api/hooks/usePatients.ts`)
-  - List patients with search and pagination
-  - Fetch individual patient details
-  - Create and update mutations with cache invalidation
-
-#### Visit/Queue Management
-- **Visits Queue Screen** (`src/screens/VisitsQueueScreen.tsx`) - Assistant View
-  - View visits by status (waiting/in progress/completed/all)
-  - Advance visit status through workflow
-  - Real-time queue updates
-  - Status filtering with segmented buttons
-  
-- **Doctor Queue Screen** (`src/screens/DoctorQueueScreen.tsx`)
-  - Doctor-specific view of visits
-  - Mark visits as completed
-  - Simplified interface focused on treatment
-  
-- **Visit Detail Screen** (`src/screens/VisitDetailScreen.tsx`)
-  - Complete visit information
-  - Patient details linked to visit
-  - Status transitions
-  - Visit notes and metadata
-
-- **Visit API Hooks** (`src/api/hooks/useVisits.ts`)
-  - List visits with status filtering
-  - Fetch individual visit details
-  - Create and update mutations
-  - **Optimistic updates** for instant UI feedback
-  - Smart cache management
-
-#### Tab Navigation
-- **Assistant Tabs**: Patients | Visits | Uploads | Diagnostics
-- **Doctor Tabs**: Queue | Patients | Diagnostics
-- Consistent navigation with role-based content
-
-### Phase 3 — Uploads & Offline ✅ COMPLETE
-
-#### Upload Management
-- **Upload Manager Screen** (`src/screens/UploadManagerScreen.tsx`)
-  - Camera integration for capturing prescriptions
-  - Gallery/photo library access with multi-select batch capture
-  - File selection list with per-item removal and progress tracking
-  - Upload progress tracking with progress bar
-  - Associated uploads with patient and visit
-  - Optional description field reused across batch
-  - In-app upload history with thumbnails, filters, and modal preview
-  
-- **Upload API Hooks** (`src/api/hooks/useUploads.ts`)
-  - Multipart form upload with progress tracking
-  - Retry logic on failure
-  - Queued uploads when offline
-  - Fetcher for prescription image history by visit or patient registration
-
-#### Offline Support
-- **Write Outbox** (`src/api/outbox/`)
-  - Queues write requests (POST/PUT/PATCH/DELETE) when offline
-  - Automatic replay when connection restored
-  - Request serialization including FormData
-  - Persistent storage using secure store
-- **Sync Status Banner** (`src/components/SyncStatusBanner.tsx`)
-  - Surfaces offline mode with cached data context
-  - Shows queued mutation count and last sync/queue timestamps
-  - View queue action reveals pending requests with timestamps
-  - Uses portal overlay so status is visible on every screen
-- **Cached Data Notice** (`src/components/CachedDataNotice.tsx`)
-  - Inline indicator on list screens when offline or replaying queued writes
-  - Communicates last-sync timing and queued operations
-  
-- **Outbox Processor** (`src/api/outbox/useOutboxProcessor.ts`)
-  - Background processing hook
-  - Monitors network connectivity
-  - Replays queued requests on reconnect
-  - Per-request retry with exponential backoff
-  
-- **React Query Persistence** (`src/providers/AppProviders.tsx`)
-  - Cache persisted to AsyncStorage
-  - 24-hour cache retention
-  - Survives app restarts
-  - Automatic rehydration on app launch
-  - Conflict alert surfaced on visit status changes (409 handling)
-
-- **Network-Aware Interceptors** (`src/api/client.ts`)
-  - Detects offline state using @react-native-community/netinfo
-  - Automatically queues mutations when offline
-  - Shows user-friendly feedback (202 status for queued)
-
-### Phase 4 — Quality & Release ♻️ IN PROGRESS
-
-- **Automated Testing**
-  - Jest unit suites cover sync banner queue dialog and cached notice states
-  - Detox baseline smoke test validates login screen rendering
-- **CI/CD & Tooling**
-  - `eas.json` defines development/preview/production profiles
-  - GitHub Action (`.github/workflows/mobile-eas-build.yml`) runs lint/typecheck/tests and optional EAS build
-- **Release Operations**
-  - Package scripts for Detox build/test and EAS automation ready for pipeline integration
-
-#### Public Display (Kiosk Mode)
-- **Public Display Screen** (`src/screens/PublicDisplayScreen.tsx`)
-  - Full-screen kiosk mode for waiting room display
-  - Shows current patient being served
-  - Queue of waiting patients
-  - Keep-awake functionality
-  - Auto-refresh with timestamp
-  - Offline mode indicator
-  - Exit button to return to app
-
-### Additional Features
-
-#### Diagnostics & Settings
-- **Diagnostics Screen** (`src/screens/DiagnosticsScreen.tsx`)
-  - Backend health check
-  - API version information
-  - Commit hash display
-  - Manual profile refresh
-  - Quick access to public display mode
-  - Logout functionality
-
-#### Internationalization (Partial)
-- **i18n Setup** (`src/i18n/index.ts`)
-  - i18next integration
-  - English language support implemented
-  - Locale detection using expo-localization
-  - Translation keys for login screen
-  - **Note:** Additional languages deferred until after English launch
-
-#### Error Handling & UX
-- **Reusable Components** (`src/components/`)
-  - LoadingIndicator for async operations
-  - ErrorState for error messages
-  - SearchBar for filtering lists
-  - Card for consistent content display
-  - VisitStatusTag for status visualization
-
-#### Observability
-- **Sentry Integration** (`src/providers/sentry.ts`)
-  - Error tracking configured
-  - User context tracking
-  - Crash reporting setup
-  - **Note:** Needs production DSN configuration
-
-- **Logging** (`src/utils/logger.ts`)
-  - Centralized logging utility
-  - Console logging for development
-  - Ready for remote logging integration
+- **Localization Expansion** – English-only content; Urdu/RTL and locale-specific formatting deferred post v1. (`src/i18n/index.ts`, `apps/mobile/docs/STATUS.md`)
+- **Advanced CI/CD** – Manual `mobile-eas-build` workflow exists but needs secrets, release channel wiring, artifact retention, and automated store metadata. (`.github/workflows/mobile-eas-build.yml`, `docs/CI-CD.md`)
+- **Production Readiness Tasks** – Push notifications (FCM), deep links, legal docs, marketing assets, and crash-free KPI tracking are outstanding. (`apps/mobile/docs/STATUS.md`, `apps/mobile/docs/QA-Checklist.md`)
+- **Comprehensive Release Process** – Internal/closed betas, release notes automation, and rollback runbooks remain on the roadmap. (`apps/mobile/docs/STATUS.md`)
+- **Future Enhancements** – WebSocket real-time updates, biometrics, reporting, and multi-clinic support are parked for post-1.0. (`apps/mobile/docs/STATUS.md`)
 
 ---
 
-## 🚧 What's Left to Build
+## Technical Architecture Snapshot
 
-### Phase 3 — Remaining Items
+- **Stack:** Expo (React Native 0.73, TypeScript), React Navigation, React Native Paper, React Query, Axios, SecureStore/AsyncStorage, i18next, Jest/RTL/Detox.
+- **Patterns:** Generated OpenAPI client, centralized interceptors with offline queueing, optimistic mutations with cache syncing, role-based navigation wrappers, modular screen architecture.
 
-1. **Enhanced Offline UX**
-   - Visual indicators showing which data is cached vs. live
-   - Better feedback when operations are queued
-   - Conflict resolution for concurrent edits
-   
-2. **Upload Improvements**
-   - Thumbnail generation for prescription previews
-   - Batch upload capability
-   - View uploaded prescriptions in app
-
-### Phase 4 — Quality & Release (Not Started)
-
-#### Localization (Post-English Launch)
-- [ ] Research additional languages and locale date/time formatting
-
-#### Accessibility
-- [ ] Screen reader support (accessibility labels completed on some screens)
-- [ ] Color contrast compliance
-- [ ] Font scaling support
-- [ ] Keyboard navigation
-- [ ] Voice control testing
-
-#### Testing
-- [ ] Unit tests for business logic
-- [ ] Component tests using React Native Testing Library
-- [ ] Integration tests for critical flows
-- [ ] E2E tests using Detox
-  - Login flow
-  - Patient creation
-  - Queue management
-  - Offline scenarios
-- [ ] Test coverage > 70%
-
-#### CI/CD Pipeline
-- [ ] GitHub Actions workflow
-- [ ] Automated linting on PR
-- [ ] Automated type checking
-- [ ] Automated test runs
-- [ ] Build validation for Android
-- [ ] EAS Build integration
-
-#### Performance
-- [ ] List virtualization optimization
-- [ ] Image loading optimization
-- [ ] Bundle size analysis and reduction
-- [ ] Startup time profiling
-- [ ] Memory leak detection
-- [ ] Frame rate monitoring
-
-#### Production Readiness
-- [ ] Error boundary implementation
-- [ ] Production Sentry DSN configuration
-- [ ] Crash-free sessions monitoring (target: >99%)
-- [ ] Analytics integration (optional)
-- [ ] Push notifications infrastructure (FCM)
-- [ ] Deep linking support
-- [ ] App icons and splash screens
-- [ ] Play Store assets (screenshots, description)
-- [ ] Privacy policy and terms of service
-
-#### Release Process
-- [ ] Internal testing track setup
-- [ ] Closed beta testing
-- [ ] Production release checklist
-- [ ] Versioning strategy
-- [ ] Release notes automation
-- [ ] Rollback procedures
-
-### Future Enhancements (Post-v1.0)
-
-- Real-time updates via WebSocket/SSE
-- Biometric authentication (fingerprint/face)
-- Offline-first data sync improvements
-- Export reports functionality
-- Multi-clinic support
-- Advanced search and filtering
-- Appointment scheduling
-- iOS version using EAS Build
-
----
-
-## Technical Architecture Summary
-
-### Technology Stack
-- **Framework:** React Native with Expo SDK 50
-- **Language:** TypeScript
-- **State Management:** React Query (TanStack Query v5)
-- **Navigation:** React Navigation v6 (Native Stack + Bottom Tabs)
-- **UI Library:** React Native Paper
-- **Forms:** React Hook Form + Zod validation
-- **HTTP Client:** Axios with interceptors
-- **Storage:** 
-  - Expo Secure Store (tokens, outbox)
-  - AsyncStorage (query cache)
-- **i18n:** i18next + react-i18next
-- **Error Tracking:** Sentry React Native
-- **Testing:** Jest + React Native Testing Library (configured, tests not written)
-
-### Key Architectural Patterns
-- Generated API client from OpenAPI spec (type-safe)
-- Centralized API client with auth interceptors
-- Optimistic updates for immediate UX feedback
-- Write outbox pattern for offline mutations
-- Query cache persistence for offline reads
-- Role-based navigation and screen access
-- Hook-based data fetching with React Query
-- Form validation at both client and API level
-
-### Code Organization
 ```
 src/
-├── api/              # API client, generated code, hooks
-│   ├── client.ts     # Axios client with interceptors
-│   ├── generated/    # OpenAPI generated client
-│   ├── hooks/        # React Query hooks per domain
-│   └── outbox/       # Offline write queue
-├── components/       # Reusable UI components
-├── constants/        # App constants and query keys
-├── features/
-│   └── auth/         # Authentication context and types
-├── i18n/             # Internationalization setup
-├── navigation/       # Navigation configuration
-├── providers/        # App-level providers (Query, Auth, Theme)
-├── screens/          # Screen components
-├── storage/          # Storage utilities
-├── theme/            # Theme configuration
-└── utils/            # Utility functions (logger, env)
+├── api/              # Axios client, generated types, hooks, offline outbox
+├── components/       # Reusable UI widgets (cards, status tags, banners)
+├── features/         # Domain-specific providers (auth)
+├── navigation/       # Stack/tab navigators and route types
+├── screens/          # Feature screens (patients, visits, uploads, kiosk)
+├── providers/        # App-level providers (query, theme, auth, sentry)
+└── utils/            # Environment, logging, formatting helpers
 ```
 
 ---
 
 ## Development Workflow
 
-### Setup
 ```bash
-cd clinicq_Mobile
+cd apps/mobile
 npm install
-cp .env.example .env
-# Edit .env with SERVER_URL
+cp ENV.sample .env   # configure SERVER_URL
 npx expo start
+npm run android       # Expo run on emulator/device
+npm run lint          # ESLint
+npm run typecheck     # TSC
+npm test              # Jest (currently minimal coverage)
 ```
 
-### Available Commands
-- `npm start` - Start Expo dev server
-- `npm run android` - Run on Android device/emulator
-- `npm run ios` - Run on iOS simulator (macOS only)
-- `npm test` - Run Jest tests (no tests implemented yet)
-- `npm run lint` - Run ESLint
-- `npm run typecheck` - Run TypeScript compiler check
+OpenAPI changes can be regenerated with:
 
-### API Client Regeneration
-When backend API changes:
 ```bash
-# From backend, expose OpenAPI schema at /api/schema/
 npx openapi-typescript-codegen --input http://localhost:8000/api/schema/ --output src/api/generated
 ```
 
 ---
 
-## Known Issues & Limitations
+## Known Gaps & Risks
 
-1. **No Tests:** Testing infrastructure is configured but no tests have been written
-2. **No CI/CD:** No automated builds or deployments
-3. **English Only:** Additional languages deferred to a future release
-4. **No Dark Theme:** Light theme only
-5. **Limited Error Recovery:** Some edge cases in offline mode may not be handled
-6. **No Push Notifications:** Real-time updates require manual refresh
-7. **Single Clinic:** No multi-clinic/multi-tenant support
-
----
-
-## Metrics & Progress
-
-### Code Statistics
-- **Screens:** 10 screens implemented
-- **API Hooks:** 4 hook files (patients, visits, uploads, diagnostics)
-- **Lines of Code:** ~3,500+ TypeScript/TSX
-- **Components:** 5 reusable components
-- **Test Coverage:** 0% (no tests written)
-
-### Phase Completion
-- **Phase 1 (Foundations):** ✅ 100% Complete
-- **Phase 2 (Core Workflows):** ✅ 100% Complete  
-- **Phase 3 (Uploads & Offline):** ⚠️ ~85% Complete
-- **Phase 4 (Quality & Release):** ❌ ~5% Complete
-
-### Overall Progress: **~72% Complete**
-
----
-
-## Next Steps (Priority Order)
-
-1. **Immediate (Next Sprint)**
-   - Add upload thumbnails, in-app viewer, and batch queue tools
-   - Implement basic unit tests for critical hooks
-   - Write comprehensive E2E test suite
-
-2. **Short Term (2-4 weeks)**
-   - Set up CI/CD pipeline with GitHub Actions
-   - Implement error boundaries
-   - Add accessibility labels to all interactive elements
-   - Create Play Store assets
-
-3. **Medium Term (1-2 months)**
-   - Internal testing release
-   - Performance optimization
-   - Sentry configuration for production
-   - Beta testing program
-
-4. **Long Term (3+ months)**
-   - Production release to Play Store
-   - Real-time updates via WebSocket
-   - Push notifications
-   - iOS version
-
----
-
-## Conclusion
-
-The ClinicQ Mobile app has successfully implemented all core functionality required for an MVP and is feature-complete for basic clinic operations. The app includes sophisticated offline support, role-based workflows, and a polished user interface. 
-
-The main gap is in **quality assurance and production readiness**: testing, internationalization completion, CI/CD, and performance optimization. With focused effort on Phase 4 items, the app could be production-ready within 1-2 months.
-
-The foundation is solid and the architecture supports the planned future enhancements without major refactoring.
+1. **Sparse Automated Tests:** Only outbox smoke tests exist; business flows lack coverage, making regressions hard to catch early.
+2. **Accessibility Debt:** Needs full TalkBack/VoiceOver pass, contrast checks, and font scaling verification before public release.
+3. **Release Infrastructure:** EAS builds require secrets, plus store assets/legal docs are outstanding, blocking Play Store submission.
+4. **Observability:** Sentry production DSN and analytics/push notification integrations are unfinished.
+5. **Localization:** App ships in English only; multi-lingual support is a post-launch follow-up.
