@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Electricity Meter Tracker</string>
+    <string name="reminder_title">%1$s reading reminder</string>
+    <string name="reminder_body">It has been %1$d days since your last reading.</string>
+    <string name="nudge_title">%1$s needs a reading</string>
+    <string name="nudge_body">No readings recorded this cycle. Add one to stay on track.</string>
+    <string name="threshold_title">%1$s approaching threshold</string>
+    <string name="threshold_body">Projected to cross %.1f units on %s.</string>
+    <string name="channel_name">Meter reminders</string>
+</resources>
