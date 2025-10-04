@@ -13,7 +13,7 @@
 - [x] Cached vs live indicators
 
 ## Accessibility
-- [ ] Labels on all touchables
+- [x] Labels on all touchables
 - [ ] Contrast & font scaling
 - [ ] Keyboard navigation (where applicable)
 

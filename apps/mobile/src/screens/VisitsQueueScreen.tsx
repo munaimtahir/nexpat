@@ -59,6 +59,7 @@ export const VisitsQueueScreen: React.FC = () => {
         onValueChange={(newValue) => setStatus(newValue as Visit['status'] | 'all')}
         buttons={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
         style={{ margin: 16 }}
+        accessibilityLabel="Filter visits by status"
       />
       <FlatList
         data={visits}
@@ -68,9 +69,21 @@ export const VisitsQueueScreen: React.FC = () => {
           <Card>
             <Text style={{ fontSize: 18, fontWeight: '600' }}>Visit #{item.id}</Text>
             <VisitStatusTag status={item.status} />
-            <Button onPress={() => navigation.navigate('VisitDetail', { visitId: item.id })}>Open</Button>
+            <Button 
+              onPress={() => navigation.navigate('VisitDetail', { visitId: item.id })}
+              accessibilityLabel={`View details for visit ${item.id}`}
+              accessibilityHint="Opens visit detail page"
+            >
+              Open
+            </Button>
             {nextStatus[item.status] ? (
-              <Button mode="contained" onPress={() => onAdvance(item.id, item.status)} loading={update.isPending}>
+              <Button 
+                mode="contained" 
+                onPress={() => onAdvance(item.id, item.status)} 
+                loading={update.isPending}
+                accessibilityLabel={`Advance visit ${item.id} to ${nextStatus[item.status]?.replace('_', ' ')}`}
+                accessibilityHint={`Changes status from ${item.status} to ${nextStatus[item.status]}`}
+              >
                 Advance to {nextStatus[item.status]?.replace('_', ' ')}
               </Button>
             ) : null}
@@ -81,6 +94,7 @@ export const VisitsQueueScreen: React.FC = () => {
             <Text style={{ textAlign: 'center', color: '#6b7280' }}>No visits</Text>
           </View>
         )}
+        accessibilityLabel="Visits queue list"
       />
     </View>
   );

@@ -25,7 +25,12 @@ export const PatientsListScreen: React.FC = () => {
   const data = patientsQuery.data?.results ?? [];
 
   const renderItem = ({ item }: { item: (typeof data)[number] }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('PatientDetail', { patientId: item.id })}>
+    <TouchableOpacity 
+      onPress={() => navigation.navigate('PatientDetail', { patientId: item.id })}
+      accessibilityRole="button"
+      accessibilityLabel={`Patient: ${item.first_name} ${item.last_name}`}
+      accessibilityHint="Tap to view patient details"
+    >
       <Card>
         <Text style={{ fontSize: 16, fontWeight: '600' }}>
           {item.first_name} {item.last_name}
@@ -49,8 +54,20 @@ export const PatientsListScreen: React.FC = () => {
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
         <CachedDataNotice />
       </View>
-      <SearchBar value={search} onChange={setSearch} placeholder="Search patients" />
-      <Button mode="contained" onPress={() => navigation.navigate('PatientForm', {})} style={{ marginHorizontal: 16, marginBottom: 16 }}>
+      <SearchBar 
+        value={search} 
+        onChange={setSearch} 
+        placeholder="Search patients"
+        accessibilityLabel="Search patients by name, phone, or notes"
+        accessibilityHint="Type to filter the patient list"
+      />
+      <Button 
+        mode="contained" 
+        onPress={() => navigation.navigate('PatientForm', {})} 
+        style={{ marginHorizontal: 16, marginBottom: 16 }}
+        accessibilityLabel="Add new patient"
+        accessibilityHint="Opens form to create a new patient record"
+      >
         Add patient
       </Button>
       <FlatList
@@ -63,6 +80,7 @@ export const PatientsListScreen: React.FC = () => {
             <Text style={{ textAlign: 'center', color: '#6b7280' }}>No patients yet</Text>
           </View>
         )}
+        accessibilityLabel="Patient list"
       />
     </View>
   );
