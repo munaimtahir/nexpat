@@ -9,11 +9,18 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 })
 }));
 
+// Resolved mock with full component stubs (keep this side)
 jest.mock('react-native-paper', () => {
   const React = jest.requireActual('react');
   const { Text: RNText, View } = jest.requireActual('react-native');
 
-  const BannerMock = ({ children, actions }: { children: React.ReactNode; actions?: { label: string; onPress: () => void }[] }) => (
+  const BannerMock = ({
+    children,
+    actions
+  }: {
+    children: React.ReactNode;
+    actions?: { label: string; onPress: () => void }[];
+  }) => (
     <View>
       <View>{children}</View>
       {actions?.map((action) => (
@@ -25,9 +32,13 @@ jest.mock('react-native-paper', () => {
   );
   BannerMock.displayName = 'BannerMock';
 
-  const ButtonMock = ({ children, onPress }: { children: React.ReactNode; onPress?: () => void }) => (
-    <RNText onPress={onPress ?? (() => undefined)}>{children}</RNText>
-  );
+  const ButtonMock = ({
+    children,
+    onPress
+  }: {
+    children: React.ReactNode;
+    onPress?: () => void;
+  }) => <RNText onPress={onPress ?? (() => undefined)}>{children}</RNText>;
   ButtonMock.displayName = 'ButtonMock';
 
   type DialogComponentProps = { visible: boolean; children: React.ReactNode };
@@ -36,27 +47,47 @@ jest.mock('react-native-paper', () => {
     Content: React.FC<{ children: React.ReactNode }>;
     Actions: React.FC<{ children: React.ReactNode }>;
   };
-  const DialogComponent: DialogComponentType = (({ visible, children }) => (
+
+  const DialogComponent = (({ visible, children }) => (
     <View>{visible ? children : null}</View>
   )) as DialogComponentType;
-  }
-  const DialogComponent = ({ visible, children }: DialogProps) => (
-    <View>{visible ? children : null}</View>
-  );
   DialogComponent.displayName = 'DialogMock';
-  const DialogTitleMock = ({ children }: { children: React.ReactNode }) => <RNText>{children}</RNText>;
+
+  const DialogTitleMock = ({ children }: { children: React.ReactNode }) => (
+    <RNText>{children}</RNText>
+  );
   DialogTitleMock.displayName = 'DialogTitleMock';
-  const DialogContentMock = ({ children }: { children: React.ReactNode }) => <View>{children}</View>;
+
+  const DialogContentMock = ({
+    children
+  }: {
+    children: React.ReactNode;
+  }) => <View>{children}</View>;
   DialogContentMock.displayName = 'DialogContentMock';
-  const DialogActionsMock = ({ children }: { children: React.ReactNode }) => <View>{children}</View>;
+
+  const DialogActionsMock = ({
+    children
+  }: {
+    children: React.ReactNode;
+  }) => <View>{children}</View>;
   DialogActionsMock.displayName = 'DialogActionsMock';
+
   DialogComponent.Title = DialogTitleMock;
   DialogComponent.Content = DialogContentMock;
   DialogComponent.Actions = DialogActionsMock;
 
-  const ListSectionMock = ({ children }: { children: React.ReactNode }) => <View>{children}</View>;
+  const ListSectionMock = ({ children }: { children: React.ReactNode }) => (
+    <View>{children}</View>
+  );
   ListSectionMock.displayName = 'ListSectionMock';
-  const ListItemMock = ({ title, description }: { title: string; description?: string }) => (
+
+  const ListItemMock = ({
+    title,
+    description
+  }: {
+    title: string;
+    description?: string;
+  }) => (
     <View>
       <RNText>{title}</RNText>
       {description ? <RNText>{description}</RNText> : null}
@@ -73,7 +104,9 @@ jest.mock('react-native-paper', () => {
       Section: ListSectionMock,
       Item: ListItemMock
     },
-    Text: ({ children, ...props }: React.ComponentProps<typeof RNText>) => <RNText {...props}>{children}</RNText>,
+    Text: ({ children, ...props }: React.ComponentProps<typeof RNText>) => (
+      <RNText {...props}>{children}</RNText>
+    ),
     Icon: () => null,
     useTheme: () => ({
       colors: {
@@ -95,8 +128,12 @@ jest.mock('@/api/outbox/useOutboxStatus', () => ({
   useOutboxStatus: jest.fn()
 }));
 
-const mockedUseNetworkStatus = useNetworkStatus as jest.MockedFunction<typeof useNetworkStatus>;
-const mockedUseOutboxStatus = useOutboxStatus as jest.MockedFunction<typeof useOutboxStatus>;
+const mockedUseNetworkStatus = useNetworkStatus as jest.MockedFunction<
+  typeof useNetworkStatus
+>;
+const mockedUseOutboxStatus = useOutboxStatus as jest.MockedFunction<
+  typeof useOutboxStatus
+>;
 
 const buildOutboxStatus = (
   overrides: Partial<ReturnType<typeof useOutboxStatus>> = {}

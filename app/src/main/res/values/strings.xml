@@ -5,6 +5,6 @@
     <string name="nudge_title">%1$s needs a reading</string>
     <string name="nudge_body">No readings recorded this cycle. Add one to stay on track.</string>
     <string name="threshold_title">%1$s approaching threshold</string>
-    <string name="threshold_body">Projected to cross %.1f units on %s.</string>
+    <string name="threshold_body" formatted="false">Projected to cross %.1f units on %s.</string>
     <string name="channel_name">Meter reminders</string>
 </resources>
