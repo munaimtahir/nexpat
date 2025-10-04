@@ -13,8 +13,8 @@ jest.mock('@/api/outbox/useOutboxStatus', () => ({
 }));
 
 jest.mock('react-native-paper', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-  const { Text: RNText } = jest.requireActual<typeof import('react-native')>('react-native');
+  const React = jest.requireActual('react');
+  const { Text: RNText } = jest.requireActual('react-native');
   return {
     Icon: () => null,
     Text: ({ children, ...props }: React.ComponentProps<typeof RNText>) => <RNText {...props}>{children}</RNText>,
