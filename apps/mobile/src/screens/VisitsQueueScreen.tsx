@@ -10,6 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '@/navigation/types';
 import type { Visit } from '@/api/generated/types';
+import { CachedDataNotice } from '@/components/CachedDataNotice';
 
 const statusOptions = [
   { value: 'waiting', label: 'Waiting' },
@@ -50,6 +51,9 @@ export const VisitsQueueScreen: React.FC = () => {
 
   return (
     <View style={{ flex: 1 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+        <CachedDataNotice />
+      </View>
       <SegmentedButtons
         value={status}
         onValueChange={(newValue) => setStatus(newValue as Visit['status'] | 'all')}

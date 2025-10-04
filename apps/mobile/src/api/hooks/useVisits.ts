@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Alert } from 'react-native';
+import { isAxiosError } from 'axios';
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/constants/queryKeys';
 import type { PaginatedResponse, Visit, VisitRequest } from '@/api/generated/types';
@@ -81,7 +83,13 @@ export const useVisitMutation = () => {
 
       return { previousVisit, listSnapshots };
     },
-    onError: (_error, variables, context) => {
+    onError: (error, variables, context) => {
+      if (isAxiosError(error) && error.response?.status === 409) {
+        Alert.alert(
+          'Update conflict',
+          'This visit was updated on another device. We refreshed the latest information.'
+        );
+      }
       if (context?.previousVisit) {
         queryClient.setQueryData(queryKeys.visit(variables.id), context.previousVisit);
       }

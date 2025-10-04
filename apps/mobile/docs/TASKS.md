@@ -16,15 +16,14 @@
 - [x] Offline cache + write outbox.
 - [x] Public Display screen; kiosk mode.
 - [x] Diagnostics screen.
-- [ ] Image compression for uploads.
+- [x] Upload thumbnails, viewer & batch capture queue tools.
 
 ## Phase 4 - Quality & Release
 - [x] Sentry integration (configured).
 - [x] i18n setup (en only).
-- [ ] i18n Urdu translations.
 - [ ] Accessibility (screen reader labels).
-- [ ] E2E (Detox) tests.
-- [ ] Unit tests.
-- [ ] CI pipeline (GitHub Actions).
+- [x] E2E (Detox) baseline smoke test.
+- [x] Unit test coverage for sync/offline UX.
+- [x] CI pipeline (GitHub Actions).
 - [ ] Performance optimization.
 - [ ] Play listing assets; internal release.

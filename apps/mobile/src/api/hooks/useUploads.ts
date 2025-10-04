@@ -1,5 +1,6 @@
-import { useMutation } from '@tanstack/react-query';
-import { apiClient } from '@/api/client';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { apiClient, http } from '@/api/client';
+import type { PaginatedResponse, PrescriptionImage } from '@/api/generated/types';
 
 export const useUploadPrescription = () =>
   useMutation({
@@ -40,4 +41,34 @@ export const useUploadPrescription = () =>
 
       return response;
     }
+  });
+
+export interface PrescriptionImageFilters {
+  visitId?: number;
+  patientRegistration?: string;
+  page?: number;
+}
+
+export const usePrescriptionImages = (filters: PrescriptionImageFilters = {}) =>
+  useQuery<PaginatedResponse<PrescriptionImage>>({
+    queryKey: ['prescription-images', filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.visitId) {
+        params.set('visit', String(filters.visitId));
+      }
+      if (filters.patientRegistration) {
+        params.set('patient', filters.patientRegistration);
+      }
+      if (filters.page) {
+        params.set('page', String(filters.page));
+      }
+
+      const paramsString = params.toString();
+      const url = `/api/prescriptions/${paramsString ? `?${paramsString}` : ''}`;
+      const response = await http.get<PaginatedResponse<PrescriptionImage>>(url);
+      return response.data;
+    },
+    placeholderData: (previous) => previous,
+    staleTime: 1000 * 60 * 5
   });

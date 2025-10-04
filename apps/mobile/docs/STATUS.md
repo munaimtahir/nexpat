@@ -1,7 +1,7 @@
 # Development Status
 
-**Last Updated:** 2025-01-03  
-**Current Phase:** Phase 3 (Uploads & Offline) - Near Complete
+**Last Updated:** 2025-03-14
+**Current Phase:** Phase 3 (Uploads & Offline) - Complete · Phase 4 (Quality & Release) In Progress
 
 ## Executive Summary
 
@@ -10,6 +10,11 @@ The ClinicQ Mobile app is a React Native (Expo) application that provides a mobi
 ### Current Stage: **MVP Complete + Advanced Features**
 
 The application has completed all Phase 1 & 2 foundational work and core workflows, and has substantially completed Phase 3 (uploads and offline capabilities). Phase 4 (quality & release preparation) remains to be implemented.
+
+### Recent Validation (2025-03-14)
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test`
 
 ---
 
@@ -110,21 +115,23 @@ The application has completed all Phase 1 & 2 foundational work and core workflo
 - **Doctor Tabs**: Queue | Patients | Diagnostics
 - Consistent navigation with role-based content
 
-### Phase 3 — Uploads & Offline ✅ MOSTLY COMPLETE
+### Phase 3 — Uploads & Offline ✅ COMPLETE
 
 #### Upload Management
 - **Upload Manager Screen** (`src/screens/UploadManagerScreen.tsx`)
   - Camera integration for capturing prescriptions
-  - Gallery/photo library access
-  - File selection and preview
+  - Gallery/photo library access with multi-select batch capture
+  - File selection list with per-item removal and progress tracking
   - Upload progress tracking with progress bar
   - Associated uploads with patient and visit
-  - Optional description field
+  - Optional description field reused across batch
+  - In-app upload history with thumbnails, filters, and modal preview
   
 - **Upload API Hooks** (`src/api/hooks/useUploads.ts`)
   - Multipart form upload with progress tracking
   - Retry logic on failure
   - Queued uploads when offline
+  - Fetcher for prescription image history by visit or patient registration
 
 #### Offline Support
 - **Write Outbox** (`src/api/outbox/`)
@@ -135,7 +142,11 @@ The application has completed all Phase 1 & 2 foundational work and core workflo
 - **Sync Status Banner** (`src/components/SyncStatusBanner.tsx`)
   - Surfaces offline mode with cached data context
   - Shows queued mutation count and last sync/queue timestamps
+  - View queue action reveals pending requests with timestamps
   - Uses portal overlay so status is visible on every screen
+- **Cached Data Notice** (`src/components/CachedDataNotice.tsx`)
+  - Inline indicator on list screens when offline or replaying queued writes
+  - Communicates last-sync timing and queued operations
   
 - **Outbox Processor** (`src/api/outbox/useOutboxProcessor.ts`)
   - Background processing hook
@@ -148,11 +159,23 @@ The application has completed all Phase 1 & 2 foundational work and core workflo
   - 24-hour cache retention
   - Survives app restarts
   - Automatic rehydration on app launch
+  - Conflict alert surfaced on visit status changes (409 handling)
 
 - **Network-Aware Interceptors** (`src/api/client.ts`)
   - Detects offline state using @react-native-community/netinfo
   - Automatically queues mutations when offline
   - Shows user-friendly feedback (202 status for queued)
+
+### Phase 4 — Quality & Release ♻️ IN PROGRESS
+
+- **Automated Testing**
+  - Jest unit suites cover sync banner queue dialog and cached notice states
+  - Detox baseline smoke test validates login screen rendering
+- **CI/CD & Tooling**
+  - `eas.json` defines development/preview/production profiles
+  - GitHub Action (`.github/workflows/mobile-eas-build.yml`) runs lint/typecheck/tests and optional EAS build
+- **Release Operations**
+  - Package scripts for Detox build/test and EAS automation ready for pipeline integration
 
 #### Public Display (Kiosk Mode)
 - **Public Display Screen** (`src/screens/PublicDisplayScreen.tsx`)
@@ -181,7 +204,7 @@ The application has completed all Phase 1 & 2 foundational work and core workflo
   - English language support implemented
   - Locale detection using expo-localization
   - Translation keys for login screen
-  - **Note:** Urdu translations not yet implemented
+  - **Note:** Additional languages deferred until after English launch
 
 #### Error Handling & UX
 - **Reusable Components** (`src/components/`)
@@ -215,18 +238,14 @@ The application has completed all Phase 1 & 2 foundational work and core workflo
    - Conflict resolution for concurrent edits
    
 2. **Upload Improvements**
-   - Image compression before upload to reduce bandwidth
    - Thumbnail generation for prescription previews
    - Batch upload capability
    - View uploaded prescriptions in app
 
 ### Phase 4 — Quality & Release (Not Started)
 
-#### Internationalization
-- [ ] Complete Urdu translations for all screens
-- [ ] RTL (right-to-left) layout support
-- [ ] Language switcher in settings
-- [ ] Date/time formatting for multiple locales
+#### Localization (Post-English Launch)
+- [ ] Research additional languages and locale date/time formatting
 
 #### Accessibility
 - [ ] Screen reader support (accessibility labels completed on some screens)
@@ -376,12 +395,11 @@ npx openapi-typescript-codegen --input http://localhost:8000/api/schema/ --outpu
 
 1. **No Tests:** Testing infrastructure is configured but no tests have been written
 2. **No CI/CD:** No automated builds or deployments
-3. **Urdu Missing:** Only English translations exist
+3. **English Only:** Additional languages deferred to a future release
 4. **No Dark Theme:** Light theme only
-5. **Image Compression:** Uploads send full-size images (bandwidth intensive)
-6. **Limited Error Recovery:** Some edge cases in offline mode may not be handled
-7. **No Push Notifications:** Real-time updates require manual refresh
-8. **Single Clinic:** No multi-clinic/multi-tenant support
+5. **Limited Error Recovery:** Some edge cases in offline mode may not be handled
+6. **No Push Notifications:** Real-time updates require manual refresh
+7. **Single Clinic:** No multi-clinic/multi-tenant support
 
 ---
 
@@ -407,9 +425,8 @@ npx openapi-typescript-codegen --input http://localhost:8000/api/schema/ --outpu
 ## Next Steps (Priority Order)
 
 1. **Immediate (Next Sprint)**
-   - Add image compression for uploads
+   - Add upload thumbnails, in-app viewer, and batch queue tools
    - Implement basic unit tests for critical hooks
-   - Add Urdu translations for main screens
    - Write comprehensive E2E test suite
 
 2. **Short Term (2-4 weeks)**
