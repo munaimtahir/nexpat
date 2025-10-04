@@ -18,7 +18,7 @@
 - [ ] Keyboard navigation (where applicable)
 
 ## Performance
-- [ ] FlatList virtualization
+- [x] FlatList virtualization
 - [ ] Bundle/image optimizations
 - [ ] Startup/memory/FPS checks
 

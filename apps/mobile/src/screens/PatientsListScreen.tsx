@@ -24,21 +24,24 @@ export const PatientsListScreen: React.FC = () => {
 
   const data = patientsQuery.data?.results ?? [];
 
-  const renderItem = ({ item }: { item: (typeof data)[number] }) => (
-    <TouchableOpacity 
-      onPress={() => navigation.navigate('PatientDetail', { patientId: item.id })}
-      accessibilityRole="button"
-      accessibilityLabel={`Patient: ${item.first_name} ${item.last_name}`}
-      accessibilityHint="Tap to view patient details"
-    >
-      <Card>
-        <Text style={{ fontSize: 16, fontWeight: '600' }}>
-          {item.first_name} {item.last_name}
-        </Text>
-        {item.phone ? <Text style={{ marginTop: 4 }}>{item.phone}</Text> : null}
-        {item.notes ? <Text style={{ marginTop: 4, color: '#6b7280' }}>{item.notes}</Text> : null}
-      </Card>
-    </TouchableOpacity>
+  const renderItem = React.useCallback(
+    ({ item }: { item: (typeof data)[number] }) => (
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('PatientDetail', { patientId: item.id })}
+        accessibilityRole="button"
+        accessibilityLabel={`Patient: ${item.first_name} ${item.last_name}`}
+        accessibilityHint="Tap to view patient details"
+      >
+        <Card>
+          <Text style={{ fontSize: 16, fontWeight: '600' }}>
+            {item.first_name} {item.last_name}
+          </Text>
+          {item.phone ? <Text style={{ marginTop: 4 }}>{item.phone}</Text> : null}
+          {item.notes ? <Text style={{ marginTop: 4, color: '#6b7280' }}>{item.notes}</Text> : null}
+        </Card>
+      </TouchableOpacity>
+    ),
+    [navigation]
   );
 
   if (patientsQuery.isLoading) {
@@ -81,6 +84,12 @@ export const PatientsListScreen: React.FC = () => {
           </View>
         )}
         accessibilityLabel="Patient list"
+        // Performance optimizations
+        windowSize={10}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        removeClippedSubviews={true}
+        initialNumToRender={15}
       />
     </View>
   );

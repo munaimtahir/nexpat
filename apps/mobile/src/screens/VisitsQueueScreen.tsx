@@ -95,6 +95,12 @@ export const VisitsQueueScreen: React.FC = () => {
           </View>
         )}
         accessibilityLabel="Visits queue list"
+        // Performance optimizations
+        windowSize={10}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        removeClippedSubviews={true}
+        initialNumToRender={15}
       />
     </View>
   );
