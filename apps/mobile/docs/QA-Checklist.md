@@ -8,3 +8,8 @@
 - [ ] Accessibility: TalkBack, font scale, RTL.
 - [ ] Performance: cold start, list scroll, memory.
 - [ ] Security: logs redact, token wipe on logout.
+- [ ] Push notifications (FCM): device token registration, background delivery.
+- [ ] Deep links: universal/app link routing to patients/visits.
+- [ ] Legal docs: privacy policy + ToS accessible in settings/build artifacts.
+- [ ] Marketing assets: store screenshots, icons, feature graphics packaged.
+- [ ] Crash-free KPI: analytics dashboard reporting <1% crash rate for last 30 days.
