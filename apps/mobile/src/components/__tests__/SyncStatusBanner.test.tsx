@@ -9,7 +9,9 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 jest.mock('react-native-paper', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { Text: RNText } = require('react-native');
   return {
     Banner: ({ children }: { children: React.ReactNode }) => <>{children}</>,
