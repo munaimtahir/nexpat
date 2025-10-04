@@ -64,7 +64,8 @@ export const usePrescriptionImages = (filters: PrescriptionImageFilters = {}) =>
         params.set('page', String(filters.page));
       }
 
-      const url = `/api/prescriptions/${params.toString() ? `?${params.toString()}` : ''}`;
+      const paramsString = params.toString();
+      const url = `/api/prescriptions/${paramsString ? `?${paramsString}` : ''}`;
       const response = await http.get<PaginatedResponse<PrescriptionImage>>(url);
       return response.data;
     },
