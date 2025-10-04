@@ -16,6 +16,20 @@ const serializeBody = (body: unknown) => {
   return body;
 };
 
+type Listener = (entries: OutboxEntry[]) => void;
+
+const listeners = new Set<Listener>();
+
+const notify = (entries: OutboxEntry[]) => {
+  listeners.forEach((listener) => {
+    try {
+      listener(entries);
+    } catch (error) {
+      // swallow listener errors to avoid breaking outbox operations
+    }
+  });
+};
+
 const getEntries = async (): Promise<OutboxEntry[]> => {
   const raw = await secureStore.getString(STORAGE_KEYS.outbox);
   if (!raw) return [];
@@ -28,6 +42,7 @@ const getEntries = async (): Promise<OutboxEntry[]> => {
 
 const saveEntries = async (entries: OutboxEntry[]) => {
   await secureStore.setString(STORAGE_KEYS.outbox, JSON.stringify(entries));
+  notify(entries);
 };
 
 export const outbox = {
@@ -56,5 +71,11 @@ export const outbox = {
   },
   async list() {
     return getEntries();
+  },
+  subscribe(listener: Listener) {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
   }
 };
