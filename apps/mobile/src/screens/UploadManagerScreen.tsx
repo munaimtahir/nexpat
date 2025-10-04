@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Alert, FlatList, Image, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Button, IconButton, Modal, Portal, ProgressBar, TextInput, useTheme } from 'react-native-paper';
+import type { AxiosResponse } from 'axios';
 import { useUploadPrescription, usePrescriptionImages } from '@/api/hooks/useUploads';
 import type { PrescriptionImage } from '@/api/generated/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -78,7 +79,8 @@ export const UploadManagerScreen: React.FC = () => {
                 [asset.uri]: value
               }))
           });
-          if ((response as any)?.status === 202) {
+          // Check if response is an AxiosResponse with status 202 (queued)
+          if (response && typeof response === 'object' && 'status' in response && (response as AxiosResponse).status === 202) {
             queued += 1;
           } else {
             completed += 1;
