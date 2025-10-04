@@ -244,7 +244,7 @@ Failed: ${failed}`
         <Modal
           visible={!!selectedImage}
           onDismiss={() => setSelectedImage(null)}
-          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors?.background ?? '#fff' }]}
+          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.background }]}
         >
           {selectedImage ? (
             <View>
