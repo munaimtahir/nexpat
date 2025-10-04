@@ -2,6 +2,12 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiClient, http } from '@/api/client';
 import type { PaginatedResponse, PrescriptionImage } from '@/api/generated/types';
 
+interface ReactNativeFile {
+  uri: string;
+  name: string;
+  type: string;
+}
+
 export const useUploadPrescription = () =>
   useMutation({
     mutationFn: async ({
@@ -25,11 +31,13 @@ export const useUploadPrescription = () =>
       if (description) {
         formData.append('description', description);
       }
-      formData.append('file', {
+      const file: ReactNativeFile = {
         uri: fileUri,
         name: fileName,
         type: 'image/jpeg'
-      } as any);
+      };
+      // FormData.append in React Native accepts ReactNativeFile objects
+      formData.append('file', file as unknown as Blob);
 
       const response = await apiClient.uploadPrescription(formData, {
         onUploadProgress: (event) => {

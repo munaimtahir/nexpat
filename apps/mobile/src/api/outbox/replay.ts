@@ -3,6 +3,7 @@ import { env } from '@/utils/environment';
 import { logger } from '@/utils/logger';
 import { outbox } from './outbox';
 import type { OutboxEntry } from './types';
+import { isSerializedFormData } from './types';
 import { secureStore } from '@/storage/secureStore';
 import { STORAGE_KEYS } from '@/constants';
 
@@ -19,9 +20,9 @@ client.interceptors.request.use(async (config) => {
 });
 
 const deserializeBody = (body: unknown) => {
-  if (body && typeof body === 'object' && (body as any).__type === 'FormData') {
+  if (isSerializedFormData(body)) {
     const form = new FormData();
-    for (const [key, value] of (body as any).parts as [string, any][]) {
+    for (const [key, value] of body.parts) {
       form.append(key, value);
     }
     return form;
