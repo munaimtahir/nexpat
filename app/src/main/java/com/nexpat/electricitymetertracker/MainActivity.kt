@@ -47,7 +47,7 @@ fun MeterNavHost() {
     NavHost(navController = navController, startDestination = MeterDestination.Home.route) {
         composable(MeterDestination.Home.route) {
             val viewModel: HomeViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
             HomeScreen(
                 state = uiState,
                 onAddReading = viewModel::addQuickReading,
@@ -65,7 +65,7 @@ fun MeterNavHost() {
         ) { backStackEntry ->
             val meterId = backStackEntry.arguments?.getLong("meterId") ?: return@composable
             val viewModel: HistoryViewModel = hiltViewModel()
-            val uiState by viewModel.stateFor(meterId).collectAsStateWithLifecycle()
+            val uiState = viewModel.stateFor(meterId).collectAsStateWithLifecycle().value
             HistoryScreen(state = uiState, onBack = { navController.popBackStack() })
         }
         composable(
@@ -74,7 +74,7 @@ fun MeterNavHost() {
         ) { backStackEntry ->
             val meterId = backStackEntry.arguments?.getLong("meterId") ?: return@composable
             val viewModel: SettingsViewModel = hiltViewModel()
-            val state by viewModel.stateFor(meterId).collectAsStateWithLifecycle()
+            val state = viewModel.stateFor(meterId).collectAsStateWithLifecycle().value
             SettingsScreen(
                 state = state,
                 onAnchorChanged = { viewModel.updateAnchorDay(meterId, it) },
