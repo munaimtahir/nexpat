@@ -30,7 +30,11 @@ jest.mock('react-native-paper', () => {
   );
   ButtonMock.displayName = 'ButtonMock';
 
-  const DialogComponent: any = ({ visible, children }: { visible: boolean; children: React.ReactNode }) => (
+  interface DialogProps {
+    visible: boolean;
+    children: React.ReactNode;
+  }
+  const DialogComponent = ({ visible, children }: DialogProps) => (
     <View>{visible ? children : null}</View>
   );
   DialogComponent.displayName = 'DialogMock';
