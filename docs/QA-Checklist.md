@@ -4,12 +4,12 @@
 - [ ] Auth + role routing
 - [ ] Patients CRUD & search
 - [ ] Visits status flow
-- [ ] Uploads (capture/gallery/queued/retry/compression/thumbnails/viewer)
+- [ ] Uploads (capture/gallery/queued/retry/thumbnails/viewer)
 - [ ] Offline outbox & replay; conflict handling
 
-## i18n & UX
-- [ ] Urdu/RTL & switcher
-- [ ] Localized dates/times
+## UX polish
+- [ ] English copy review
+- [ ] Localized dates/times (deferred until after launch)
 - [ ] Cached vs live indicators
 
 ## Accessibility

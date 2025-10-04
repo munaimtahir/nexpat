@@ -62,11 +62,15 @@ export const SyncStatusBanner: React.FC = () => {
       <View pointerEvents="box-none" style={[styles.wrapper, { paddingTop: insets.top + 8 }]}> 
         <Banner visible={visible} style={[styles.banner, { backgroundColor }]} icon={icon}>
           <View style={styles.content}> 
-            <Text variant="titleSmall" style={[styles.message, { color: textColor }]}>
+            <Text testID="sync-status-message" variant="titleSmall" style={[styles.message, { color: textColor }]}>
               {message}
             </Text>
             {supportingText ? (
-              <Text variant="bodySmall" style={[styles.supporting, { color: textColor }]}> 
+              <Text
+                testID="sync-status-supporting"
+                variant="bodySmall"
+                style={[styles.supporting, { color: textColor }]}
+              >
                 {supportingText}
               </Text>
             ) : null}

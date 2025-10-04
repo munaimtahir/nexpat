@@ -16,6 +16,6 @@
 - Public Display screen; kiosk mode.
 
 ## Phase 4 — Quality & Release
-- i18n (Urdu/English), accessibility, performance.
+- Accessibility, performance, and English copy polish.
 - E2E (Detox), Sentry, Crash-free sessions > 99%.
 - Play Console assets; internal → closed → production tracks.
