@@ -80,22 +80,28 @@ export const VisitsQueueScreen: React.FC = () => {
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: 4 }} />}
         renderItem={({ item }) => (
-          <Animated.View layout={Layout.springify()}>
-            <Card variant="elevated">
-              <Text style={styles.cardTitle}>Visit #{item.id}</Text>
-              <VisitStatusTag status={item.status} />
-              <View style={styles.buttonRow}>
-                <Button label="Open" variant="secondary" onPress={() => navigation.navigate('VisitDetail', { visitId: item.id })} />
-                {nextStatus[item.status] ? (
-                  <Button
-                    label={`Advance to ${nextStatus[item.status]?.replace('_', ' ')}`}
-                    onPress={() => onAdvance(item.id, item.status)}
-                    loading={update.isPending}
-                  />
-                ) : null}
-              </View>
-            </Card>
-          </Animated.View>
+          <Card>
+            <Text style={{ fontSize: 18, fontWeight: '600' }}>Visit #{item.id}</Text>
+            <VisitStatusTag status={item.status} />
+            <Button 
+              onPress={() => navigation.navigate('VisitDetail', { visitId: item.id })}
+              accessibilityLabel={`View details for visit ${item.id}`}
+              accessibilityHint="Opens visit detail page"
+            >
+              Open
+            </Button>
+            {nextStatus[item.status] ? (
+              <Button 
+                mode="contained" 
+                onPress={() => onAdvance(item.id, item.status)} 
+                loading={update.isPending}
+                accessibilityLabel={`Advance visit ${item.id} to ${nextStatus[item.status]?.replace('_', ' ')}`}
+                accessibilityHint={`Changes status from ${item.status} to ${nextStatus[item.status]}`}
+              >
+                Advance to {nextStatus[item.status]?.replace('_', ' ')}
+              </Button>
+            ) : null}
+          </Card>
         )}
         ListEmptyComponent={() => (
           <View style={styles.emptyState}>
@@ -103,6 +109,13 @@ export const VisitsQueueScreen: React.FC = () => {
             <Text style={styles.emptySubtext}>Pull down to refresh the live queue.</Text>
           </View>
         )}
+        accessibilityLabel="Visits queue list"
+        // Performance optimizations
+        windowSize={10}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        removeClippedSubviews={true}
+        initialNumToRender={15}
       />
     </TextureBackground>
   );

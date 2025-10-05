@@ -29,24 +29,24 @@ export const PatientsListScreen: React.FC = () => {
 
   const data = patientsQuery.data?.results ?? [];
 
-  React.useEffect(() => {
-    refreshOverlay.value = withTiming(patientsQuery.isRefetching ? 1 : 0, { duration: 250 });
-  }, [patientsQuery.isRefetching, refreshOverlay]);
-
-  const refreshStyle = useAnimatedStyle(() => ({ opacity: refreshOverlay.value }));
-
-  const renderItem = ({ item }: { item: (typeof data)[number] }) => (
-    <Animated.View layout={Layout.springify()}>
-      <TouchableOpacity onPress={() => navigation.navigate('PatientDetail', { patientId: item.id })}>
-        <Card variant="elevated">
-          <Text style={styles.cardTitle}>
+  const renderItem = React.useCallback(
+    ({ item }: { item: (typeof data)[number] }) => (
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('PatientDetail', { patientId: item.id })}
+        accessibilityRole="button"
+        accessibilityLabel={`Patient: ${item.first_name} ${item.last_name}`}
+        accessibilityHint="Tap to view patient details"
+      >
+        <Card>
+          <Text style={{ fontSize: 16, fontWeight: '600' }}>
             {item.first_name} {item.last_name}
           </Text>
-          {item.phone ? <Text style={styles.cardMeta}>{item.phone}</Text> : null}
-          {item.notes ? <Text style={styles.cardNotes}>{item.notes}</Text> : null}
+          {item.phone ? <Text style={{ marginTop: 4 }}>{item.phone}</Text> : null}
+          {item.notes ? <Text style={{ marginTop: 4, color: '#6b7280' }}>{item.notes}</Text> : null}
         </Card>
       </TouchableOpacity>
-    </Animated.View>
+    ),
+    [navigation]
   );
 
   if (patientsQuery.isLoading) {
@@ -62,14 +62,21 @@ export const PatientsListScreen: React.FC = () => {
       <View style={styles.noticeWrapper}>
         <CachedDataNotice />
       </View>
-      <View style={styles.searchWrapper}>
-        <SearchBar value={search} onChange={setSearch} placeholder="Search patients" />
-        <Button label="Add patient" onPress={() => navigation.navigate('PatientForm', {})} style={styles.addButton} />
-      </View>
-      <Animated.View style={[styles.refreshBanner, refreshStyle]} pointerEvents="none">
-        <Text style={styles.refreshText}>Syncing roster…</Text>
-      </Animated.View>
-      <AnimatedFlatList
+      <SearchBar 
+        value={search} 
+        onChange={setSearch} 
+        placeholder="Search patients"
+      />
+      <Button 
+        mode="contained" 
+        onPress={() => navigation.navigate('PatientForm', {})} 
+        style={{ marginHorizontal: 16, marginBottom: 16 }}
+        accessibilityLabel="Add new patient"
+        accessibilityHint="Opens form to create a new patient record"
+      >
+        Add patient
+      </Button>
+      <FlatList
         data={data}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
@@ -82,6 +89,13 @@ export const PatientsListScreen: React.FC = () => {
             <Text style={styles.emptySubtext}>Add your first patient to get started.</Text>
           </View>
         )}
+        accessibilityLabel="Patient list"
+        // Performance optimizations
+        windowSize={10}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        removeClippedSubviews={true}
+        initialNumToRender={15}
       />
     </TextureBackground>
   );

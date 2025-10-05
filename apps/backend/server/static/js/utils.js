@@ -120,8 +120,8 @@ const validation = {
   },
   
   registrationNumber(value) {
-    // Validate registration number format (assuming xx-xx-xxx format)
-    const regRegex = /^\d{2}-\d{2}-\d{3}$/;
+    // Validate registration number format (xx-xx-xxx or xx-xx-xxxx format)
+    const regRegex = /^\d{2}-\d{2}-\d{3,4}$/;
     return regRegex.test(value);
   }
 };

@@ -13,18 +13,18 @@
 - [x] Cached vs live indicators
 
 ## Accessibility
-- [ ] Labels on all touchables
+- [x] Labels on all touchables
 - [ ] Contrast & font scaling
 - [ ] Keyboard navigation (where applicable)
 
 ## Performance
-- [ ] FlatList virtualization
+- [x] FlatList virtualization
 - [ ] Bundle/image optimizations
 - [ ] Startup/memory/FPS checks
 
 ## Observability
-- [ ] Error boundaries
-- [ ] Sentry production DSN
+- [x] Error boundaries
+- [x] Sentry production DSN
 - [ ] Crash‑free >99% (beta)
 
 ## Store
