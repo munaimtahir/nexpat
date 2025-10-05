@@ -12,7 +12,7 @@ This pack defines how to build a **separate Android app** that uses the **same D
 - *(optional later)* **packages/api-client** — generated typed client from OpenAPI.
 
 ## Highlights
-- JWT auth for both clients, identical endpoints & roles.
+- DRF token auth for both clients, identical endpoints & roles.
 - Shared OpenAPI schema → generated clients for web & mobile.
 - Mobile adds offline cache + write outbox; uploads via camera/gallery.
 - Release gates: schema changes must regenerate clients before merge.

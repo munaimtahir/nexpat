@@ -14,7 +14,7 @@ Deliver an MVP with login, role routing (assistant/doctor), patients, queue, upl
 
 ## Steps
 1. Scaffold app; add `.env` for `SERVER_URL`.
-2. Implement `api/client` using generated OpenAPI types; axios interceptors for JWT.
+2. Implement `api/client` using generated OpenAPI types; axios interceptors for DRF token auth.
 3. Screens: Login → role routing → Assistant/Doctor dashboards.
 4. Patients: list/search/detail/form (zod validation).
 5. Visits: list/enqueue/update; optimistic updates where safe.

@@ -16,10 +16,19 @@ const genders = [
   { value: 'OTHER', label: 'Other' },
 ];
 
+const categories = [
+  { value: '01', label: 'Self-paying' },
+  { value: '02', label: 'Insurance' },
+  { value: '03', label: 'Cash' },
+  { value: '04', label: 'Free' },
+  { value: '05', label: 'Poor' },
+];
+
 const defaultFormState = {
   name: '',
   phone: '',
   gender: 'OTHER',
+  category: '01',
 };
 
 const PatientFormPage = () => {
@@ -41,6 +50,7 @@ const PatientFormPage = () => {
           name: response.data?.name || '',
           phone: response.data?.phone || '',
           gender: response.data?.gender || 'OTHER',
+          category: response.data?.category || '01',
         });
         const imgResp = await api.get(`/prescriptions/?patient=${registrationNumberParam}`);
         setImages(unwrapListResponse(imgResp.data));
@@ -163,6 +173,21 @@ const PatientFormPage = () => {
           {genders.map((gender) => (
             <option key={gender.value} value={gender.value}>
               {gender.label}
+            </option>
+          ))}
+        </SelectField>
+        <SelectField
+          label="Patient category"
+          name="category"
+          value={formData.category}
+          onChange={handleChange}
+          error={resolveFieldError('category')}
+          description="Select the payment category for this patient."
+          required
+        >
+          {categories.map((cat) => (
+            <option key={cat.value} value={cat.value}>
+              {cat.label}
             </option>
           ))}
         </SelectField>

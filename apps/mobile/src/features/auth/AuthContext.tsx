@@ -27,7 +27,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     setIsLoading(true);
     try {
       const response = await apiClient.login({ username, password });
-      await authStorage.persistTokens({ access: response.data.access, refresh: response.data.refresh });
+      await authStorage.persistToken(response.data.token);
       await loadProfile();
     } finally {
       setIsLoading(false);
@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   }, [loadProfile]);
 
   const logout = useCallback(async () => {
-    await authStorage.clearTokens();
+    await authStorage.clearToken();
     setUser(null);
     Sentry.setUser(null);
   }, []);
@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        await authStorage.loadTokens();
+        await authStorage.loadToken();
         await loadProfile();
       } finally {
         setIsLoading(false);

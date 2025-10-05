@@ -5,7 +5,6 @@ from .views import (
     PatientViewSet,
     QueueViewSet,
     PrescriptionImageViewSet,
-    RegistrationNumberFormatView,
     me,
     health,
 )
@@ -26,11 +25,6 @@ urlpatterns = [
     path("", include(router.urls)),
     path("auth/me/", me, name="auth-me"),
     path("health/", health, name="health"),
-    path(
-        "settings/registration-format/",
-        RegistrationNumberFormatView.as_view(),
-        name="registration-number-format",
-    ),
     # The patient search endpoint is registered as an action within
     # PatientViewSet so it will be available at /api/patients/search/
 ]

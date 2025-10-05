@@ -18,32 +18,22 @@ function isOutboxMethod(method: string): method is OutboxMethod {
   return ['post', 'put', 'patch', 'delete'].includes(method.toLowerCase());
 }
 
-let accessToken: string | null = null;
-let refreshToken: string | null = null;
+let authToken: string | null = null;
 
-const loadTokens = async () => {
-  accessToken = (await secureStore.getString(STORAGE_KEYS.token)) ?? null;
-  refreshToken = (await secureStore.getString(STORAGE_KEYS.refreshToken)) ?? null;
+const loadToken = async () => {
+  authToken = (await secureStore.getString(STORAGE_KEYS.token)) ?? null;
 };
 
-void loadTokens();
+void loadToken();
 
-const persistTokens = async (tokens: { access?: string; refresh?: string }) => {
-  if (tokens.access) {
-    accessToken = tokens.access;
-    await secureStore.setString(STORAGE_KEYS.token, tokens.access);
-  }
-  if (tokens.refresh) {
-    refreshToken = tokens.refresh;
-    await secureStore.setString(STORAGE_KEYS.refreshToken, tokens.refresh);
-  }
+const persistToken = async (token: string) => {
+  authToken = token;
+  await secureStore.setString(STORAGE_KEYS.token, token);
 };
 
-const clearTokens = async () => {
-  accessToken = null;
-  refreshToken = null;
+const clearToken = async () => {
+  authToken = null;
   await secureStore.remove(STORAGE_KEYS.token);
-  await secureStore.remove(STORAGE_KEYS.refreshToken);
 };
 
 const http: AxiosInstance = axios.create({
@@ -52,46 +42,21 @@ const http: AxiosInstance = axios.create({
 });
 
 http.interceptors.request.use(async (config) => {
-  if (!accessToken) {
-    await loadTokens();
+  if (!authToken) {
+    await loadToken();
   }
-  if (accessToken) {
+  if (authToken) {
     const headers = AxiosHeaders.from((config.headers ?? {}) as AxiosRequestHeaders);
-    headers.set('Authorization', `Bearer ${accessToken}`);
+    headers.set('Authorization', `Token ${authToken}`);
     config.headers = headers;
   }
   return config;
 });
 
-const retryRequest = async (config: AxiosRequestConfig, token: string) => {
-  const nextHeaders = AxiosHeaders.from((config.headers ?? {}) as AxiosRequestHeaders);
-  nextHeaders.set('Authorization', `Bearer ${token}`);
-  const nextConfig = {
-    ...config,
-    headers: nextHeaders
-  };
-  return http(nextConfig);
-};
-
 http.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as (AxiosRequestConfig & { _retry?: boolean }) | undefined;
-    const status = error.response?.status;
-
-    if (status === 401 && refreshToken && originalRequest && !originalRequest._retry) {
-      try {
-        originalRequest._retry = true;
-        const refreshResponse = await http.post<{ access: string }>('/api/auth/refresh/', {
-          refresh: refreshToken
-        });
-        await persistTokens({ access: refreshResponse.data.access });
-        return retryRequest(originalRequest, refreshResponse.data.access);
-      } catch (refreshError) {
-        await clearTokens();
-      }
-    }
-
+    const originalRequest = error.config as AxiosRequestConfig | undefined;
     const method = (originalRequest?.method ?? '').toLowerCase();
     const nonGet = method && method !== 'get';
     const offlineOrNetworkError = !error.response;
@@ -119,9 +84,9 @@ http.interceptors.response.use(
 export const apiClient = new GeneratedApiClient(http);
 
 export const authStorage = {
-  persistTokens,
-  clearTokens,
-  loadTokens: () => loadTokens()
+  persistToken,
+  clearToken,
+  loadToken: () => loadToken()
 };
 
 export { http };

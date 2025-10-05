@@ -24,7 +24,7 @@ To keep the repository free of binary blobs, icon and splash assets are not comm
 
 ## Key features
 
-- Secure login with JWT refresh and encrypted token storage
+- Secure login with DRF token auth and encrypted token storage
 - Role-based navigation for assistants and doctors
 - Patients and visits management with optimistic updates
 - Photo uploads with progress, retry, and offline queuing

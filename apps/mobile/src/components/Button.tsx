@@ -10,7 +10,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export type ButtonVariant = 'primary' | 'secondary' | 'glass';
 
 type Props = {
-  label: string;
+  label?: string;
   onPress?: () => void;
   variant?: ButtonVariant;
   disabled?: boolean;
@@ -48,10 +48,15 @@ export const Button: React.FC<Props> = ({
     opacity: disabled ? 0.6 : 1
   }));
 
+  const resolvedLabel = loading ? '...' : children ?? label ?? '';
   const content = (
     <>
       {icon ? icon : null}
-      <Text style={[styles.label, variant === 'glass' ? styles.labelGlass : null]}>{loading ? '...' : label}</Text>
+      {typeof resolvedLabel === 'string' || typeof resolvedLabel === 'number' ? (
+        <Text style={[styles.label, variant === 'glass' ? styles.labelGlass : null]}>{resolvedLabel}</Text>
+      ) : (
+        resolvedLabel
+      )}
     </>
   );
 

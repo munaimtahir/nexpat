@@ -2,7 +2,6 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -19,8 +18,6 @@ from .models import (
     Patient,
     Queue,
     PrescriptionImage,
-    RegistrationNumberFormat,
-    get_registration_number_format,
 )
 from .serializers import (
     VisitSerializer,
@@ -28,7 +25,6 @@ from .serializers import (
     PatientSerializer,
     QueueSerializer,
     PrescriptionImageSerializer,
-    RegistrationNumberFormatSerializer,
 )
 from .pagination import StandardResultsSetPagination
 from .google_drive import upload_prescription_image
@@ -105,8 +101,7 @@ class PatientViewSet(viewsets.ModelViewSet):
         registration numbers.
         """
         queryset = super().get_queryset()
-        format_config = get_registration_number_format()
-        pattern = re.compile(format_config["pattern"])
+        pattern = re.compile(r"^\d{4}-\d{2}-\d{4}$")
         reg_nums = self.request.query_params.get("registration_numbers")
         if reg_nums:
             raw_numbers = [num.strip() for num in reg_nums.split(",")]
@@ -118,21 +113,8 @@ class PatientViewSet(viewsets.ModelViewSet):
 
             numbers = []
             for num in raw_numbers:
-                # Accept formatted registration numbers based on configuration
+                # Accept formatted registration numbers in mmyy-ct-0000 format
                 if pattern.match(num):
-                    numbers.append(num)
-                # Also accept old numeric format for backward compatibility
-                # during transition
-                elif num.isdigit():
-                    if len(num) > format_config["total_digits"]:
-                        raise ValidationError(
-                            {
-                                "registration_numbers": (
-                                    "Registration numbers may not exceed "
-                                    f"{format_config['total_digits']} digits."
-                                ),
-                            }
-                        )
                     numbers.append(num)
 
             if numbers:
@@ -198,16 +180,10 @@ class PatientViewSet(viewsets.ModelViewSet):
 
         filters = Q(name__icontains=query) | Q(phone__icontains=query)
 
-        format_config = get_registration_number_format()
-        pattern = re.compile(format_config["pattern"])
+        pattern = re.compile(r"^\d{4}-\d{2}-\d{4}$")
 
         # Check if query matches registration number format
         if pattern.match(query):
-            filters |= Q(registration_number=query)
-        # Also check for old numeric format for backward compatibility
-        elif query.isdigit():
-            # For numeric queries, try both exact match and also try to
-            # find registration numbers that might match this pattern
             filters |= Q(registration_number=query)
 
         patients = Patient.objects.filter(filters).order_by("registration_number")
@@ -420,39 +396,3 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-class RegistrationNumberFormatView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_permissions(self):
-        if self.request.method in ("PUT", "PATCH"):
-            return [IsDoctor()]
-        return super().get_permissions()
-
-    def get(self, request):
-        instance = RegistrationNumberFormat.load()
-        serializer = RegistrationNumberFormatSerializer(instance)
-        payload = serializer.data
-        payload["pattern"] = get_registration_number_format()["pattern"]
-        return Response(payload)
-
-    def put(self, request):
-        instance = RegistrationNumberFormat.load()
-        serializer = RegistrationNumberFormatSerializer(instance, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        cache.delete("registration_number_format")
-        payload = serializer.data
-        payload["pattern"] = get_registration_number_format()["pattern"]
-        return Response(payload)
-
-    def patch(self, request):
-        instance = RegistrationNumberFormat.load()
-        serializer = RegistrationNumberFormatSerializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        cache.delete("registration_number_format")
-        payload = serializer.data
-        payload["pattern"] = get_registration_number_format()["pattern"]
-        return Response(payload)
