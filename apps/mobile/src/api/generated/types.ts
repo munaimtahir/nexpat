@@ -8,7 +8,6 @@ export interface LoginRequest {
 }
 
 export interface UserProfile {
-  id: number;
   username: string;
   roles: string[];
 }
@@ -20,46 +19,57 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
+export type PatientGender = 'MALE' | 'FEMALE' | 'OTHER';
+
 export interface Patient {
-  id: number;
-  first_name: string;
-  last_name: string;
-  date_of_birth?: string | null;
-  gender?: 'male' | 'female' | 'other' | null;
-  phone?: string | null;
-  notes?: string | null;
+  registration_number: string;
+  name: string;
+  phone: string | null;
+  gender: PatientGender;
   created_at: string;
   updated_at: string;
+  last_5_visit_dates: string[];
 }
 
-export interface PatientRequest {
-  first_name: string;
-  last_name: string;
-  date_of_birth?: string | null;
-  gender?: 'male' | 'female' | 'other' | null;
+export interface PatientCreateRequest {
+  name: string;
   phone?: string | null;
-  notes?: string | null;
+  gender?: PatientGender;
 }
+
+export interface PatientUpdateRequest {
+  name?: string;
+  phone?: string | null;
+  gender?: PatientGender;
+}
+
+export type VisitStatus = 'WAITING' | 'START' | 'IN_ROOM' | 'DONE';
 
 export interface Visit {
   id: number;
-  patient: number;
-  status: 'waiting' | 'in_progress' | 'completed' | 'cancelled';
-  reason?: string | null;
-  notes?: string | null;
+  token_number: number;
+  visit_date: string;
+  status: VisitStatus;
   created_at: string;
   updated_at: string;
+  patient: string;
+  queue: number;
+  patient_registration_number: string;
+  patient_full_name: string;
+  queue_name: string;
 }
 
-export interface VisitRequest {
-  patient: number;
-  status?: Visit['status'];
-  reason?: string | null;
-  notes?: string | null;
+export interface VisitCreateRequest {
+  patient: string;
+  queue: number;
+}
+
+export interface VisitUpdateRequest {
+  queue?: number;
 }
 
 export interface UploadRequest {
-  patient: number;
+  patient: string;
   visit: number;
   description?: string;
   file: any;
@@ -73,12 +83,15 @@ export interface PrescriptionImage {
   created_at: string;
 }
 
-export interface HealthResponse {
-  status: 'ok' | 'degraded' | 'down';
-  uptime: number;
+export interface Queue {
+  id: number;
+  name: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface VersionResponse {
-  version: string;
-  commit?: string;
+export interface HealthResponse {
+  status: string;
+  service: string;
+  timestamp: string;
 }

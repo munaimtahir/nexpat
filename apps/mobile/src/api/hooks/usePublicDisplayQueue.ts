@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/constants/queryKeys';
-import type { Patient, Visit } from '@/api/generated/types';
+import type { Patient, Visit, VisitStatus } from '@/api/generated/types';
 
 export interface PublicDisplayEntry {
   visit: Visit;
@@ -11,8 +11,8 @@ export interface PublicDisplayEntry {
 
 const fetchPublicDisplayQueue = async (): Promise<PublicDisplayEntry[]> => {
   const [inProgressResponse, waitingResponse] = await Promise.all([
-    apiClient.listVisits({ status: 'in_progress' }),
-    apiClient.listVisits({ status: 'waiting' })
+    apiClient.listVisits({ status: 'IN_ROOM' as VisitStatus }),
+    apiClient.listVisits({ status: 'WAITING' as VisitStatus })
   ]);
 
   const inProgressVisits = [...inProgressResponse.data.results].sort(
@@ -28,12 +28,14 @@ const fetchPublicDisplayQueue = async (): Promise<PublicDisplayEntry[]> => {
     return [];
   }
 
-  const uniquePatientIds = Array.from(new Set(visits.map((visit) => visit.patient)));
+  const uniquePatientIds = Array.from(
+    new Set(visits.map((visit) => visit.patient_registration_number))
+  );
 
   const patients = await Promise.all(
-    uniquePatientIds.map(async (id) => {
+    uniquePatientIds.map(async (registrationNumber) => {
       try {
-        const response = await apiClient.getPatient(id);
+        const response = await apiClient.getPatient(registrationNumber);
         return response.data;
       } catch (error) {
         return null;
@@ -41,16 +43,16 @@ const fetchPublicDisplayQueue = async (): Promise<PublicDisplayEntry[]> => {
     })
   );
 
-  const patientMap = new Map<number, Patient>();
+  const patientMap = new Map<string, Patient>();
   patients.forEach((patient) => {
     if (patient) {
-      patientMap.set(patient.id, patient);
+      patientMap.set(patient.registration_number, patient);
     }
   });
 
   return visits.map((visit, index) => ({
     visit,
-    patient: patientMap.get(visit.patient),
+    patient: patientMap.get(visit.patient_registration_number),
     position: index + 1
   }));
 };

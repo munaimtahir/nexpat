@@ -1,0 +1,888 @@
+openapi: 3.0.2
+info:
+  title: ''
+  version: ''
+paths:
+  /api/visits/:
+    get:
+      operationId: listVisits
+      description: ''
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - count
+                - results
+                properties:
+                  count:
+                    type: integer
+                    example: 123
+                  next:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: http://api.example.org/accounts/?page=4
+                  previous:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: http://api.example.org/accounts/?page=2
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Visit'
+          description: ''
+      tags:
+      - api
+    post:
+      operationId: createVisit
+      description: ''
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Visit'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+      tags:
+      - api
+  /api/visits/{id}/:
+    get:
+      operationId: retrieveVisit
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this visit.
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+      tags:
+      - api
+    put:
+      operationId: updateVisit
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this visit.
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Visit'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+      tags:
+      - api
+    patch:
+      operationId: partialUpdateVisit
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this visit.
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Visit'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+      tags:
+      - api
+    delete:
+      operationId: destroyVisit
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this visit.
+        schema:
+          type: string
+      responses:
+        '204':
+          description: ''
+      tags:
+      - api
+  /api/patients/:
+    get:
+      operationId: listPatients
+      description: API endpoint that allows patients to be viewed or edited.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - count
+                - results
+                properties:
+                  count:
+                    type: integer
+                    example: 123
+                  next:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: http://api.example.org/accounts/?page=4
+                  previous:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: http://api.example.org/accounts/?page=2
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Patient'
+          description: ''
+      tags:
+      - api
+    post:
+      operationId: createPatient
+      description: API endpoint that allows patients to be viewed or edited.
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Patient'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Patient'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Patient'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+      tags:
+      - api
+  /api/patients/search/:
+    get:
+      operationId: searchPatient
+      description: 'Search for patients by registration number,
+
+        name fragment, or phone fragment.'
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+      tags:
+      - api
+  /api/patients/{registration_number}/:
+    get:
+      operationId: retrievePatient
+      description: API endpoint that allows patients to be viewed or edited.
+      parameters:
+      - name: registration_number
+        in: path
+        required: true
+        description: A unique value identifying this patient.
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+      tags:
+      - api
+    put:
+      operationId: updatePatient
+      description: API endpoint that allows patients to be viewed or edited.
+      parameters:
+      - name: registration_number
+        in: path
+        required: true
+        description: A unique value identifying this patient.
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Patient'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Patient'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Patient'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+      tags:
+      - api
+    patch:
+      operationId: partialUpdatePatient
+      description: API endpoint that allows patients to be viewed or edited.
+      parameters:
+      - name: registration_number
+        in: path
+        required: true
+        description: A unique value identifying this patient.
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Patient'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Patient'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Patient'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+      tags:
+      - api
+    delete:
+      operationId: destroyPatient
+      description: API endpoint that allows patients to be viewed or edited.
+      parameters:
+      - name: registration_number
+        in: path
+        required: true
+        description: A unique value identifying this patient.
+        schema:
+          type: string
+      responses:
+        '204':
+          description: ''
+      tags:
+      - api
+  /api/queues/:
+    get:
+      operationId: listQueues
+      description: API endpoint that allows queues to be viewed.
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Queue'
+          description: ''
+      tags:
+      - api
+  /api/queues/{id}/:
+    get:
+      operationId: retrieveQueue
+      description: API endpoint that allows queues to be viewed.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this queue.
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Queue'
+          description: ''
+      tags:
+      - api
+  /api/prescriptions/:
+    get:
+      operationId: listPrescriptionImages
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PrescriptionImage'
+          description: ''
+      tags:
+      - api
+    post:
+      operationId: createPrescriptionImage
+      description: ''
+      parameters: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrescriptionImage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrescriptionImage'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrescriptionImage'
+          description: ''
+      tags:
+      - api
+  /api/prescriptions/{id}/:
+    get:
+      operationId: retrievePrescriptionImage
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this prescription image.
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrescriptionImage'
+          description: ''
+      tags:
+      - api
+    put:
+      operationId: updatePrescriptionImage
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this prescription image.
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrescriptionImage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrescriptionImage'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrescriptionImage'
+          description: ''
+      tags:
+      - api
+    patch:
+      operationId: partialUpdatePrescriptionImage
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this prescription image.
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrescriptionImage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrescriptionImage'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrescriptionImage'
+          description: ''
+      tags:
+      - api
+    delete:
+      operationId: destroyPrescriptionImage
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this prescription image.
+        schema:
+          type: string
+      responses:
+        '204':
+          description: ''
+      tags:
+      - api
+  /api/auth/me/:
+    get:
+      operationId: listmes
+      description: Return the current user's username and role memberships.
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+          description: ''
+      tags:
+      - api
+  /api/health/:
+    get:
+      operationId: listhealths
+      description: Health check endpoint for monitoring and connectivity testing.
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+          description: ''
+      tags:
+      - api
+  /api/settings/registration-format/:
+    get:
+      operationId: listRegistrationNumberFormats
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+          description: ''
+      tags:
+      - api
+    put:
+      operationId: updateRegistrationNumberFormat
+      description: ''
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+          application/x-www-form-urlencoded:
+            schema: {}
+          multipart/form-data:
+            schema: {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: ''
+      tags:
+      - api
+    patch:
+      operationId: partialUpdateRegistrationNumberFormat
+      description: ''
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+          application/x-www-form-urlencoded:
+            schema: {}
+          multipart/form-data:
+            schema: {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: ''
+      tags:
+      - api
+  /api/auth/login/:
+    post:
+      operationId: createAuthToken
+      description: ''
+      parameters: []
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthToken'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AuthToken'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthToken'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+          description: ''
+      tags:
+      - api
+  /api/visits/{id}/done/:
+    patch:
+      operationId: doneVisit
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this visit.
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Visit'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+      tags:
+      - api
+  /api/visits/{id}/in_room/:
+    patch:
+      operationId: inRoomVisit
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this visit.
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Visit'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+      tags:
+      - api
+  /api/visits/{id}/send_back_to_waiting/:
+    patch:
+      operationId: sendBackToWaitingVisit
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this visit.
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Visit'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+      tags:
+      - api
+  /api/visits/{id}/start/:
+    patch:
+      operationId: startVisit
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this visit.
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Visit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Visit'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+      tags:
+      - api
+components:
+  schemas:
+    Visit:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        token_number:
+          type: integer
+          readOnly: true
+        visit_date:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          enum:
+          - WAITING
+          - START
+          - IN_ROOM
+          - DONE
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        patient:
+          type: string
+        queue:
+          type: integer
+        patient_registration_number:
+          type: string
+          readOnly: true
+        patient_full_name:
+          type: string
+          readOnly: true
+        queue_name:
+          type: string
+          readOnly: true
+      required:
+      - patient
+      - queue
+    Patient:
+      type: object
+      properties:
+        registration_number:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        phone:
+          type: string
+          nullable: true
+          maxLength: 20
+        gender:
+          enum:
+          - MALE
+          - FEMALE
+          - OTHER
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        last_5_visit_dates:
+          type: string
+          readOnly: true
+      required:
+      - name
+    Queue:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - name
+    PrescriptionImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        visit:
+          type: integer
+        drive_file_id:
+          type: string
+          readOnly: true
+        image_url:
+          type: string
+          format: uri
+          readOnly: true
+          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+            .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\[[0-9a-f:.]+\\\
+            ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\\
+            .(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+            .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - visit
+    AuthToken:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        token:
+          type: string
+          readOnly: true
+      required:
+      - username
+      - password

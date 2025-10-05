@@ -89,6 +89,11 @@ OpenAPI changes can be regenerated with:
 npx openapi-typescript-codegen --input http://localhost:8000/api/schema/ --output src/api/generated
 ```
 
+**API contract notes:**
+- Patient resources use `registration_number` (string) as the identifier and expose `{ name, phone, gender, last_5_visit_dates }`.
+- Visit statuses from the backend are uppercase (`WAITING`, `START`, `IN_ROOM`, `DONE`) with transitions handled via dedicated action endpoints (`/start/`, `/in_room/`, `/done/`, `/send_back_to_waiting/`).
+- The backend does not expose `/api/version/`; diagnostics show the Expo app version instead.
+
 ---
 
 ## Known Gaps & Risks

@@ -10,12 +10,3 @@ export const useHealth = () =>
       return response.data;
     }
   });
-
-export const useVersion = () =>
-  useQuery({
-    queryKey: queryKeys.version,
-    queryFn: async () => {
-      const response = await apiClient.version();
-      return response.data;
-    }
-  });

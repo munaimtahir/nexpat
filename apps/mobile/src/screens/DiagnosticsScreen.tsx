@@ -1,7 +1,8 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { Button } from 'react-native-paper';
-import { useHealth, useVersion } from '@/api/hooks/useDiagnostics';
+import Constants from 'expo-constants';
+import { useHealth } from '@/api/hooks/useDiagnostics';
 import { LoadingIndicator } from '@/components/LoadingIndicator';
 import { ErrorState } from '@/components/ErrorState';
 import { useAuth } from '@/features/auth/AuthContext';
@@ -11,15 +12,19 @@ import type { AppStackParamList } from '@/navigation/types';
 
 export const DiagnosticsScreen: React.FC = () => {
   const health = useHealth();
-  const version = useVersion();
   const { refreshProfile, logout } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const appVersion = Constants.expoConfig?.version ?? 'dev';
+  const buildNumber =
+    Constants.expoConfig?.android?.versionCode?.toString() ??
+    Constants.expoConfig?.extra?.eas?.build?.gitCommitHash ??
+    'n/a';
 
-  if (health.isLoading || version.isLoading) {
+  if (health.isLoading) {
     return <LoadingIndicator />;
   }
 
-  if (health.isError || version.isError) {
+  if (health.isError) {
     return <ErrorState message="Diagnostics unavailable" />;
   }
 
@@ -30,16 +35,17 @@ export const DiagnosticsScreen: React.FC = () => {
       <View style={{ marginBottom: 16 }}>
         <Text style={{ fontSize: 18, fontWeight: '600' }}>Health</Text>
         <Text>Status: {health.data?.status}</Text>
-        <Text>Uptime: {health.data?.uptime}</Text>
+        <Text>Service: {health.data?.service}</Text>
+        <Text>Timestamp: {health.data?.timestamp}</Text>
       </View>
 
       <View style={{ marginBottom: 16 }}>
         <Text style={{ fontSize: 18, fontWeight: '600' }}>Version</Text>
-        <Text>Version: {version.data?.version}</Text>
-        {version.data?.commit ? <Text>Commit: {version.data.commit}</Text> : null}
+        <Text>App version: {appVersion}</Text>
+        <Text>Build: {buildNumber}</Text>
       </View>
 
-      <Button mode="outlined" onPress={() => { health.refetch(); version.refetch(); }} style={{ marginBottom: 12 }}>
+      <Button mode="outlined" onPress={() => health.refetch()} style={{ marginBottom: 12 }}>
         Refresh diagnostics
       </Button>
       <Button

@@ -3,7 +3,7 @@ import { StyleSheet, Text } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/theme/colors';
-import type { Visit } from '@/api/generated/types';
+import type { Visit, VisitStatus } from '@/api/generated/types';
 
 type Variant = 'gradient' | 'glass' | 'solid';
 
@@ -12,25 +12,25 @@ interface Props {
   variant?: Variant;
 }
 
-const STATUS_GRADIENTS: Record<string, [string, string]> = {
-  waiting: ['#FBBF24', '#F97316'],
-  in_progress: ['#818CF8', '#6366F1'],
-  completed: ['#34D399', '#059669'],
-  cancelled: ['#F87171', '#EF4444']
+const STATUS_GRADIENTS: Record<VisitStatus, [string, string]> = {
+  WAITING: ['#FBBF24', '#F97316'],
+  START: ['#6366F1', '#4338CA'],
+  IN_ROOM: ['#34D399', '#059669'],
+  DONE: ['#22d3ee', '#0891b2']
 };
 
-const STATUS_SOLIDS: Record<string, string> = {
-  waiting: colors.warning,
-  in_progress: colors.secondary,
-  completed: colors.success,
-  cancelled: colors.danger
+const STATUS_SOLIDS: Record<VisitStatus, string> = {
+  WAITING: colors.warning,
+  START: colors.secondary,
+  IN_ROOM: colors.success,
+  DONE: colors.secondary
 };
 
-const STATUS_TEXT: Record<string, string> = {
-  waiting: '#431407',
-  in_progress: '#F8FAFC',
-  completed: '#022C22',
-  cancelled: '#F8FAFC'
+const STATUS_TEXT: Record<VisitStatus, string> = {
+  WAITING: '#431407',
+  START: '#F8FAFC',
+  IN_ROOM: '#022C22',
+  DONE: '#0F172A'
 };
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
@@ -47,8 +47,9 @@ export const VisitStatusTag: React.FC<Props> = ({ status, variant = 'gradient' }
     transform: [{ scale: scale.value }]
   }));
 
-  const label = status.replace('_', ' ');
-  const textColor = variant === 'glass' ? '#E0E7FF' : STATUS_TEXT[status] ?? '#0F172A';
+  const normalized = (status as string).toUpperCase() as VisitStatus;
+  const label = normalized.replace('_', ' ');
+  const textColor = variant === 'glass' ? '#E0E7FF' : STATUS_TEXT[normalized] ?? '#0F172A';
 
   if (variant === 'glass') {
     return (
@@ -60,7 +61,9 @@ export const VisitStatusTag: React.FC<Props> = ({ status, variant = 'gradient' }
 
   if (variant === 'solid') {
     return (
-      <Animated.View style={[styles.container, animatedStyle, { backgroundColor: STATUS_SOLIDS[status] ?? colors.muted }]}>
+      <Animated.View
+        style={[styles.container, animatedStyle, { backgroundColor: STATUS_SOLIDS[normalized] ?? colors.muted }]}
+      >
         <Text style={[styles.text, { color: textColor }]}>{label}</Text>
       </Animated.View>
     );
@@ -68,7 +71,7 @@ export const VisitStatusTag: React.FC<Props> = ({ status, variant = 'gradient' }
 
   return (
     <AnimatedGradient
-      colors={STATUS_GRADIENTS[status] ?? STATUS_GRADIENTS.waiting}
+      colors={STATUS_GRADIENTS[normalized] ?? STATUS_GRADIENTS.WAITING}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.container, animatedStyle]}

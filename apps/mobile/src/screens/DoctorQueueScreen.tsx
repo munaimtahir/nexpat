@@ -13,18 +13,19 @@ import { CachedDataNotice } from '@/components/CachedDataNotice';
 import { TextureBackground } from '@/components/TextureBackground';
 import { FilterChips } from '@/components/FilterChips';
 import { Button } from '@/components/Button';
-import type { Visit } from '@/api/generated/types';
+import type { Visit, VisitStatus } from '@/api/generated/types';
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<Visit>);
 
 const statusOptions = [
-  { value: 'in_progress', label: 'In progress' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'START', label: 'Ready to start' },
+  { value: 'IN_ROOM', label: 'In room' },
+  { value: 'DONE', label: 'Done' },
   { value: 'all', label: 'All' }
 ];
 
 export const DoctorQueueScreen: React.FC = () => {
-  const [status, setStatus] = useState('in_progress');
+  const [status, setStatus] = useState<VisitStatus | 'all'>('START');
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const visitsQuery = useVisits({ status: status === 'all' ? undefined : status });
   const { update } = useVisitMutation();
@@ -53,7 +54,11 @@ export const DoctorQueueScreen: React.FC = () => {
       <View style={styles.noticeWrapper}>
         <CachedDataNotice />
       </View>
-      <FilterChips value={status} options={statusOptions} onChange={setStatus} />
+      <FilterChips
+        value={status}
+        options={statusOptions}
+        onChange={(value) => setStatus(value as VisitStatus | 'all')}
+      />
       <Animated.View style={[styles.refreshBanner, refreshStyle]} pointerEvents="none">
         <Text style={styles.refreshText}>Refreshing queue…</Text>
       </Animated.View>
@@ -69,14 +74,13 @@ export const DoctorQueueScreen: React.FC = () => {
             <Card variant="elevated" onPress={() => navigation.navigate('VisitDetail', { visitId: item.id })}>
               <Text style={styles.cardTitle}>Visit #{item.id}</Text>
               <VisitStatusTag status={item.status} />
-              {item.notes ? <Text style={styles.cardBody}>{item.notes}</Text> : null}
               <View style={styles.actions}>
                 <Button label="Open visit" onPress={() => navigation.navigate('VisitDetail', { visitId: item.id })} />
-                {item.status !== 'completed' ? (
+                {item.status !== 'DONE' ? (
                   <Button
-                    label="Mark completed"
+                    label="Mark done"
                     variant="glass"
-                    onPress={() => update.mutate({ id: item.id, status: 'completed' })}
+                    onPress={() => update.mutate({ id: item.id, status: 'DONE' })}
                     loading={update.isPending}
                   />
                 ) : null}
@@ -119,9 +123,6 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
     fontSize: 18,
     fontWeight: '700'
-  },
-  cardBody: {
-    color: '#CBD5F5'
   },
   actions: {
     flexDirection: 'row',
