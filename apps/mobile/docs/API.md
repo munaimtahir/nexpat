@@ -1,7 +1,7 @@
 # API & Interfaces
 ## Auth
-- `POST /api/auth/login/` → { access, refresh } or { token }
-- `POST /api/auth/refresh/` → { access } (if JWT)
+- `POST /api/auth/login/` → { token }
+- Clients send `Authorization: Token <token>` on subsequent requests. Tokens are opaque DRF auth tokens with no refresh endpoint.
 - `GET /api/auth/me/` → { id, username, roles[] }
 
 ## Patients

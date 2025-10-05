@@ -1,10 +1,10 @@
 import type {
+  AuthTokenResponse,
   HealthResponse,
   LoginRequest,
   PaginatedResponse,
   Patient,
   PatientRequest,
-  TokenPair,
   UploadRequest,
   UserProfile,
   VersionResponse,
@@ -17,11 +17,7 @@ export class GeneratedApiClient {
   constructor(private readonly http: AxiosInstance) {}
 
   login(body: LoginRequest) {
-    return this.http.post<TokenPair>('/api/auth/login/', body);
-  }
-
-  refresh(body: { refresh: string }) {
-    return this.http.post<{ access: string }>('/api/auth/refresh/', body);
+    return this.http.post<AuthTokenResponse>('/api/auth/login/', body);
   }
 
   me() {
@@ -76,6 +72,6 @@ export class GeneratedApiClient {
   }
 }
 
-export type { LoginRequest, TokenPair, UserProfile, Patient, Visit };
+export type { LoginRequest, AuthTokenResponse, UserProfile, Patient, Visit };
 export type { PatientRequest, VisitRequest, UploadRequest, PaginatedResponse };
 export type { HealthResponse, VersionResponse };

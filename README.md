@@ -134,6 +134,8 @@ curl -X POST http://127.0.0.1:8000/api/auth/login/ \
   -d '{"username":"admin","password":"admin123"}'
 ```
 
+The API responds with `{ "token": "..." }`. Include that value in subsequent requests using `Authorization: Token <token>`.
+
 ### Troubleshooting
 
 | Issue | Solution |

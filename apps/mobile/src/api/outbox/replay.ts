@@ -13,7 +13,7 @@ client.interceptors.request.use(async (config) => {
   const token = await secureStore.getString(STORAGE_KEYS.token);
   if (token) {
     const headers = AxiosHeaders.from((config.headers ?? {}) as AxiosRequestHeaders);
-    headers.set('Authorization', `Bearer ${token}`);
+    headers.set('Authorization', `Token ${token}`);
     config.headers = headers;
   }
   return config;

@@ -1,6 +1,5 @@
-export interface TokenPair {
-  access: string;
-  refresh?: string;
+export interface AuthTokenResponse {
+  token: string;
 }
 
 export interface LoginRequest {

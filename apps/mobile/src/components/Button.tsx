@@ -10,13 +10,14 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export type ButtonVariant = 'primary' | 'secondary' | 'glass';
 
 type Props = {
-  label: string;
+  label?: string;
   onPress?: () => void;
   variant?: ButtonVariant;
   disabled?: boolean;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
   icon?: React.ReactNode;
+  children?: React.ReactNode;
 };
 
 export const Button: React.FC<Props> = ({
@@ -26,7 +27,8 @@ export const Button: React.FC<Props> = ({
   disabled,
   loading,
   style,
-  icon
+  icon,
+  children
 }) => {
   const scale = useSharedValue(1);
 
@@ -44,10 +46,15 @@ export const Button: React.FC<Props> = ({
     opacity: disabled ? 0.6 : 1
   }));
 
+  const resolvedLabel = loading ? '...' : children ?? label ?? '';
   const content = (
     <>
       {icon ? icon : null}
-      <Text style={[styles.label, variant === 'glass' ? styles.labelGlass : null]}>{loading ? '...' : label}</Text>
+      {typeof resolvedLabel === 'string' || typeof resolvedLabel === 'number' ? (
+        <Text style={[styles.label, variant === 'glass' ? styles.labelGlass : null]}>{resolvedLabel}</Text>
+      ) : (
+        resolvedLabel
+      )}
     </>
   );
 

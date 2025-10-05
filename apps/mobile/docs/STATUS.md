@@ -20,9 +20,13 @@ The application has completed all Phase 1 & 2 foundational work and the Phase 3 
 
 ## Feature Readiness Overview
 
+### Decision Log
+
+- **2025-03-21 — Auth Tokens**: Confirmed that both web and mobile clients will continue using the existing DRF token login. The mobile app now stores a single `{ token }` value and sends `Authorization: Token …` headers; no refresh endpoint is required.
+
 ### ✅ Ready to Ship (feature-complete & stable in manual testing)
 
-- **Authentication & Role Routing** – Credential login with JWT storage/refresh and role-sensitive navigation across assistant and doctor tab stacks. (`src/screens/LoginScreen.tsx`, `src/api/client.ts`, `src/navigation/index.tsx`)
+- **Authentication & Role Routing** – Credential login with DRF token storage (single token) and role-sensitive navigation across assistant and doctor tab stacks. (`src/screens/LoginScreen.tsx`, `src/api/client.ts`, `src/navigation/index.tsx`)
 - **Patient Management** – Searchable patient lists, detail view, and create/edit flows with optimistic cache updates and offline notices. (`src/screens/PatientsListScreen.tsx`, `src/screens/PatientDetailScreen.tsx`, `src/screens/PatientFormScreen.tsx`)
 - **Visit Queue Operations** – Assistant queue management, doctor workflow, detail drill-down, and conflict handling with optimistic updates. (`src/screens/VisitsQueueScreen.tsx`, `src/screens/DoctorQueueScreen.tsx`, `src/api/hooks/useVisits.ts`)
 - **Uploads Hub** – Camera/gallery intake, batch uploads with progress, offline queuing, and gallery of historical prescriptions. (`src/screens/UploadManagerScreen.tsx`, `src/api/hooks/useUploads.ts`)

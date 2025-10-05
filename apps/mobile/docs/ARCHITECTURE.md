@@ -10,7 +10,7 @@ app/
   services/     # uploads, notifications (later)
   utils/        # validators, date
 ```
-- **Auth:** JWT (access+refresh). Secure storage at rest.
+- **Auth:** DRF token auth (single opaque token). Secure storage at rest.
 - **Data:** React Query cache; pagination; optimistic updates where safe.
 - **Offline:** Persisted cache + queued writes with idempotency keys.
 - **Uploads:** Multipart with progress; compress large images on-device.
