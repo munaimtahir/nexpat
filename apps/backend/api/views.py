@@ -421,7 +421,7 @@ class RegistrationNumberFormatView(APIView):
 
     def get_permissions(self):
         if self.request.method in ("PUT", "PATCH"):
-            return [IsDoctor()]
+            return [permissions.IsAuthenticated(), IsDoctor()]
         return super().get_permissions()
 
     def get(self, request):
