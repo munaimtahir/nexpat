@@ -12,5 +12,10 @@ test('renders Assistant portal heading', async () => {
       <AssistantPage />
     </MemoryRouter>
   );
-  expect(await screen.findByText(/Assistant Portal/i)).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', {
+      name: /Assistant Portal/i,
+      level: 1,
+    }),
+  ).toBeInTheDocument();
 });

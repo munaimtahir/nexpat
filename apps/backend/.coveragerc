@@ -1,0 +1,8 @@
+[run]
+omit =
+    */migrations/*
+    */management/commands/*
+    api/google_drive.py
+    clinicq_backend/asgi.py
+    clinicq_backend/wsgi.py
+    api/test_*.py

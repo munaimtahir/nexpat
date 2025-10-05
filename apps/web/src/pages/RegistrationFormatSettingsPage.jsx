@@ -9,11 +9,6 @@ import {
   computeFormattedLength,
 } from '../utils/registrationFormat.js';
 
-const separatorOptions = [
-  { value: '-', label: 'Dash (-)' },
-  { value: '+', label: 'Plus (+)' },
-];
-
 const normalizeGroups = (groups) =>
   groups.map((value) => {
     const numeric = Number(value);
@@ -41,8 +36,12 @@ const RegistrationFormatSettingsPage = () => {
     if (!format && !loading) {
       refresh().catch(() => {});
     } else if (format) {
-      setDigitGroups(format.digit_groups || [2, 2, 3]);
-      setSeparators(format.separators || Array(Math.max((format.digit_groups || [2, 2, 3]).length - 1, 0)).fill('-'));
+      setDigitGroups(format.digit_groups || [3, 2, 3]);
+      if (Array.isArray(format.separators)) {
+        setSeparators(format.separators);
+      } else {
+        setSeparators(Array(Math.max((format.digit_groups || [3, 2, 3]).length - 1, 0)).fill('-'));
+      }
     }
   }, [format, loading, refresh]);
 
@@ -68,14 +67,17 @@ const RegistrationFormatSettingsPage = () => {
     if (totalDigits > 15) {
       messages.push('Total digits cannot exceed 15.');
     }
-    if (formattedLength > 15) {
-      messages.push('Formatted length (digits plus separators) cannot exceed 15 characters.');
+    if (formattedLength > 24) {
+      messages.push('Formatted length (digits plus separators) cannot exceed 24 characters.');
     }
     if (separators.length !== Math.max(digitGroups.length - 1, 0)) {
       messages.push('Separators count must be one less than the number of digit groups.');
     }
+    if (separators.some((separator) => typeof separator !== 'string' || separator.trim() === '')) {
+      messages.push('Separators must be non-empty.');
+    }
     return messages;
-  }, [digitGroups.length, formattedLength, normalizedGroups, separators.length, totalDigits]);
+  }, [digitGroups.length, formattedLength, normalizedGroups, separators, totalDigits]);
 
   const example = useMemo(() => buildExampleFromFormat(workingFormat), [workingFormat]);
 
@@ -127,7 +129,7 @@ const RegistrationFormatSettingsPage = () => {
     try {
       const payload = {
         digit_groups: normalizedGroups,
-        separators,
+        separators: separators.map((separator) => (separator ?? '').trim()),
       };
       const response = await api.put('/settings/registration-format/', payload);
       setFormat(response.data);
@@ -182,18 +184,15 @@ const RegistrationFormatSettingsPage = () => {
                     <label className="block text-sm font-medium text-gray-700" htmlFor={`separator-${index}`}>
                       Separator after group {index + 1}
                     </label>
-                    <select
+                    <input
                       id={`separator-${index}`}
-                      value={separators[index] || '-'}
+                      type="text"
+                      value={separators[index] ?? ''}
                       onChange={(event) => handleSeparatorChange(index, event.target.value)}
+                      placeholder="Separator"
+                      maxLength={5}
                       className="mt-1 w-40 rounded border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    >
-                      {separatorOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
                 )}
                 {digitGroups.length > 1 && (
@@ -228,7 +227,7 @@ const RegistrationFormatSettingsPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Regex pattern</p>
               <p className="mt-1 break-all rounded bg-gray-100 px-3 py-2 font-mono text-xs">
-                {format?.pattern || buildPatternFromFormat(workingFormat)}
+                {buildPatternFromFormat(workingFormat)}
               </p>
             </div>
             <div>

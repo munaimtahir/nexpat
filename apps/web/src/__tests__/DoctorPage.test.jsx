@@ -53,28 +53,33 @@ beforeEach(() => {
   api.patch.mockResolvedValue({ data: {} });
 });
 
-test('renders Doctor dashboard and displays visits with correct action buttons', async () => {
+test('renders doctor workspace and displays visits with correct action buttons', async () => {
   render(
     <MemoryRouter>
       <DoctorPage />
     </MemoryRouter>
   );
 
-  // Check for dashboard heading
-  expect(await screen.findByText(/Doctor Dashboard/i)).toBeInTheDocument();
+  // Check for workspace heading
+  expect(
+    await screen.findByRole('heading', {
+      name: /Doctor Control Room/i,
+      level: 1,
+    }),
+  ).toBeInTheDocument();
 
   // Check for WAITING visit and its button
   expect(await screen.findByText(/John Doe/i)).toBeInTheDocument();
-  expect(screen.getByText(/Start Consultation/i)).toBeInTheDocument();
+  expect(screen.getByText(/Start consult/i)).toBeInTheDocument();
 
   // Check for START visit and its buttons
   expect(await screen.findByText(/Jane Smith/i)).toBeInTheDocument();
-  expect(screen.getByText(/Move to Room/i)).toBeInTheDocument();
-  expect(screen.getAllByText(/Send Back/i).length).toBeGreaterThan(0);
+  expect(screen.getByText(/Move to room/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/Send back/i).length).toBeGreaterThan(0);
 
   // Check for IN_ROOM visit and its buttons
   expect(await screen.findByText(/Peter Pan/i)).toBeInTheDocument();
-  expect(screen.getByText(/Mark as Done/i)).toBeInTheDocument();
+  expect(screen.getByText(/Mark done/i)).toBeInTheDocument();
 });
 
 test('clicking "Start Consultation" calls the correct API endpoint', async () => {
@@ -84,7 +89,7 @@ test('clicking "Start Consultation" calls the correct API endpoint', async () =>
     </MemoryRouter>
   );
 
-  const startButton = await screen.findByText(/Start Consultation/i);
+  const startButton = await screen.findByText(/Start consult/i);
   fireEvent.click(startButton);
 
   await waitFor(() => {
@@ -99,7 +104,7 @@ test('clicking "Move to Room" calls the correct API endpoint', async () => {
     </MemoryRouter>
   );
 
-  const moveButton = await screen.findByText(/Move to Room/i);
+  const moveButton = await screen.findByText(/Move to room/i);
   fireEvent.click(moveButton);
 
   await waitFor(() => {
@@ -114,7 +119,7 @@ test('clicking "Mark as Done" calls the correct API endpoint', async () => {
     </MemoryRouter>
   );
 
-  const doneButton = await screen.findByText(/Mark as Done/i);
+  const doneButton = await screen.findByText(/Mark done/i);
   fireEvent.click(doneButton);
 
   await waitFor(() => {

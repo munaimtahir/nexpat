@@ -1,5 +1,3 @@
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import transaction
 from rest_framework import serializers
 from .models import (
     Visit,
@@ -8,8 +6,6 @@ from .models import (
     PrescriptionImage,
     RegistrationNumberFormat,
     get_registration_number_format,
-    ensure_format_can_fit_existing_patients,
-    reformat_patients_to_format,
 )
 
 
@@ -124,10 +120,19 @@ class RegistrationNumberFormatSerializer(serializers.ModelSerializer):
     )
     total_digits = serializers.SerializerMethodField()
     formatted_length = serializers.SerializerMethodField()
+    pattern = serializers.SerializerMethodField()
+    example = serializers.SerializerMethodField()
 
     class Meta:
         model = RegistrationNumberFormat
-        fields = ["digit_groups", "separators", "total_digits", "formatted_length"]
+        fields = [
+            "digit_groups",
+            "separators",
+            "total_digits",
+            "formatted_length",
+            "pattern",
+            "example",
+        ]
 
     def get_total_digits(self, obj):
         return obj.total_digits
@@ -135,63 +140,25 @@ class RegistrationNumberFormatSerializer(serializers.ModelSerializer):
     def get_formatted_length(self, obj):
         return obj.formatted_length
 
-    def validate(self, attrs):
-        digit_groups = attrs.get("digit_groups")
-        separators = attrs.get("separators")
+    def get_pattern(self, obj):
+        return obj.build_pattern()
 
-        if self.instance:
-            if digit_groups is None:
-                digit_groups = list(self.instance.digit_groups)
-            if separators is None:
-                separators = list(self.instance.separators)
-
-        if digit_groups is None:
-            digit_groups = []
-        if separators is None:
-            separators = []
-
-        if len(separators) != max(len(digit_groups) - 1, 0):
-            raise serializers.ValidationError(
-                {
-                    "separators": "Separators count must be exactly one less than the number of digit groups.",
-                }
-            )
-
-        invalid_separators = [sep for sep in separators if sep not in {"-", "+"}]
-        if invalid_separators:
-            raise serializers.ValidationError(
-                {"separators": "Only '-' and '+' separators are supported."}
-            )
-
-        total_digits = sum(digit_groups)
-        if total_digits > 15:
-            raise serializers.ValidationError(
-                {"digit_groups": "Total digits cannot exceed 15."}
-            )
-
-        formatted_length = total_digits + len(separators)
-        if formatted_length > 15:
-            raise serializers.ValidationError(
-                {
-                    "digit_groups": (
-                        "Formatted length (digits + separators) cannot exceed 15 characters."
-                    )
-                }
-            )
-
-        return attrs
+    def get_example(self, obj):
+        return obj.build_example()
 
     def update(self, instance, validated_data):
-        instance.digit_groups = validated_data.get("digit_groups", instance.digit_groups)
-        instance.separators = validated_data.get("separators", instance.separators)
-        try:
-            instance.full_clean()
-            ensure_format_can_fit_existing_patients(instance)
-        except DjangoValidationError as exc:
-            raise serializers.ValidationError(exc.message_dict or exc.messages) from exc
-        with transaction.atomic():
-            instance.save(update_fields=["digit_groups", "separators", "updated_at"])
-            reformat_patients_to_format(instance)
-        # Refresh cache so future validations use the updated format
+        for field in ("digit_groups", "separators"):
+            if field in validated_data:
+                setattr(instance, field, validated_data[field])
+
+        instance.full_clean()
+        instance.save(update_fields=["digit_groups", "separators", "updated_at"])
+        get_registration_number_format(force_reload=True)
+        return instance
+
+    def create(self, validated_data):
+        instance = RegistrationNumberFormat(**validated_data)
+        instance.full_clean()
+        instance.save()
         get_registration_number_format(force_reload=True)
         return instance

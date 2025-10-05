@@ -118,28 +118,22 @@ class PatientViewSet(viewsets.ModelViewSet):
 
             numbers = []
             for num in raw_numbers:
-                # Accept formatted registration numbers based on configuration
-                if pattern.match(num):
+                if not num:
+                    continue
+                if pattern.fullmatch(num):
                     numbers.append(num)
-                # Also accept old numeric format for backward compatibility
-                # during transition
-                elif num.isdigit():
-                    if len(num) > format_config["total_digits"]:
-                        raise ValidationError(
-                            {
-                                "registration_numbers": (
-                                    "Registration numbers may not exceed "
-                                    f"{format_config['total_digits']} digits."
-                                ),
-                            }
-                        )
-                    numbers.append(num)
+                else:
+                    raise ValidationError(
+                        {
+                            "registration_numbers": (
+                                "All registration numbers must match the current format."
+                            )
+                        }
+                    )
 
             if numbers:
                 queryset = queryset.filter(registration_number__in=numbers)
             else:
-                # If all provided registration numbers are invalid,
-                # return empty
                 return Patient.objects.none()
         return queryset
 
@@ -202,12 +196,7 @@ class PatientViewSet(viewsets.ModelViewSet):
         pattern = re.compile(format_config["pattern"])
 
         # Check if query matches registration number format
-        if pattern.match(query):
-            filters |= Q(registration_number=query)
-        # Also check for old numeric format for backward compatibility
-        elif query.isdigit():
-            # For numeric queries, try both exact match and also try to
-            # find registration numbers that might match this pattern
+        if pattern.fullmatch(query):
             filters |= Q(registration_number=query)
 
         patients = Patient.objects.filter(filters).order_by("registration_number")
@@ -429,21 +418,14 @@ class RegistrationNumberFormatView(APIView):
         return super().get_permissions()
 
     def get(self, request):
-        instance = RegistrationNumberFormat.load()
-        serializer = RegistrationNumberFormatSerializer(instance)
-        payload = serializer.data
-        payload["pattern"] = get_registration_number_format()["pattern"]
-        return Response(payload)
+        return Response(get_registration_number_format())
 
     def put(self, request):
         instance = RegistrationNumberFormat.load()
         serializer = RegistrationNumberFormatSerializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        cache.delete("registration_number_format")
-        payload = serializer.data
-        payload["pattern"] = get_registration_number_format()["pattern"]
-        return Response(payload)
+        return Response(get_registration_number_format(force_reload=True))
 
     def patch(self, request):
         instance = RegistrationNumberFormat.load()
@@ -452,7 +434,4 @@ class RegistrationNumberFormatView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        cache.delete("registration_number_format")
-        payload = serializer.data
-        payload["pattern"] = get_registration_number_format()["pattern"]
-        return Response(payload)
+        return Response(get_registration_number_format(force_reload=True))

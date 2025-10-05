@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import api from '../api.js';
 import { firstFromListResponse } from '../utils/api.js';
 import useRegistrationFormat from '../hooks/useRegistrationFormat.js';
 import { buildExampleFromFormat } from '../utils/registrationFormat.js';
+import { WorkspaceLayout, TextField, SelectField, ProgressPulse } from '../components/index.js';
 
 const AssistantPage = () => {
   const [registrationNumber, setRegistrationNumber] = useState('');
@@ -13,8 +13,19 @@ const AssistantPage = () => {
   const [generatedToken, setGeneratedToken] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [issuedCount, setIssuedCount] = useState(0);
   const { format } = useRegistrationFormat();
   const formatExample = useMemo(() => buildExampleFromFormat(format), [format]);
+  const registrationPattern = useMemo(() => {
+    if (!format?.pattern) return null;
+    try {
+      return new RegExp(format.pattern);
+    } catch (err) {
+      console.error('Invalid registration pattern from server:', err);
+      return null;
+    }
+  }, [format?.pattern]);
 
   useEffect(() => {
     const fetchQueues = async () => {
@@ -80,8 +91,13 @@ const AssistantPage = () => {
     setError('');
     setGeneratedToken(null);
 
-    if (!registrationNumber.trim()) {
+    const normalizedNumber = registrationNumber.trim();
+    if (!normalizedNumber) {
       setError('Registration number cannot be empty.');
+      return;
+    }
+    if (registrationPattern && !registrationPattern.test(normalizedNumber)) {
+      setError('Registration number must match the configured format.');
       return;
     }
     if (!selectedQueue) {
@@ -150,163 +166,134 @@ const AssistantPage = () => {
     },
   ];
 
-  const queueFilterOptions = useMemo(
-    () => [
-      { label: 'All queues', value: '' },
-      ...queues.slice(0, 4).map((queue) => ({ label: queue.name, value: String(queue.id) })),
-    ],
-    [queues],
-  );
-
   return (
-    <div className="container mx-auto p-6 max-w-md bg-white shadow-md rounded-lg mt-10">
-      <Link to="/" className="text-blue-500 hover:underline mb-4 block">
-        &larr; Back to Home
-      </Link>
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-700">
-        Assistant Portal
-      </h1>
+    <WorkspaceLayout
+      title="Assistant Portal"
+      subtitle="Generate visit tokens, find patients instantly, and keep queues flowing."
+      breadcrumbs={[
+        { label: 'Home', to: '/' },
+        { label: 'Assistant Portal' },
+      ]}
+      kpis={kpis}
+    >
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        className="space-y-5 rounded-3xl bg-gradient-to-br from-white via-white to-indigo-50/50 p-6 shadow-inner"
+      >
+        <ProgressPulse active={isLoading} />
+        <TextField
+          label="Registration number"
+          value={registrationNumber}
+          onChange={(e) => setRegistrationNumber(e.target.value)}
+          autoComplete="off"
+          description={
+            formatExample
+              ? `Expected format similar to ${formatExample}`
+              : 'Enter the patient registration number.'
+          }
+          trailingNode={format?.pattern ? <span className="text-[0.65rem] text-slate-400">{format.pattern}</span> : null}
+        />
+        <SelectField
+          label="Queue destination"
+          value={selectedQueue}
+          onChange={(e) => setSelectedQueue(e.target.value)}
+          description="Only active queues appear in this list."
+        >
+          <option value="">Select a queue</option>
+          {queues.map((queue) => (
+            <option key={queue.id} value={queue.id}>
+              {queue.name}
+            </option>
+          ))}
+        </SelectField>
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        <div>
-          <label
-            htmlFor="registrationNumber"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Registration Number
-          </label>
-          <input
-            type="text"
-            id="registrationNumber"
-            value={registrationNumber}
-            onChange={(e) => setRegistrationNumber(e.target.value)}
-            placeholder={formatExample ? `e.g. ${formatExample}` : 'Registration number'}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-          {formatExample && (
-            <p className="mt-1 text-xs text-gray-500">
-              Expected format similar to <span className="font-mono">{formatExample}</span>
+        <button
+          type="submit"
+          disabled={isLoading || !registrationNumber.trim() || !selectedQueue}
+          className="w-full rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+        >
+          {isLoading ? 'Generating token…' : 'Generate token'}
+        </button>
+
+        {error && (
+          <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600" role="alert">
+            {error}
+          </p>
+        )}
+      </form>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-3xl border border-indigo-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-800">Patient preview</h2>
+            <span
+              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                patientInfo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+              }`}
+            >
+              {patientInfo ? 'Matched' : isSearching ? 'Searching…' : 'Awaiting'}
+            </span>
+          </div>
+          {patientInfo ? (
+            <div className="mt-4 space-y-3 text-sm text-slate-600">
+              <p className="text-base font-semibold text-slate-800">{patientInfo.name}</p>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 font-semibold text-indigo-700">
+                  {patientInfo.gender}
+                </span>
+                {patientInfo.phone && (
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+                    📞 {patientInfo.phone}
+                  </span>
+                )}
+              </div>
+              {Array.isArray(patientInfo.last_5_visit_dates) && patientInfo.last_5_visit_dates.length > 0 ? (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recent visits</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {patientInfo.last_5_visit_dates.slice(0, 3).map((date) => (
+                      <span
+                        key={date}
+                        className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600"
+                      >
+                        {date}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400">No historical visits on record.</p>
+              )}
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-slate-400">
+              Enter a registration number to preview patient context and last visit history.
             </p>
           )}
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          noValidate
-          className="space-y-5 rounded-3xl bg-gradient-to-br from-white via-white to-indigo-50/50 p-6 shadow-inner"
-        >
-          <ProgressPulse active={isLoading} />
-          <TextField
-            label="Registration number"
-            value={registrationNumber}
-            onChange={(e) => setRegistrationNumber(e.target.value)}
-            autoComplete="off"
-            description="Search by patient ID or phone to pre-fill their context."
-            leadingIcon="#"
-          />
-          <SelectField
-            label="Queue destination"
-            value={selectedQueue}
-            onChange={(e) => setSelectedQueue(e.target.value)}
-            description="Only active queues appear in this list."
-          >
-            <option value="">Select a queue</option>
-            {queues.map((queue) => (
-              <option key={queue.id} value={queue.id}>
-                {queue.name}
-              </option>
-            ))}
-          </SelectField>
-
-          <button
-            type="submit"
-            disabled={isLoading || !registrationNumber.trim() || !selectedQueue}
-            className="w-full rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-300"
-          >
-            {isLoading ? 'Generating token…' : 'Generate token'}
-          </button>
-
-          {error && (
-            <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600" role="alert">
-              {error}
-            </p>
-          )}
-        </form>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-3xl border border-indigo-100 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-800">Patient preview</h2>
-              <span
-                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                  patientInfo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
-                }`}
-              >
-                {patientInfo ? 'Matched' : isSearching ? 'Searching…' : 'Awaiting'}
-              </span>
-            </div>
-            {patientInfo ? (
-              <div className="mt-4 space-y-3 text-sm text-slate-600">
-                <p className="text-base font-semibold text-slate-800">{patientInfo.name}</p>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 font-semibold text-indigo-700">
-                    {patientInfo.gender}
-                  </span>
-                  {patientInfo.phone && (
-                    <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
-                      📞 {patientInfo.phone}
-                    </span>
-                  )}
-                </div>
-                {Array.isArray(patientInfo.last_5_visit_dates) && patientInfo.last_5_visit_dates.length > 0 ? (
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recent visits</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {patientInfo.last_5_visit_dates.slice(0, 3).map((date) => (
-                        <span
-                          key={date}
-                          className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600"
-                        >
-                          {date}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-400">No historical visits on record.</p>
-                )}
-              </div>
+        <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-500/10 via-white to-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-800">Token status</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Tokens animate across the queue when generated. Keep the assistant screen visible for confirmation.
+          </p>
+          <div className="mt-4 flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/70 p-6 shadow-inner">
+            {generatedToken !== null ? (
+              <>
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
+                  Token issued
+                </span>
+                <p className="text-5xl font-black text-indigo-600">{generatedToken}</p>
+              </>
             ) : (
-              <p className="mt-6 text-sm text-slate-400">
-                Enter a registration number to preview patient context and last visit history.
-              </p>
+              <>
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Waiting</span>
+                <p className="text-sm text-center text-slate-500">
+                  Generate a token to broadcast it to the live queue display and clinician dashboards.
+                </p>
+              </>
             )}
-          </div>
-
-          <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-500/10 via-white to-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-800">Token status</h2>
-            <p className="mt-1 text-xs text-slate-500">
-              Tokens animate across the queue when generated. Keep the assistant screen visible for confirmation.
-            </p>
-            <div className="mt-4 flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/70 p-6 shadow-inner">
-              {generatedToken !== null ? (
-                <>
-                  <span className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-                    Token issued
-                  </span>
-                  <p className="text-5xl font-black text-indigo-600">{generatedToken}</p>
-                </>
-              ) : (
-                <>
-                  <span className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
-                    Waiting
-                  </span>
-                  <p className="text-sm text-slate-500 text-center">
-                    Generate a token to broadcast it to the live queue display and clinician dashboards.
-                  </p>
-                </>
-              )}
-            </div>
           </div>
         </div>
       </div>

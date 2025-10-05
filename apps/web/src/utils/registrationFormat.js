@@ -35,7 +35,7 @@ export const buildPatternFromFormat = (format) => {
     const digits = Math.max(0, Number(size) || 0);
     pattern += `\\d{${digits}}`;
     if (index < (format.separators?.length || 0)) {
-      const separator = format.separators[index] ?? '';
+      const separator = String(format.separators[index] ?? '');
       pattern += separator.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
     }
   });
@@ -48,8 +48,10 @@ export const computeFormattedLength = (format) => {
     return 0;
   }
   const digits = format.digit_groups.reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
-  const separators = Array.isArray(format.separators) ? format.separators.length : 0;
-  return digits + separators;
+  const separatorLength = Array.isArray(format.separators)
+    ? format.separators.reduce((sum, value) => sum + String(value ?? '').length, 0)
+    : 0;
+  return digits + separatorLength;
 };
 
 export const computeDigitTotal = (format) => {
