@@ -6,7 +6,7 @@ const config: ExpoConfig = {
   slug: 'clinicq-mobile',
   version: '0.1.0',
   scheme: 'clinicq',
-  owner: undefined,
+  owner: 'munaim',
   orientation: 'portrait',
   userInterfaceStyle: 'light',
   updates: {
