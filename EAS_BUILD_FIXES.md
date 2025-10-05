@@ -57,9 +57,8 @@ This matches the authenticated user from the EXPO_TOKEN secret (confirmed from w
 **Solution**: If this occurs, you need to initialize the project:
 ```bash
 cd apps/mobile
-npx eas-cli login
-npx eas-cli build:configure
-```
+eas login
+eas build:configure
 This will add a `projectId` to your `app.config.ts` or create an `app.json` with the project configuration. Commit and push the changes.
 
 ### 2. Missing Credentials
