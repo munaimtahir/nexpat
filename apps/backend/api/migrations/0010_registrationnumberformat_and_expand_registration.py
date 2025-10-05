@@ -1,4 +1,5 @@
 import api.models
+import django.db.models.deletion
 from django.db import migrations, models
 
 
@@ -41,6 +42,15 @@ class Migration(migrations.Migration):
                 serialize=False,
                 unique=True,
                 validators=[api.models.validate_registration_number_format],
+            ),
+        ),
+        migrations.AlterField(
+            model_name="visit",
+            name="patient",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="visits",
+                to="api.patient",
             ),
         ),
         migrations.RunPython(seed_default_format, migrations.RunPython.noop),
