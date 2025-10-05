@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from api.models import Patient, Queue, Visit, get_registration_number_format
+from api.models import Patient, Queue, Visit
 
 
 class PatientCRUDTests(APITestCase):
@@ -52,31 +52,33 @@ class RegistrationNumberFormatTests(APITestCase):
         cache.clear()
 
     def test_registration_number_auto_generation(self):
-        """Test that registration numbers are auto-generated using configured format"""
-        patient1 = Patient.objects.create(name="Patient 1", gender="MALE")
-        patient2 = Patient.objects.create(name="Patient 2", gender="FEMALE")
+        """Test that registration numbers are auto-generated in mmyy-ct-0000 format"""
+        patient1 = Patient.objects.create(name="Patient 1", gender="MALE", category="01")
+        patient2 = Patient.objects.create(name="Patient 2", gender="FEMALE", category="01")
 
-        # Verify format
-        pattern = get_registration_number_format()["pattern"]
+        # Verify format mmyy-ct-0000
+        pattern = r"^\d{4}-\d{2}-\d{4}$"
         self.assertRegex(patient1.registration_number, pattern)
         self.assertRegex(patient2.registration_number, pattern)
 
-        # Verify sequential generation
-        self.assertEqual(patient1.registration_number, "001-00-001")
-        self.assertEqual(patient2.registration_number, "001-00-002")
+        # Verify sequential generation within same month/category
+        # Extract serial numbers
+        serial1 = int(patient1.registration_number.split("-")[-1])
+        serial2 = int(patient2.registration_number.split("-")[-1])
+        self.assertEqual(serial2, serial1 + 1)
 
     def test_registration_number_validation(self):
         """Test that invalid registration number formats are rejected"""
         from api.models import validate_registration_number_format
 
-        current_pattern = re.compile(get_registration_number_format()["pattern"])
+        pattern = re.compile(r"^\d{4}-\d{2}-\d{4}$")
 
-        # Valid formats
-        valid_formats = ["001-23-456", "999-99-999", "000-00-001"]
+        # Valid formats (mmyy-ct-0000)
+        valid_formats = ["1025-01-0001", "0125-05-9999", "1224-03-0100"]
         for valid_format in valid_formats:
             self.assertIsNotNone(
-                current_pattern.match(valid_format),
-                msg=f"Expected {valid_format} to match {current_pattern.pattern}",
+                pattern.match(valid_format),
+                msg=f"Expected {valid_format} to match {pattern.pattern}",
             )
             try:
                 validate_registration_number_format(valid_format)
@@ -85,14 +87,17 @@ class RegistrationNumberFormatTests(APITestCase):
 
         # Invalid formats
         invalid_formats = [
-            "1-23-456",  # Missing leading zero
-            "01-2-456",  # Missing digit in middle
-            "01-23-45",  # Missing digit at end
-            "01-23-45678",  # Too many digits at end
-            "01-23456",  # Missing dash
-            "0123456",  # No dashes
-            "ab-cd-efg",  # Non-numeric
-            "01-23-45a",  # Mixed alphanumeric
+            "1-23-456",  # Wrong format
+            "01-23-456",  # Old format
+            "001-00-001",  # Old format
+            "102-01-0001",  # Wrong mmyy length
+            "1025-1-0001",  # Wrong category length
+            "1025-01-001",  # Wrong serial length
+            "1025-01-00001",  # Too many digits in serial
+            "102501-0001",  # Missing dashes
+            "ab25-01-0001",  # Non-numeric
+            "1025-ab-0001",  # Non-numeric category
+            "1025-01-000a",  # Mixed alphanumeric
         ]
 
         for invalid_format in invalid_formats:
@@ -101,39 +106,46 @@ class RegistrationNumberFormatTests(APITestCase):
             ):
                 validate_registration_number_format(invalid_format)
 
+    def test_patient_creation_with_different_categories(self):
+        """Test that patients with different categories get separate serial sequences"""
+        patient1 = Patient.objects.create(name="Patient 1", gender="MALE", category="01")
+        patient2 = Patient.objects.create(name="Patient 2", gender="FEMALE", category="02")
+        patient3 = Patient.objects.create(name="Patient 3", gender="MALE", category="01")
+
+        # Verify both patients 1 and 3 are in category 01
+        self.assertTrue("-01-" in patient1.registration_number)
+        self.assertTrue("-01-" in patient3.registration_number)
+        
+        # Verify patient 2 is in category 02
+        self.assertTrue("-02-" in patient2.registration_number)
+
+        # Verify serial numbers in category 01 are sequential
+        serial1 = int(patient1.registration_number.split("-")[-1])
+        serial3 = int(patient3.registration_number.split("-")[-1])
+        self.assertEqual(serial3, serial1 + 1)
+
+        # Verify patient 2 (category 02) starts at serial 0001
+        serial2 = int(patient2.registration_number.split("-")[-1])
+        self.assertEqual(serial2, 1)
+
     def test_patient_creation_with_explicit_registration_number(self):
         """Test that patients can be created with explicit registration numbers"""
         patient = Patient.objects.create(
-            registration_number="005-67-890", name="Test Patient", gender="OTHER"
+            registration_number="1025-01-0050", name="Test Patient", gender="OTHER", category="01"
         )
-        self.assertEqual(patient.registration_number, "005-67-890")
+        self.assertEqual(patient.registration_number, "1025-01-0050")
 
-        # Next auto-generated patient should continue from this number
-        next_patient = Patient.objects.create(name="Next Patient", gender="MALE")
-        self.assertEqual(next_patient.registration_number, "005-67-891")
-
-    def test_registration_number_9_character_format(self):
-        """Test that 9-character registration numbers (xx-xx-xxxx) are accepted"""
+    def test_registration_number_format_validation(self):
+        """Test that the new mmyy-ct-0000 format is validated correctly"""
+        import datetime
+        now = datetime.datetime.now()
+        mmyy = f"{now.month:02d}{now.year % 100:02d}"
+        
+        # Valid registration number
         patient = Patient.objects.create(
-            registration_number="99-99-9999", name="Test Patient 9", gender="OTHER"
+            registration_number=f"{mmyy}-01-0001", name="Test Patient", gender="MALE", category="01"
         )
-        self.assertEqual(patient.registration_number, "99-99-9999")
-
-        # Verify it can be retrieved
-        retrieved = Patient.objects.get(registration_number="99-99-9999")
-        self.assertEqual(retrieved.name, "Test Patient 9")
-
-    def test_registration_number_auto_generation_8_digit(self):
-        """Test that registration numbers auto-generate 8-digit format when needed"""
-        # Create a patient with registration number at the edge (9999999)
-        patient = Patient.objects.create(
-            registration_number="99-99-999", name="Test Patient Edge", gender="OTHER"
-        )
-        self.assertEqual(patient.registration_number, "99-99-999")
-
-        # Next patient should get 10-00-0000 (8 digits)
-        next_patient = Patient.objects.create(name="Test Patient Next", gender="MALE")
-        self.assertEqual(next_patient.registration_number, "10-00-0000")
+        self.assertEqual(patient.registration_number, f"{mmyy}-01-0001")
 
 
 class PatientFilterTests(APITestCase):
@@ -313,13 +325,14 @@ class PatientSearchTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
 
         self.patient1 = Patient.objects.create(
-            registration_number="001-23-456",
+            registration_number="1025-01-0001",
             name="John Doe",
             phone="1234567890",
             gender="MALE",
+            category="01",
         )
         self.patient2 = Patient.objects.create(
-            name="Jane Smith", phone="0987654321", gender="FEMALE"
+            name="Jane Smith", phone="0987654321", gender="FEMALE", category="01"
         )
 
     def test_search_by_formatted_registration_number(self):
@@ -345,61 +358,3 @@ class PatientSearchTests(APITestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data["count"], 1)
         self.assertEqual(resp.data["results"][0]["phone"], "1234567890")
-
-
-class RegistrationNumberFormatSettingsTests(APITestCase):
-    def setUp(self):
-        cache.clear()
-        doctor_group, _ = Group.objects.get_or_create(name="Doctor")
-        assistant_group, _ = Group.objects.get_or_create(name="Assistant")
-        self.doctor = User.objects.create_user(username="doctor-settings", password="pass")
-        self.doctor.groups.add(doctor_group)
-        self.assistant = User.objects.create_user(username="assistant-settings", password="pass")
-        self.assistant.groups.add(assistant_group)
-        self.doctor_token = Token.objects.create(user=self.doctor)
-        self.assistant_token = Token.objects.create(user=self.assistant)
-
-    def test_get_current_format(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.assistant_token.key}")
-        resp = self.client.get("/api/settings/registration-format/")
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.data["digit_groups"], [2, 2, 3])
-        self.assertIn("pattern", resp.data)
-
-    def test_update_format_and_reformat_existing_numbers(self):
-        queue, _ = Queue.objects.get_or_create(name="General")
-        patient = Patient.objects.create(name="Format Test", gender="MALE")
-        visit = Visit.objects.create(
-            patient=patient,
-            queue=queue,
-            token_number=1,
-            visit_date=datetime.date.today(),
-            status="WAITING",
-        )
-
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
-        resp = self.client.put(
-            "/api/settings/registration-format/",
-            {"digit_groups": [3, 4, 4], "separators": ["-", "+"]},
-            format="json",
-        )
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.data["digit_groups"], [3, 4, 4])
-        self.assertEqual(resp.data["separators"], ["-", "+"])
-
-        updated_patient = Patient.objects.get(name="Format Test")
-        updated_visit = Visit.objects.get(pk=visit.pk)
-        new_pattern = re.compile(resp.data["pattern"])
-        self.assertRegex(updated_patient.registration_number, new_pattern)
-        self.assertEqual(updated_visit.patient_id, updated_patient.registration_number)
-
-    def test_reject_format_that_cannot_hold_existing_numbers(self):
-        Patient.objects.create(name="Format Limit", gender="MALE")
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
-        resp = self.client.put(
-            "/api/settings/registration-format/",
-            {"digit_groups": [1, 1], "separators": ["-"]},
-            format="json",
-        )
-        self.assertEqual(resp.status_code, 400)
-        self.assertIn("digit_groups", resp.data)
