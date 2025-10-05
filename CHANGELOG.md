@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+*   **Registration Number Format**:
+    *   Removed all dynamic registration number format configuration logic.
+    *   Implemented permanent registration number format: `mmyy-ct-0000`
+        *   `mmyy`: Month and year of registration (e.g., 1025 = October 2025)
+        *   `ct`: Category code (01=self-paying, 02=insurance, 03=cash, 04=free, 05=poor)
+        *   `0000`: Serial number, incremental and unique for each mmyy/ct combination
+    *   Removed `RegistrationNumberFormat` model and related API endpoints.
+    *   Removed registration format settings UI from web application.
+    *   Added `category` field to `Patient` model with choices for patient payment categories.
+    *   Updated patient registration to auto-generate registration numbers based on current month/year and selected category.
+    *   Migration created to convert existing registration numbers to new format.
+
+### Removed
+
+*   `RegistrationNumberFormat` model and all dynamic format configuration.
+*   `/api/settings/registration-format/` API endpoint.
+*   Registration format settings page from web frontend.
+*   `useRegistrationFormat` hook and `registrationFormat` utility from web frontend.
+
 ## [0.2.0] - YYYY-MM-DD <!-- Replace with actual release date for v0.2.0 -->
 
 ### Added
