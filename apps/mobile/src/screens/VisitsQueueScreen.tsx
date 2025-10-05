@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInUp, Layout, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { FadeInUp, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useVisits, useVisitMutation } from '@/api/hooks/useVisits';
@@ -12,27 +12,28 @@ import { CachedDataNotice } from '@/components/CachedDataNotice';
 import { TextureBackground } from '@/components/TextureBackground';
 import { FilterChips } from '@/components/FilterChips';
 import { Button } from '@/components/Button';
-import type { Visit } from '@/api/generated/types';
+import type { Visit, VisitStatus } from '@/api/generated/types';
 import type { AppStackParamList } from '@/navigation/types';
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<Visit>);
 
 const statusOptions = [
-  { value: 'waiting', label: 'Waiting' },
-  { value: 'in_progress', label: 'In progress' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'WAITING', label: 'Waiting' },
+  { value: 'START', label: 'Ready to start' },
+  { value: 'IN_ROOM', label: 'In room' },
+  { value: 'DONE', label: 'Done' },
   { value: 'all', label: 'All' }
 ];
 
-const nextStatus: Record<Visit['status'], Visit['status'] | null> = {
-  waiting: 'in_progress',
-  in_progress: 'completed',
-  completed: null,
-  cancelled: null
+const nextStatus: Record<VisitStatus, VisitStatus | null> = {
+  WAITING: 'START',
+  START: 'IN_ROOM',
+  IN_ROOM: 'DONE',
+  DONE: null
 };
 
 export const VisitsQueueScreen: React.FC = () => {
-  const [status, setStatus] = useState<Visit['status'] | 'all'>('waiting');
+  const [status, setStatus] = useState<VisitStatus | 'all'>('WAITING');
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const visitsQuery = useVisits({ status: status === 'all' ? undefined : status });
   const { update } = useVisitMutation();
@@ -48,7 +49,7 @@ export const VisitsQueueScreen: React.FC = () => {
     opacity: refreshOverlay.value
   }));
 
-  const onAdvance = (id: number, currentStatus: Visit['status']) => {
+  const onAdvance = (id: number, currentStatus: VisitStatus) => {
     const target = nextStatus[currentStatus];
     if (target) {
       update.mutate({ id, status: target });
@@ -68,7 +69,11 @@ export const VisitsQueueScreen: React.FC = () => {
       <View style={styles.noticeWrapper}>
         <CachedDataNotice />
       </View>
-      <FilterChips value={status} options={statusOptions} onChange={(value) => setStatus(value as Visit['status'] | 'all')} />
+      <FilterChips
+        value={status}
+        options={statusOptions}
+        onChange={(value) => setStatus(value as VisitStatus | 'all')}
+      />
       <Animated.View style={[styles.refreshBanner, refreshStyle]} pointerEvents="none">
         <Text style={styles.refreshText}>Refreshing queue…</Text>
       </Animated.View>
@@ -83,17 +88,20 @@ export const VisitsQueueScreen: React.FC = () => {
           <Card>
             <Text style={{ fontSize: 18, fontWeight: '600' }}>Visit #{item.id}</Text>
             <VisitStatusTag status={item.status} />
-            <Button 
+            <Button
+              label="Open"
               onPress={() => navigation.navigate('VisitDetail', { visitId: item.id })}
-            >
-              Open
-            </Button>
-            {nextStatus[item.status] ? (
-              <Button 
-                onPress={() => onAdvance(item.id, item.status)} 
-              >
-                Advance to {nextStatus[item.status]?.replace('_', ' ')}
-              </Button>
+              accessibilityLabel={`View details for visit ${item.id}`}
+              accessibilityHint="Opens visit detail page"
+            />
+            {nextStatus[item.status as VisitStatus] ? (
+              <Button
+                label={`Advance to ${nextStatus[item.status as VisitStatus]?.replace('_', ' ')}`}
+                onPress={() => onAdvance(item.id, item.status as VisitStatus)}
+                loading={update.isPending}
+                accessibilityLabel={`Advance visit ${item.id} to ${nextStatus[item.status as VisitStatus]?.replace('_', ' ')}`}
+                accessibilityHint={`Changes status from ${item.status} to ${nextStatus[item.status as VisitStatus]}`}
+              />
             ) : null}
           </Card>
         )}

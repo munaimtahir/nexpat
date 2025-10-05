@@ -20,9 +20,9 @@ type DashboardNavigation = BottomTabNavigationProp<AssistantTabParamList & Docto
 export const DashboardScreen: React.FC = () => {
   const navigation = useNavigation<DashboardNavigation>();
   const { user } = useAuth();
-  const waitingQuery = useVisits({ status: 'waiting' });
-  const inProgressQuery = useVisits({ status: 'in_progress' });
-  const completedQuery = useVisits({ status: 'completed' });
+  const waitingQuery = useVisits({ status: 'WAITING' });
+  const inProgressQuery = useVisits({ status: 'IN_ROOM' });
+  const completedQuery = useVisits({ status: 'DONE' });
   const [refreshing, setRefreshing] = useState(false);
 
   const initials = useMemo(() => {
@@ -64,26 +64,27 @@ export const DashboardScreen: React.FC = () => {
   ];
 
   const actions = useMemo(() => {
-    const base: Array<{
+    type ActionCard = {
       title: string;
       description: string;
       route: 'Queue' | 'Patients' | 'Uploads';
       colors: [string, string];
-      icon: string;
-    }> = [
+      icon: keyof typeof MaterialCommunityIcons.glyphMap;
+    };
+    const base: ActionCard[] = [
       {
         title: 'Manage queue',
         description: 'Track visits in real-time',
-        route: 'Queue' as const,
+        route: 'Queue',
         colors: ['#6366F1', '#8B5CF6'],
-        icon: 'clipboard-text-outline'
+        icon: 'clipboard-text-outline' as keyof typeof MaterialCommunityIcons.glyphMap
       },
       {
         title: 'Patients',
         description: 'Review records and history',
-        route: 'Patients' as const,
+        route: 'Patients',
         colors: ['#22D3EE', '#3B82F6'],
-        icon: 'account-heart-outline'
+        icon: 'account-heart-outline' as keyof typeof MaterialCommunityIcons.glyphMap
       }
     ];
 
@@ -91,9 +92,9 @@ export const DashboardScreen: React.FC = () => {
       base.push({
         title: 'Uploads',
         description: 'Scan prescriptions & charts',
-        route: 'Uploads' as const,
+        route: 'Uploads',
         colors: ['#F472B6', '#F97316'],
-        icon: 'cloud-upload-outline'
+        icon: 'cloud-upload-outline' as keyof typeof MaterialCommunityIcons.glyphMap
       });
     }
 
@@ -145,7 +146,8 @@ export const DashboardScreen: React.FC = () => {
             <Text style={styles.cardTitle}>Next patient</Text>
             <Text style={styles.cardSubtitle}>Visit #{nextVisit.id}</Text>
             {nextVisit.status ? <VisitStatusTag status={nextVisit.status} variant="glass" /> : null}
-            {nextVisit.reason ? <Text style={styles.cardBody}>{nextVisit.reason}</Text> : null}
+            <Text style={styles.cardBody}>Patient: {nextVisit.patient_full_name}</Text>
+            <Text style={styles.cardBody}>Queue: {nextVisit.queue_name}</Text>
             <Button label="Open visit" onPress={() => navigation.navigate('Queue')} />
           </Card>
         ) : null}

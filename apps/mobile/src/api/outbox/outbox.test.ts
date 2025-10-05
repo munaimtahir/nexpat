@@ -88,7 +88,7 @@ describe('outbox edge cases', () => {
       description: 'A'.repeat(10000)
     };
 
-    const entry = await outbox.enqueue('post', '/patients', largeData);
+    const _entry = await outbox.enqueue('post', '/patients', largeData);
     const list = await outbox.list();
     
     expect(list).toHaveLength(1);

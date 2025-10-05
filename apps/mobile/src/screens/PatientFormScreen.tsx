@@ -7,44 +7,51 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { usePatient } from '@/api/hooks/usePatients';
-import { usePatientMutations } from '@/api/hooks/usePatients';
+import { usePatient, usePatientMutations } from '@/api/hooks/usePatients';
 import { LoadingIndicator } from '@/components/LoadingIndicator';
+import type { PatientGender } from '@/api/generated/types';
 
 const schema = z.object({
-  first_name: z.string().min(1),
-  last_name: z.string().min(1),
+  name: z.string().min(1),
   phone: z.string().optional(),
-  notes: z.string().optional()
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).default('OTHER')
 });
 
 type FormValues = z.infer<typeof schema>;
 
 export const PatientFormScreen: React.FC = () => {
   const route = useRoute<RouteProp<AppStackParamList, 'PatientForm'>>();
-  const patientId = route.params?.patientId;
+  const registrationNumber = route.params?.registrationNumber;
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
-  const patientQuery = usePatient(patientId ?? 0);
+  const patientQuery = usePatient(registrationNumber);
   const { create, update } = usePatientMutations();
-  const isEdit = Boolean(patientId);
-  const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { first_name: '', last_name: '', phone: '', notes: '' } });
+  const isEdit = Boolean(registrationNumber);
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { name: '', phone: '', gender: 'OTHER' }
+  });
 
   useEffect(() => {
     if (isEdit && patientQuery.data) {
       form.reset({
-        first_name: patientQuery.data.first_name,
-        last_name: patientQuery.data.last_name,
+        name: patientQuery.data.name,
         phone: patientQuery.data.phone ?? '',
-        notes: patientQuery.data.notes ?? ''
+        gender: patientQuery.data.gender as PatientGender
       });
     }
   }, [isEdit, patientQuery.data, form]);
 
   const onSubmit = form.handleSubmit(async (values) => {
-    if (isEdit && patientId) {
-      await update.mutateAsync({ id: patientId, ...values });
+    const payload = {
+      name: values.name,
+      phone: values.phone?.trim() ? values.phone.trim() : null,
+      gender: values.gender as PatientGender
+    };
+
+    if (isEdit && registrationNumber) {
+      await update.mutateAsync({ registrationNumber, ...payload });
     } else {
-      await create.mutateAsync(values);
+      await create.mutateAsync(payload);
     }
     navigation.goBack();
   });
@@ -55,18 +62,14 @@ export const PatientFormScreen: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {isEdit && registrationNumber ? (
+        <TextInput label="Registration number" style={styles.input} value={registrationNumber} disabled />
+      ) : null}
       <Controller
         control={form.control}
-        name="first_name"
+        name="name"
         render={({ field: { value, onChange } }) => (
-          <TextInput label="First name" style={styles.input} value={value} onChangeText={onChange} />
-        )}
-      />
-      <Controller
-        control={form.control}
-        name="last_name"
-        render={({ field: { value, onChange } }) => (
-          <TextInput label="Last name" style={styles.input} value={value} onChangeText={onChange} />
+          <TextInput label="Full name" style={styles.input} value={value} onChangeText={onChange} />
         )}
       />
       <Controller
@@ -78,9 +81,14 @@ export const PatientFormScreen: React.FC = () => {
       />
       <Controller
         control={form.control}
-        name="notes"
+        name="gender"
         render={({ field: { value, onChange } }) => (
-          <TextInput label="Notes" style={styles.input} value={value} onChangeText={onChange} multiline numberOfLines={3} />
+          <TextInput
+            label="Gender (MALE, FEMALE, OTHER)"
+            style={styles.input}
+            value={value}
+            onChangeText={(text) => onChange(text.toUpperCase())}
+          />
         )}
       />
 

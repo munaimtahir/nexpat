@@ -12,7 +12,7 @@ import { ErrorState } from '@/components/ErrorState';
 
 export const UploadManagerScreen: React.FC = () => {
   const [selectedAssets, setSelectedAssets] = useState<{ uri: string; name: string }[]>([]);
-  const [patientId, setPatientId] = useState('');
+  const [patientRegistration, setPatientRegistration] = useState('');
   const [visitId, setVisitId] = useState('');
   const [description, setDescription] = useState('');
   const [progressByAsset, setProgressByAsset] = useState<Record<string, number>>({});
@@ -54,7 +54,7 @@ export const UploadManagerScreen: React.FC = () => {
       Alert.alert('Select a file first');
       return;
     }
-    if (!patientId || !visitId) {
+    if (!patientRegistration || !visitId) {
       Alert.alert('Patient and visit are required');
       return;
     }
@@ -70,7 +70,7 @@ export const UploadManagerScreen: React.FC = () => {
           const response = await uploadMutation.mutateAsync({
             fileUri: asset.uri,
             fileName: asset.name,
-            patient: Number(patientId),
+            patient: patientRegistration,
             visit: Number(visitId),
             description,
             onUploadProgress: (value) =>
@@ -97,7 +97,7 @@ Failed: ${failed}`
       );
       setSelectedAssets([]);
       setDescription('');
-      setPatientId('');
+      setPatientRegistration('');
       setVisitId('');
       setProgressByAsset({});
       void uploadsQuery.refetch();
@@ -168,10 +168,10 @@ Failed: ${failed}`
       ) : null}
 
       <TextInput
-        label="Patient ID"
-        value={patientId}
-        onChangeText={setPatientId}
-        keyboardType="numeric"
+        label="Patient registration #"
+        value={patientRegistration}
+        onChangeText={setPatientRegistration}
+        autoCapitalize="characters"
         style={styles.spaced}
       />
       <TextInput

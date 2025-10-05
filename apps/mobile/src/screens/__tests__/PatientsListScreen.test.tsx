@@ -108,8 +108,24 @@ describe('PatientsListScreen', () => {
     mockedUsePatients.mockReturnValue({
       data: {
         results: [
-          { id: 1, first_name: 'John', last_name: 'Doe', phone: '1234567890', notes: 'Test note' },
-          { id: 2, first_name: 'Jane', last_name: 'Smith', phone: null, notes: null }
+          {
+            registration_number: 'RN-001',
+            name: 'John Doe',
+            phone: '1234567890',
+            gender: 'MALE',
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+            last_5_visit_dates: []
+          },
+          {
+            registration_number: 'RN-002',
+            name: 'Jane Smith',
+            phone: null,
+            gender: 'FEMALE',
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+            last_5_visit_dates: []
+          }
         ]
       },
       isLoading: false,
@@ -122,7 +138,6 @@ describe('PatientsListScreen', () => {
 
     expect(getByText('John Doe')).toBeTruthy();
     expect(getByText('1234567890')).toBeTruthy();
-    expect(getByText('Test note')).toBeTruthy();
     expect(getByText('Jane Smith')).toBeTruthy();
   });
 
@@ -130,7 +145,15 @@ describe('PatientsListScreen', () => {
     mockedUsePatients.mockReturnValue({
       data: {
         results: [
-          { id: 1, first_name: 'John', last_name: 'Doe', phone: '1234567890', notes: null }
+          {
+            registration_number: 'RN-001',
+            name: 'John Doe',
+            phone: '1234567890',
+            gender: 'MALE',
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+            last_5_visit_dates: []
+          }
         ]
       },
       isLoading: false,
@@ -144,7 +167,7 @@ describe('PatientsListScreen', () => {
     const patientCard = getByText('John Doe');
     fireEvent.press(patientCard);
 
-    expect(mockNavigate).toHaveBeenCalledWith('PatientDetail', { patientId: 1 });
+    expect(mockNavigate).toHaveBeenCalledWith('PatientDetail', { registrationNumber: 'RN-001' });
   });
 
   it('navigates to add patient form when add button is pressed', () => {

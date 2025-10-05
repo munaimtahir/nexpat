@@ -10,12 +10,13 @@ import { VisitStatusTag } from '@/components/VisitStatusTag';
 import { TextureBackground } from '@/components/TextureBackground';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
+import type { VisitStatus } from '@/api/generated/types';
 
-const statusChoices: { label: string; value: any }[] = [
-  { label: 'Waiting', value: 'waiting' },
-  { label: 'In progress', value: 'in_progress' },
-  { label: 'Completed', value: 'completed' },
-  { label: 'Cancelled', value: 'cancelled' }
+const statusChoices: { label: string; value: VisitStatus }[] = [
+  { label: 'Waiting', value: 'WAITING' },
+  { label: 'Ready to start', value: 'START' },
+  { label: 'In room', value: 'IN_ROOM' },
+  { label: 'Done', value: 'DONE' }
 ];
 
 export const VisitDetailScreen: React.FC = () => {
@@ -40,8 +41,8 @@ export const VisitDetailScreen: React.FC = () => {
           <Card variant="elevated">
             <Text style={styles.title}>Visit #{visit.id}</Text>
             <VisitStatusTag status={visit.status} />
-            {visit.reason ? <Text style={styles.body}>{visit.reason}</Text> : null}
-            {visit.notes ? <Text style={styles.notes}>{visit.notes}</Text> : null}
+            <Text style={styles.body}>Patient: {visit.patient_full_name}</Text>
+            <Text style={styles.body}>Queue: {visit.queue_name}</Text>
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Update status</Text>
               <View style={styles.buttons}>
@@ -76,10 +77,6 @@ const styles = StyleSheet.create({
     color: '#E2E8F0',
     marginTop: 16,
     fontSize: 16
-  },
-  notes: {
-    color: 'rgba(226,232,240,0.7)',
-    marginTop: 12
   },
   section: {
     marginTop: 24,
