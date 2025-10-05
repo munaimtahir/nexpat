@@ -20,13 +20,13 @@ export const useUploadPrescription = () =>
     }: {
       fileUri: string;
       fileName: string;
-      patient: number;
+      patient: string;
       visit: number;
       description?: string;
       onUploadProgress?: (progress: number) => void;
     }) => {
       const formData = new FormData();
-      formData.append('patient', String(patient));
+      formData.append('patient', patient);
       formData.append('visit', String(visit));
       if (description) {
         formData.append('description', description);

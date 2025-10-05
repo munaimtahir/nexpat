@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeInUp, Layout, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SearchBar } from '@/components/SearchBar';
@@ -13,13 +12,10 @@ import { CachedDataNotice } from '@/components/CachedDataNotice';
 import { TextureBackground } from '@/components/TextureBackground';
 import { Button } from '@/components/Button';
 
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
-
 export const PatientsListScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [search, setSearch] = useState('');
   const patientsQuery = usePatients({ search });
-  const refreshOverlay = useSharedValue(0);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -31,18 +27,24 @@ export const PatientsListScreen: React.FC = () => {
 
   const renderItem = React.useCallback(
     ({ item }: { item: (typeof data)[number] }) => (
-      <TouchableOpacity 
-        onPress={() => navigation.navigate('PatientDetail', { patientId: item.id })}
+      <TouchableOpacity
+        onPress={() =>
+          navigation.navigate('PatientDetail', {
+            registrationNumber: item.registration_number
+          })
+        }
         accessibilityRole="button"
-        accessibilityLabel={`Patient: ${item.first_name} ${item.last_name}`}
+        accessibilityLabel={`Patient: ${item.name}`}
         accessibilityHint="Tap to view patient details"
       >
         <Card>
           <Text style={{ fontSize: 16, fontWeight: '600' }}>
-            {item.first_name} {item.last_name}
+            {item.name}
           </Text>
+          {item.registration_number ? (
+            <Text style={{ marginTop: 4, color: '#6b7280' }}>{item.registration_number}</Text>
+          ) : null}
           {item.phone ? <Text style={{ marginTop: 4 }}>{item.phone}</Text> : null}
-          {item.notes ? <Text style={{ marginTop: 4, color: '#6b7280' }}>{item.notes}</Text> : null}
         </Card>
       </TouchableOpacity>
     ),
@@ -67,20 +69,17 @@ export const PatientsListScreen: React.FC = () => {
         onChange={setSearch} 
         placeholder="Search patients"
       />
-      <Button 
-        mode="contained" 
-        onPress={() => navigation.navigate('PatientForm', {})} 
+      <Button
+        label="Add patient"
+        onPress={() => navigation.navigate('PatientForm', {})}
         style={{ marginHorizontal: 16, marginBottom: 16 }}
         accessibilityLabel="Add new patient"
         accessibilityHint="Opens form to create a new patient record"
-      >
-        Add patient
-      </Button>
+      />
       <FlatList
         data={data}
-        keyExtractor={(item) => String(item.id)}
+        keyExtractor={(item) => item.registration_number}
         renderItem={renderItem}
-        entering={FadeInUp.duration(320)}
         refreshControl={<RefreshControl refreshing={patientsQuery.isRefetching} onRefresh={() => patientsQuery.refetch()} tintColor="#fff" />}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={() => (

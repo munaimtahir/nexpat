@@ -15,7 +15,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     try {
       const response = await apiClient.me();
       setUser(response.data);
-      Sentry.setUser({ id: String(response.data.id), username: response.data.username });
+      Sentry.setUser({ username: response.data.username });
     } catch (error) {
       logger.warn('Unable to fetch profile', error);
       setUser(null);

@@ -13,7 +13,7 @@ import type { PublicDisplayEntry } from '@/api/hooks/usePublicDisplayQueue';
 const formatName = (entry: PublicDisplayEntry) => {
   const patient = entry.patient;
   if (patient) {
-    return `${patient.first_name} ${patient.last_name}`.trim();
+    return patient.name;
   }
   return `Patient #${entry.visit.patient}`;
 };
@@ -21,7 +21,7 @@ const formatName = (entry: PublicDisplayEntry) => {
 const formatStatus = (status: string) =>
   status
     .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join(' ');
 
 export const PublicDisplayScreen: React.FC = () => {
@@ -49,7 +49,10 @@ export const PublicDisplayScreen: React.FC = () => {
   );
 
   const entries = queueQuery.data ?? [];
-  const nowServing = entries.find((entry) => entry.visit.status === 'in_progress') ?? entries[0];
+  const nowServing =
+    entries.find((entry) => entry.visit.status === 'IN_ROOM') ??
+    entries.find((entry) => entry.visit.status === 'START') ??
+    entries[0];
   const waiting = nowServing
     ? entries.filter((entry) => entry.visit.id !== nowServing.visit.id)
     : entries;

@@ -7,7 +7,7 @@ import Animated, { FadeInUp, Layout } from 'react-native-reanimated';
 import { usePatient } from '@/api/hooks/usePatients';
 import { LoadingIndicator } from '@/components/LoadingIndicator';
 import { ErrorState } from '@/components/ErrorState';
-import { useVisitMutation, useVisits } from '@/api/hooks/useVisits';
+import { useVisits } from '@/api/hooks/useVisits';
 import { TextureBackground } from '@/components/TextureBackground';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -16,9 +16,9 @@ import { VisitStatusTag } from '@/components/VisitStatusTag';
 export const PatientDetailScreen: React.FC = () => {
   const route = useRoute<RouteProp<AppStackParamList, 'PatientDetail'>>();
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
-  const patientQuery = usePatient(route.params.patientId);
+  const registrationNumber = route.params.registrationNumber;
+  const patientQuery = usePatient(registrationNumber);
   const visitsQuery = useVisits({});
-  const visitMutation = useVisitMutation();
 
   if (patientQuery.isLoading) {
     return <LoadingIndicator />;
@@ -29,7 +29,10 @@ export const PatientDetailScreen: React.FC = () => {
   }
 
   const patient = patientQuery.data;
-  const patientVisits = visitsQuery.data?.results.filter((visit) => visit.patient === patient.id) ?? [];
+  const patientVisits =
+    visitsQuery.data?.results.filter(
+      (visit) => visit.patient_registration_number === patient.registration_number
+    ) ?? [];
 
   return (
     <TextureBackground variant="aurora">
@@ -37,18 +40,20 @@ export const PatientDetailScreen: React.FC = () => {
         <Animated.View entering={FadeInUp.duration(300)}>
           <View style={styles.header}>
             <Text style={styles.name}>
-              {patient.first_name} {patient.last_name}
+              {patient.name}
             </Text>
+            <Text style={styles.meta}>Registration #{patient.registration_number}</Text>
             {patient.phone ? <Text style={styles.meta}>{patient.phone}</Text> : null}
-            {patient.notes ? <Text style={styles.meta}>{patient.notes}</Text> : null}
+            <Text style={styles.meta}>Gender: {patient.gender}</Text>
           </View>
           <View style={styles.actions}>
-            <Button label="Edit patient" onPress={() => navigation.navigate('PatientForm', { patientId: patient.id })} />
             <Button
-              label="Add to queue"
-              variant="glass"
-              onPress={() => visitMutation.create.mutateAsync({ patient: patient.id, status: 'waiting' })}
-              loading={visitMutation.create.isPending}
+              label="Edit patient"
+              onPress={() =>
+                navigation.navigate('PatientForm', {
+                  registrationNumber: patient.registration_number
+                })
+              }
             />
           </View>
           <View style={styles.visits}>
@@ -57,7 +62,9 @@ export const PatientDetailScreen: React.FC = () => {
             {patientVisits.map((visit) => (
               <Animated.View key={visit.id} layout={Layout.springify()}>
                 <Card variant="elevated" onPress={() => navigation.navigate('VisitDetail', { visitId: visit.id })}>
-                  <Text style={styles.visitTitle}>{visit.reason ?? 'Visit'}</Text>
+                  <Text style={styles.visitTitle}>
+                    Visit #{visit.id} · {visit.queue_name}
+                  </Text>
                   <VisitStatusTag status={visit.status} variant="glass" />
                   <Button
                     label="Open visit"

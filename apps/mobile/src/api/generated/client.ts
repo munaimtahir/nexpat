@@ -3,15 +3,24 @@ import type {
   LoginRequest,
   PaginatedResponse,
   Patient,
-  PatientRequest,
+  PatientCreateRequest,
+  PatientUpdateRequest,
   TokenPair,
   UploadRequest,
   UserProfile,
-  VersionResponse,
   Visit,
-  VisitRequest
+  VisitCreateRequest,
+  VisitStatus,
+  VisitUpdateRequest
 } from './types';
 import type { AxiosInstance, AxiosRequestConfig } from 'axios';
+
+const VISIT_STATUS_ACTION: Record<VisitStatus, string> = {
+  WAITING: 'send_back_to_waiting',
+  START: 'start',
+  IN_ROOM: 'in_room',
+  DONE: 'done'
+};
 
 export class GeneratedApiClient {
   constructor(private readonly http: AxiosInstance) {}
@@ -28,36 +37,71 @@ export class GeneratedApiClient {
     return this.http.get<UserProfile>('/api/auth/me/');
   }
 
-  listPatients(params: { search?: string; page?: number } = {}) {
-    return this.http.get<PaginatedResponse<Patient>>('/api/patients/', { params });
+  listPatients(params: { page?: number; registration_numbers?: string[] } = {}) {
+    const query: Record<string, unknown> = {};
+    if (params.page !== undefined) {
+      query.page = params.page;
+    }
+    if (params.registration_numbers?.length) {
+      query.registration_numbers = params.registration_numbers.join(',');
+    }
+    return this.http.get<PaginatedResponse<Patient>>('/api/patients/', { params: query });
   }
 
-  createPatient(body: PatientRequest) {
+  searchPatients(params: { query: string; page?: number }) {
+    const query: Record<string, unknown> = { q: params.query };
+    if (params.page !== undefined) {
+      query.page = params.page;
+    }
+    return this.http.get<PaginatedResponse<Patient>>('/api/patients/search/', {
+      params: query
+    });
+  }
+
+  createPatient(body: PatientCreateRequest) {
     return this.http.post<Patient>('/api/patients/', body);
   }
 
-  updatePatient(id: number, body: Partial<PatientRequest>) {
-    return this.http.patch<Patient>(`/api/patients/${id}/`, body);
+  updatePatient(registrationNumber: string, body: PatientUpdateRequest) {
+    return this.http.patch<Patient>(`/api/patients/${registrationNumber}/`, body);
   }
 
-  getPatient(id: number) {
-    return this.http.get<Patient>(`/api/patients/${id}/`);
+  getPatient(registrationNumber: string) {
+    return this.http.get<Patient>(`/api/patients/${registrationNumber}/`);
   }
 
-  listVisits(params: { status?: string; page?: number } = {}) {
-    return this.http.get<PaginatedResponse<Visit>>('/api/visits/', { params });
+  listVisits(
+    params: { status?: VisitStatus | VisitStatus[]; page?: number; queue?: number } = {}
+  ) {
+    const query: Record<string, unknown> = {};
+    if (params.page !== undefined) {
+      query.page = params.page;
+    }
+    if (params.queue !== undefined) {
+      query.queue = params.queue;
+    }
+    if (params.status) {
+      const statuses = Array.isArray(params.status) ? params.status : [params.status];
+      query.status = statuses.map((value) => value.toUpperCase()).join(',');
+    }
+    return this.http.get<PaginatedResponse<Visit>>('/api/visits/', { params: query });
   }
 
   getVisit(id: number) {
     return this.http.get<Visit>(`/api/visits/${id}/`);
   }
 
-  createVisit(body: VisitRequest) {
+  createVisit(body: VisitCreateRequest) {
     return this.http.post<Visit>('/api/visits/', body);
   }
 
-  updateVisit(id: number, body: Partial<VisitRequest>) {
+  updateVisit(id: number, body: VisitUpdateRequest) {
     return this.http.patch<Visit>(`/api/visits/${id}/`, body);
+  }
+
+  updateVisitStatus(id: number, status: VisitStatus) {
+    const action = VISIT_STATUS_ACTION[status];
+    return this.http.patch<Visit>(`/api/visits/${id}/${action}/`);
   }
 
   uploadPrescription(data: FormData, config?: AxiosRequestConfig<FormData>) {
@@ -70,12 +114,20 @@ export class GeneratedApiClient {
   health() {
     return this.http.get<HealthResponse>('/api/health/');
   }
-
-  version() {
-    return this.http.get<VersionResponse>('/api/version/');
-  }
 }
 
-export type { LoginRequest, TokenPair, UserProfile, Patient, Visit };
-export type { PatientRequest, VisitRequest, UploadRequest, PaginatedResponse };
-export type { HealthResponse, VersionResponse };
+export type {
+  LoginRequest,
+  TokenPair,
+  UserProfile,
+  Patient,
+  Visit,
+  PatientCreateRequest,
+  PatientUpdateRequest,
+  VisitCreateRequest,
+  VisitUpdateRequest,
+  VisitStatus,
+  UploadRequest,
+  PaginatedResponse,
+  HealthResponse
+};

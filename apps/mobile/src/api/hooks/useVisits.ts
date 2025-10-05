@@ -3,13 +3,27 @@ import { Alert } from 'react-native';
 import { isAxiosError } from 'axios';
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/constants/queryKeys';
-import type { PaginatedResponse, Visit, VisitRequest } from '@/api/generated/types';
+import type {
+  PaginatedResponse,
+  Visit,
+  VisitCreateRequest,
+  VisitStatus,
+  VisitUpdateRequest
+} from '@/api/generated/types';
 
-export const useVisits = (params: { status?: string; page?: number }) =>
+export const useVisits = (params: { status?: VisitStatus | string; page?: number; queue?: number }) =>
   useQuery<PaginatedResponse<Visit>>({
     queryKey: queryKeys.visits(params),
     queryFn: async () => {
-      const response = await apiClient.listVisits(params);
+      const response = await apiClient.listVisits({
+        page: params.page,
+        queue: params.queue,
+        status: params.status
+          ? (Array.isArray(params.status)
+              ? params.status
+              : (params.status as string).toUpperCase())
+          : undefined
+      } as { status?: VisitStatus | VisitStatus[]; page?: number; queue?: number });
       return response.data;
     },
     placeholderData: (previousData) => previousData
@@ -29,18 +43,27 @@ export const useVisitMutation = () => {
   const queryClient = useQueryClient();
 
   const create = useMutation({
-    mutationFn: async (payload: VisitRequest) => {
+    mutationFn: async (payload: VisitCreateRequest) => {
       const response = await apiClient.createVisit(payload);
       return response.data;
     },
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: ['visits'] });
+      const now = new Date().toISOString();
       const optimisticVisit = {
-        ...variables,
         id: Date.now(),
-        status: variables.status ?? 'waiting',
+        status: 'WAITING' as VisitStatus,
+        token_number: 0,
+        visit_date: now,
+        created_at: now,
+        updated_at: now,
+        patient: variables.patient,
+        queue: variables.queue,
+        patient_registration_number: variables.patient,
+        patient_full_name: variables.patient,
+        queue_name: '',
         optimistic: true
-      };
+      } as Visit & { optimistic: true };
       const previous = queryClient.getQueriesData({ queryKey: ['visits'] });
       previous.forEach(([key, data]) => {
         if (data && typeof data === 'object' && 'results' in data && Array.isArray(data.results)) {
@@ -63,16 +86,24 @@ export const useVisitMutation = () => {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, ...payload }: Partial<VisitRequest> & { id: number }) => {
+    mutationFn: async ({ id, status, ...payload }: VisitUpdateRequest & { id: number; status?: VisitStatus }) => {
+      if (status) {
+        const response = await apiClient.updateVisitStatus(id, status);
+        return response.data;
+      }
       const response = await apiClient.updateVisit(id, payload);
       return response.data;
     },
-    onMutate: async ({ id, ...payload }) => {
+    onMutate: async ({ id, status, ...payload }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.visit(id) });
       const previousVisit = queryClient.getQueryData(queryKeys.visit(id));
       queryClient.setQueryData(queryKeys.visit(id), (current: unknown) => {
         if (current && typeof current === 'object') {
-          return { ...current, ...payload };
+          return {
+            ...current,
+            ...payload,
+            ...(status ? { status } : {})
+          };
         }
         return current;
       });
@@ -84,7 +115,11 @@ export const useVisitMutation = () => {
           ...data,
           results: data.results.map((visit: unknown) => {
             if (visit && typeof visit === 'object' && 'id' in visit && visit.id === id) {
-              return { ...visit, ...payload };
+              return {
+                ...visit,
+                ...payload,
+                ...(status ? { status } : {})
+              };
             }
             return visit;
           })

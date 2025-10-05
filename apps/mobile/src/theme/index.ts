@@ -4,6 +4,8 @@ import { typography } from './typography';
 import { elevations } from './elevations';
 import { surfaces } from './surfaces';
 
+const baseTypography = (MD3LightTheme as unknown as { typography?: Record<string, unknown> }).typography ?? {};
+
 export const paperTheme = {
   ...MD3LightTheme,
   colors: {
@@ -14,23 +16,23 @@ export const paperTheme = {
     background: colors.background
   },
   typography: {
-    ...MD3LightTheme.typography,
+    ...baseTypography,
     displayLarge: {
-      ...MD3LightTheme.typography?.displayLarge,
+      ...(baseTypography as any).displayLarge,
       fontSize: typography.display.fontSize,
       fontWeight: typography.display.fontWeight,
       lineHeight: typography.display.lineHeight,
       letterSpacing: typography.display.letterSpacing
     },
     titleLarge: {
-      ...MD3LightTheme.typography?.titleLarge,
+      ...(baseTypography as any).titleLarge,
       fontSize: typography.title.fontSize,
       fontWeight: typography.title.fontWeight,
       lineHeight: typography.title.lineHeight,
       letterSpacing: typography.title.letterSpacing
     },
     bodyLarge: {
-      ...MD3LightTheme.typography?.bodyLarge,
+      ...(baseTypography as any).bodyLarge,
       fontSize: typography.body.fontSize,
       fontWeight: typography.body.fontWeight,
       lineHeight: typography.body.lineHeight,

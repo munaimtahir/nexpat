@@ -1,7 +1,7 @@
 export type AppStackParamList = {
   Tabs: undefined;
-  PatientDetail: { patientId: number };
-  PatientForm: { patientId?: number };
+  PatientDetail: { registrationNumber: string };
+  PatientForm: { registrationNumber?: string };
   VisitDetail: { visitId: number };
   PublicDisplay: undefined;
 };

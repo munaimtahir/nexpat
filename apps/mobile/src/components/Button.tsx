@@ -17,6 +17,8 @@ type Props = {
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
   icon?: React.ReactNode;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 };
 
 export const Button: React.FC<Props> = ({
@@ -26,7 +28,9 @@ export const Button: React.FC<Props> = ({
   disabled,
   loading,
   style,
-  icon
+  icon,
+  accessibilityHint,
+  accessibilityLabel
 }) => {
   const scale = useSharedValue(1);
 
@@ -58,6 +62,8 @@ export const Button: React.FC<Props> = ({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled || loading}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
         style={[styles.base, styles.glass, style, animatedStyle]}
       >
         {content}
@@ -72,6 +78,8 @@ export const Button: React.FC<Props> = ({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled || loading}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
         style={[styles.base, styles.secondary, style, animatedStyle]}
       >
         {content}
@@ -85,6 +93,8 @@ export const Button: React.FC<Props> = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled || loading}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       style={[style, animatedStyle]}
     >
       <LinearGradient colors={[colors.primary, colors.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.base, styles.gradient]}>
