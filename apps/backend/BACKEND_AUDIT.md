@@ -35,7 +35,7 @@
 - Pytest is configured with coverage enforcement and the `django-test-migrations` plugin, but running the suite currently fails because that plugin is not installed in the default environment—install `requirements-dev.txt` before executing CI to satisfy workflow expectations.【F:apps/backend/pytest.ini†L1-L6】【F:apps/backend/requirements-dev.txt†L1-L11】【5df766†L1-L44】
 
 ## Recommended Actions
-1. **Fix patient ID length** – Increase `max_length` (and accompanying serializer validation/tests) to accept nine-character registration numbers.【F:apps/backend/api/models.py†L61-L69】
+1. **Fix patient ID length** – Change `max_length` from 8 to 9 (and update accompanying serializer validation/tests) to accept nine-character registration numbers.【F:apps/backend/api/models.py†L61-L69】
 2. **Harden ID/token generation** – Introduce transactional locking or retry logic around patient registration and visit token issuance to avoid race conditions under concurrent multi-client load.【F:apps/backend/api/models.py†L84-L108】【F:apps/backend/api/views.py†L248-L286】
 3. **Document/automate Drive credentials** – Provide deployment guidance or health checks for Google Drive configuration to prevent runtime failures when credentials are absent.【F:apps/backend/api/google_drive.py†L10-L30】
 4. **Ensure CI dependencies** – Update workflow setup scripts to install `requirements-dev.txt` so pytest (with migration checks and coverage) executes reliably in all pipelines.【F:apps/backend/requirements-dev.txt†L1-L11】【5df766†L1-L44】
