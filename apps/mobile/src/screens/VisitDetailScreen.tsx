@@ -1,12 +1,15 @@
 import React from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import type { AppStackParamList } from '@/navigation/types';
 import { useVisit, useVisitMutation } from '@/api/hooks/useVisits';
 import { LoadingIndicator } from '@/components/LoadingIndicator';
 import { ErrorState } from '@/components/ErrorState';
 import { VisitStatusTag } from '@/components/VisitStatusTag';
-import { Button } from 'react-native-paper';
+import { TextureBackground } from '@/components/TextureBackground';
+import { Card } from '@/components/Card';
+import { Button } from '@/components/Button';
 
 const statusChoices: { label: string; value: any }[] = [
   { label: 'Waiting', value: 'waiting' },
@@ -31,25 +34,63 @@ export const VisitDetailScreen: React.FC = () => {
   const visit = visitQuery.data;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16 }}>
-      <Text style={{ fontSize: 24, fontWeight: '700' }}>Visit #{visit.id}</Text>
-      <VisitStatusTag status={visit.status} />
-      {visit.reason ? <Text style={{ marginTop: 16, fontSize: 16 }}>{visit.reason}</Text> : null}
-      {visit.notes ? <Text style={{ marginTop: 8, color: '#6b7280' }}>{visit.notes}</Text> : null}
-
-      <View style={{ marginTop: 24 }}>
-        <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 8 }}>Update status</Text>
-        {statusChoices.map((choice) => (
-          <Button
-            key={choice.value}
-            mode={visit.status === choice.value ? 'contained' : 'outlined'}
-            style={{ marginBottom: 12 }}
-            onPress={() => update.mutate({ id: visit.id, status: choice.value })}
-          >
-            {choice.label}
-          </Button>
-        ))}
-      </View>
-    </ScrollView>
+    <TextureBackground variant="aurora">
+      <ScrollView contentContainerStyle={styles.container}>
+        <Animated.View entering={FadeInUp.duration(320)}>
+          <Card variant="elevated">
+            <Text style={styles.title}>Visit #{visit.id}</Text>
+            <VisitStatusTag status={visit.status} />
+            {visit.reason ? <Text style={styles.body}>{visit.reason}</Text> : null}
+            {visit.notes ? <Text style={styles.notes}>{visit.notes}</Text> : null}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Update status</Text>
+              <View style={styles.buttons}>
+                {statusChoices.map((choice) => (
+                  <Button
+                    key={choice.value}
+                    label={choice.label}
+                    variant={visit.status === choice.value ? 'primary' : 'glass'}
+                    onPress={() => update.mutate({ id: visit.id, status: choice.value })}
+                  />
+                ))}
+              </View>
+            </View>
+          </Card>
+        </Animated.View>
+      </ScrollView>
+    </TextureBackground>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    paddingBottom: 120
+  },
+  title: {
+    color: '#F8FAFC',
+    fontSize: 24,
+    fontWeight: '700'
+  },
+  body: {
+    color: '#E2E8F0',
+    marginTop: 16,
+    fontSize: 16
+  },
+  notes: {
+    color: 'rgba(226,232,240,0.7)',
+    marginTop: 12
+  },
+  section: {
+    marginTop: 24,
+    gap: 16
+  },
+  sectionTitle: {
+    color: '#F8FAFC',
+    fontSize: 18,
+    fontWeight: '600'
+  },
+  buttons: {
+    gap: 12
+  }
+});

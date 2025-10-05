@@ -1,3 +1,12 @@
 export { default as ProtectedRoute } from './ProtectedRoute.jsx';
 export { default as StatusBadge } from './StatusBadge.jsx';
 export { default as TimeStamp } from './TimeStamp.jsx';
+export { default as WorkspaceLayout } from './layout/WorkspaceLayout.jsx';
+export { default as TextField } from './ui/TextField.jsx';
+export { default as SelectField } from './ui/SelectField.jsx';
+export { default as LoadingSpinner } from './ui/LoadingSpinner.jsx';
+export { default as ProgressPulse } from './ui/ProgressPulse.jsx';
+export { default as KPIChip } from './ui/KPIChip.jsx';
+export { default as Breadcrumbs } from './ui/Breadcrumbs.jsx';
+export { default as EmptyState } from './ui/EmptyState.jsx';
+export { default as FilterChips } from './ui/FilterChips.jsx';
