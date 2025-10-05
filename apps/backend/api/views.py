@@ -439,7 +439,7 @@ class RegistrationNumberFormatView(APIView):
         serializer = RegistrationNumberFormatSerializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        cache.clear()
+        cache.delete("registration_number_format")
         payload = serializer.data
         payload["pattern"] = get_registration_number_format()["pattern"]
         return Response(payload)
@@ -451,7 +451,7 @@ class RegistrationNumberFormatView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        cache.clear()
+        cache.delete("registration_number_format")
         payload = serializer.data
         payload["pattern"] = get_registration_number_format()["pattern"]
         return Response(payload)
