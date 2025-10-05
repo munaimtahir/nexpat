@@ -1,1 +1,1 @@
-DEFAULT_GREETING = 'hello world'
+DEFAULT_GREETING = "hello world"
