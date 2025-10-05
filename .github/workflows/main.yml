@@ -29,10 +29,6 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-dev.txt # install pinned dev dependencies
 
-    - name: Format with Black (Backend)
-      working-directory: ./apps/backend
-      run: black --line-length 100 .
-
     - name: Lint with Flake8 (Backend)
       working-directory: ./apps/backend
       run: flake8 .
