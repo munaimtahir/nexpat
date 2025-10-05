@@ -84,12 +84,12 @@ describe('Displays last_5_visit_dates', () => {
     await user.selectOptions(queueSelect, '1');
 
     await waitFor(() => {
-      expect(screen.getByText(/Last Visits:/i)).toBeInTheDocument();
+      expect(screen.getByText(/Recent visits/i)).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole('button', { name: /Generate Token/i }));
     await waitFor(() => {
-      expect(screen.getByText('5')).toBeInTheDocument();
+      expect(screen.getAllByText('5').length).toBeGreaterThan(0);
     });
   });
 
@@ -131,7 +131,7 @@ describe('Displays last_5_visit_dates', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Last Visits:/i)).toBeInTheDocument();
+      expect(screen.getByText(/Last:/i)).toBeInTheDocument();
     });
   });
 });

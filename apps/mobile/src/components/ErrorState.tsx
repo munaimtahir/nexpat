@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Button } from 'react-native-paper';
 import { colors } from '@/theme/colors';
+import { Button } from '@/components/Button';
 
 interface Props {
   message?: string;
@@ -11,11 +11,7 @@ interface Props {
 export const ErrorState: React.FC<Props> = ({ message, onRetry }) => (
   <View style={styles.container}>
     <Text style={styles.text}>{message ?? 'Something went wrong.'}</Text>
-    {onRetry ? (
-      <Button mode="contained" onPress={onRetry} style={styles.button}>
-        Try again
-      </Button>
-    ) : null}
+    {onRetry ? <Button label="Try again" onPress={onRetry} style={styles.button} /> : null}
   </View>
 );
 

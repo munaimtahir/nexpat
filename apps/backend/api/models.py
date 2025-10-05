@@ -293,9 +293,13 @@ class Patient(models.Model):
         return format_instance.format_value(next_number)
 
     def save(self, *args, **kwargs):
+        from django.db import transaction
+        
         # Auto-generate registration number if not provided
         if not self.registration_number:
-            self.registration_number = self.generate_next_registration_number()
+            # Use transaction to ensure atomicity when generating registration number
+            with transaction.atomic():
+                self.registration_number = self.generate_next_registration_number()
         super().save(*args, **kwargs)
 
     def __str__(self):
