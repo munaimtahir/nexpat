@@ -18,7 +18,7 @@
 - **System endpoints** – `/api/health/` is publicly accessible for monitoring; `/api/auth/me/` provides authenticated role introspection.【F:apps/backend/api/views.py†L36-L68】
 
 ## Data Model Review
-- **Registration number length bug** – `Patient.registration_number` is constrained to `max_length=8`, yet the enforced pattern (`xx-xx-xxx`) requires nine characters (including hyphens). This mismatch prevents valid values from passing model validation and should be increased to at least 9.【F:apps/backend/api/models.py†L8-L69】
+- **Registration number length bug** – `Patient.registration_number` is constrained to `max_length=8`, yet the enforced pattern (`xx-xx-xxx`) requires nine characters (2 digits + 1 hyphen + 2 digits + 1 hyphen + 3 digits = 9 characters total). This mismatch prevents valid values from passing model validation and should be increased to at least 9.【F:apps/backend/api/models.py†L8-L69】
 - **Token uniqueness guarantees** – Visit tokens are scoped by queue and date via a composite uniqueness constraint, but concurrent creations still risk `IntegrityError`; consider database-level locking or retries around `perform_create` to harden multi-device usage.【F:apps/backend/api/models.py†L49-L58】【F:apps/backend/api/views.py†L248-L286】
 - **Auto-registration concurrency** – `Patient.generate_next_registration_number` derives the next ID by reading the latest record; without transactions, simultaneous creations from web and Android clients could collide. Wrapping the generator in a database lock or switching to a sequence would make it safe at scale.【F:apps/backend/api/models.py†L84-L108】
 
