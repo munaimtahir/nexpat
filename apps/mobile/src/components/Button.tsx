@@ -10,6 +10,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export type ButtonVariant = 'primary' | 'secondary' | 'glass';
 
 type Props = {
+  children?: React.ReactNode;
   label?: string;
   onPress?: () => void;
   variant?: ButtonVariant;
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export const Button: React.FC<Props> = ({
+  children,
   label,
   onPress,
   variant = 'primary',
