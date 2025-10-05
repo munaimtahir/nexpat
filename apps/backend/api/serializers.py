@@ -153,7 +153,10 @@ class RegistrationNumberFormatSerializer(serializers.ModelSerializer):
         if len(separators) != max(len(digit_groups) - 1, 0):
             raise serializers.ValidationError(
                 {
-                    "separators": "Separators count must be exactly one less than the number of digit groups.",
+                    "separators": (
+                        "Separators count must be exactly one less "
+                        "than the number of digit groups."
+                    ),
                 }
             )
 
@@ -165,9 +168,7 @@ class RegistrationNumberFormatSerializer(serializers.ModelSerializer):
 
         total_digits = sum(digit_groups)
         if total_digits > 15:
-            raise serializers.ValidationError(
-                {"digit_groups": "Total digits cannot exceed 15."}
-            )
+            raise serializers.ValidationError({"digit_groups": "Total digits cannot exceed 15."})
 
         formatted_length = total_digits + len(separators)
         if formatted_length > 15:

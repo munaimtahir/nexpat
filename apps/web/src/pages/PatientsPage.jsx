@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api.js';
 import { unwrapListResponse } from '../utils/api.js';
-import { TimeStamp } from '../components/index.js';
+import { TimeStamp, WorkspaceLayout } from '../components/index.js';
 import useRegistrationFormat from '../hooks/useRegistrationFormat.js';
 import { buildExampleFromFormat } from '../utils/registrationFormat.js';
 
@@ -11,7 +11,7 @@ const PatientsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [genderFilter, setGenderFilter] = useState('ALL');
+  const [genderFilter, _setGenderFilter] = useState('ALL');
   const navigate = useNavigate();
   const { format } = useRegistrationFormat();
   const formatExample = useMemo(() => buildExampleFromFormat(format), [format]);
@@ -78,13 +78,6 @@ const PatientsPage = () => {
     },
   ];
 
-  const genderOptions = [
-    { label: 'All', value: 'ALL' },
-    { label: 'Female', value: 'FEMALE' },
-    { label: 'Male', value: 'MALE' },
-    { label: 'Other', value: 'OTHER' },
-  ];
-
   return (
     <WorkspaceLayout
       title="Patient Registry"
@@ -94,7 +87,7 @@ const PatientsPage = () => {
         { label: 'Patient Registry' },
       ]}
       kpis={kpis}
-      actions={(
+      actions={
         <button
           type="button"
           onClick={() => navigate('/patients/new')}
@@ -103,8 +96,8 @@ const PatientsPage = () => {
           <span aria-hidden="true">＋</span>
           Add patient
         </button>
-      </div>
-
+      }
+    >
       <form onSubmit={handleSearch} className="mt-4 flex flex-wrap gap-2">
         <input
           type="text"
@@ -231,7 +224,6 @@ const PatientsPage = () => {
             )}
           </div>
         </div>
-      </div>
     </WorkspaceLayout>
   );
 };
