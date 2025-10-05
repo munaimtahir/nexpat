@@ -1,13 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api.js';
 import { firstFromListResponse } from '../utils/api.js';
-import {
-  WorkspaceLayout,
-  TextField,
-  SelectField,
-  ProgressPulse,
-  FilterChips,
-} from '../components/index.js';
+import useRegistrationFormat from '../hooks/useRegistrationFormat.js';
+import { buildExampleFromFormat } from '../utils/registrationFormat.js';
 
 const AssistantPage = () => {
   const [registrationNumber, setRegistrationNumber] = useState('');
@@ -17,8 +13,8 @@ const AssistantPage = () => {
   const [generatedToken, setGeneratedToken] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-  const [issuedCount, setIssuedCount] = useState(0);
+  const { format } = useRegistrationFormat();
+  const formatExample = useMemo(() => buildExampleFromFormat(format), [format]);
 
   useEffect(() => {
     const fetchQueues = async () => {
@@ -163,28 +159,35 @@ const AssistantPage = () => {
   );
 
   return (
-    <WorkspaceLayout
-      title="Assistant Workspace"
-      subtitle="Capture arrivals, triage priority, and generate queue tokens without friction."
-      breadcrumbs={[
-        { label: 'Home', to: '/' },
-        { label: 'Assistant Workspace' },
-      ]}
-      kpis={kpis}
-    >
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-slate-600">Quick queue select</p>
-            <p className="text-xs text-slate-400">
-              Jump straight to frequent queues or use the selector for the full list.
-            </p>
-          </div>
-          <FilterChips
-            options={queueFilterOptions}
-            activeValue={selectedQueue}
-            onChange={(value) => setSelectedQueue(value)}
+    <div className="container mx-auto p-6 max-w-md bg-white shadow-md rounded-lg mt-10">
+      <Link to="/" className="text-blue-500 hover:underline mb-4 block">
+        &larr; Back to Home
+      </Link>
+      <h1 className="text-3xl font-bold mb-6 text-center text-gray-700">
+        Assistant Portal
+      </h1>
+
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <div>
+          <label
+            htmlFor="registrationNumber"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Registration Number
+          </label>
+          <input
+            type="text"
+            id="registrationNumber"
+            value={registrationNumber}
+            onChange={(e) => setRegistrationNumber(e.target.value)}
+            placeholder={formatExample ? `e.g. ${formatExample}` : 'Registration number'}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
+          {formatExample && (
+            <p className="mt-1 text-xs text-gray-500">
+              Expected format similar to <span className="font-mono">{formatExample}</span>
+            </p>
+          )}
         </div>
 
         <form

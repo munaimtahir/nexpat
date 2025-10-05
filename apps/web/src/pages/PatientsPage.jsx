@@ -1,16 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api.js';
 import { unwrapListResponse } from '../utils/api.js';
-import {
-  TimeStamp,
-  WorkspaceLayout,
-  TextField,
-  FilterChips,
-  EmptyState,
-  ProgressPulse,
-  LoadingSpinner,
-} from '../components/index.js';
+import { TimeStamp } from '../components/index.js';
+import useRegistrationFormat from '../hooks/useRegistrationFormat.js';
+import { buildExampleFromFormat } from '../utils/registrationFormat.js';
 
 const PatientsPage = () => {
   const [patients, setPatients] = useState([]);
@@ -19,6 +13,8 @@ const PatientsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [genderFilter, setGenderFilter] = useState('ALL');
   const navigate = useNavigate();
+  const { format } = useRegistrationFormat();
+  const formatExample = useMemo(() => buildExampleFromFormat(format), [format]);
 
   const fetchPatients = async (term = '') => {
     setLoading(true);
@@ -107,36 +103,22 @@ const PatientsPage = () => {
           <span aria-hidden="true">＋</span>
           Add patient
         </button>
-      )}
-    >
-      <div className="space-y-6">
-        <form
-          onSubmit={handleSearch}
-          className="grid gap-4 rounded-3xl border border-indigo-100 bg-white p-6 shadow-sm md:grid-cols-[1fr_auto]"
-        >
-          <TextField
-            label="Search patients"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder=" "
-            description="Search by name, phone number, or registration ID."
-            leadingIcon="🔍"
-          />
-          <div className="flex items-end">
-            <button
-              type="submit"
-              className="w-full rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-500"
-            >
-              Run search
-            </button>
-          </div>
-          <div className="md:col-span-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Gender filter</p>
-            <div className="mt-2">
-              <FilterChips options={genderOptions} activeValue={genderFilter} onChange={setGenderFilter} />
-            </div>
-          </div>
-        </form>
+      </div>
+
+      <form onSubmit={handleSearch} className="mt-4 flex flex-wrap gap-2">
+        <input
+          type="text"
+          placeholder={
+            formatExample
+              ? `Search by name, phone, or ID (e.g. ${formatExample})`
+              : 'Search by name, phone, or ID'
+          }
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-grow border border-gray-300 rounded px-3 py-2"
+        />
+        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Search</button>
+      </form>
 
         <div className="rounded-3xl border border-indigo-100 bg-white shadow-xl">
           <div className="border-b border-indigo-50 px-6 py-4">

@@ -120,9 +120,35 @@ const validation = {
   },
   
   registrationNumber(value) {
-    // Validate registration number format (xx-xx-xxx or xx-xx-xxxx format)
-    const regRegex = /^\d{2}-\d{2}-\d{3,4}$/;
-    return regRegex.test(value);
+    const pattern = (() => {
+      if (validation._cachedRegPattern) {
+        return validation._cachedRegPattern;
+      }
+      let rawPattern = null;
+      if (typeof window !== 'undefined') {
+        if (window.REGISTRATION_NUMBER_FORMAT?.pattern) {
+          rawPattern = window.REGISTRATION_NUMBER_FORMAT.pattern;
+        } else {
+          try {
+            const stored = window.localStorage.getItem('registration_number_format');
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              rawPattern = parsed?.pattern || null;
+            }
+          } catch (error) {
+            console.warn('Failed to read registration format from storage', error);
+          }
+        }
+      }
+      try {
+        validation._cachedRegPattern = rawPattern ? new RegExp(rawPattern) : /^\d{2}-\d{2}-\d{3}$/;
+      } catch (error) {
+        console.warn('Invalid registration format pattern. Falling back to default.', error);
+        validation._cachedRegPattern = /^\d{2}-\d{2}-\d{3}$/;
+      }
+      return validation._cachedRegPattern;
+    })();
+    return pattern.test(value);
   }
 };
 

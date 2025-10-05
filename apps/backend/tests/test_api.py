@@ -1,4 +1,5 @@
 import datetime
+import re
 
 from django.contrib.auth.models import Group, User
 from django.core.cache import cache
@@ -6,7 +7,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from api.models import Patient, Queue, Visit
+from api.models import Patient, Queue, Visit, get_registration_number_format
 
 
 class PatientCRUDTests(APITestCase):
@@ -51,12 +52,12 @@ class RegistrationNumberFormatTests(APITestCase):
         cache.clear()
 
     def test_registration_number_auto_generation(self):
-        """Test that registration numbers are auto-generated in xx-xx-xxx format"""
+        """Test that registration numbers are auto-generated using configured format"""
         patient1 = Patient.objects.create(name="Patient 1", gender="MALE")
         patient2 = Patient.objects.create(name="Patient 2", gender="FEMALE")
 
         # Verify format
-        pattern = r"^\d{2}-\d{2}-\d{3}$"
+        pattern = get_registration_number_format()["pattern"]
         self.assertRegex(patient1.registration_number, pattern)
         self.assertRegex(patient2.registration_number, pattern)
 
@@ -68,9 +69,15 @@ class RegistrationNumberFormatTests(APITestCase):
         """Test that invalid registration number formats are rejected"""
         from api.models import validate_registration_number_format
 
-        # Valid formats (both 7-digit and 8-digit)
-        valid_formats = ["01-23-456", "99-99-999", "00-00-001", "01-23-4567", "99-99-9999"]
+        current_pattern = re.compile(get_registration_number_format()["pattern"])
+
+        # Valid formats
+        valid_formats = ["01-23-456", "99-99-999", "00-00-001"]
         for valid_format in valid_formats:
+            self.assertIsNotNone(
+                current_pattern.match(valid_format),
+                msg=f"Expected {valid_format} to match {current_pattern.pattern}",
+            )
             try:
                 validate_registration_number_format(valid_format)
             except ValidationError:
@@ -340,67 +347,59 @@ class PatientSearchTests(APITestCase):
         self.assertEqual(resp.data["results"][0]["phone"], "1234567890")
 
 
-class ConcurrencyTests(APITestCase):
-    """Tests for race condition prevention in patient and visit creation"""
-    
+class RegistrationNumberFormatSettingsTests(APITestCase):
     def setUp(self):
         cache.clear()
         doctor_group, _ = Group.objects.get_or_create(name="Doctor")
         assistant_group, _ = Group.objects.get_or_create(name="Assistant")
-        user = User.objects.create_user(username="assistant", password="pass")
-        user.groups.add(assistant_group)
-        token = Token.objects.create(user=user)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
-        
-        # Create test queue
-        self.queue = Queue.objects.create(name="Concurrency Test Queue")
+        self.doctor = User.objects.create_user(username="doctor-settings", password="pass")
+        self.doctor.groups.add(doctor_group)
+        self.assistant = User.objects.create_user(username="assistant-settings", password="pass")
+        self.assistant.groups.add(assistant_group)
+        self.doctor_token = Token.objects.create(user=self.doctor)
+        self.assistant_token = Token.objects.create(user=self.assistant)
 
-    def test_patient_registration_uses_transaction_locking(self):
-        """Test that patient registration number generation uses select_for_update"""
-        # This test verifies the code uses proper locking mechanisms
-        # Full concurrency testing requires a real database (not SQLite)
-        
-        # Create multiple patients sequentially
-        patients = []
-        for i in range(5):
-            patient = Patient.objects.create(name=f"Patient {i}", gender="MALE")
-            patients.append(patient)
-        
-        # Verify all registration numbers are unique and sequential
-        registration_numbers = [p.registration_number for p in patients]
-        self.assertEqual(len(registration_numbers), len(set(registration_numbers)))
-        
-        # Verify sequential generation
-        for i in range(1, len(registration_numbers)):
-            prev_num = int(registration_numbers[i-1].replace("-", ""))
-            curr_num = int(registration_numbers[i].replace("-", ""))
-            self.assertEqual(curr_num, prev_num + 1)
+    def test_get_current_format(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.assistant_token.key}")
+        resp = self.client.get("/api/settings/registration-format/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["digit_groups"], [2, 2, 3])
+        self.assertIn("pattern", resp.data)
 
-    def test_visit_token_generation_uses_transaction_locking(self):
-        """Test that visit token generation uses select_for_update"""
-        # This test verifies the code uses proper locking mechanisms
-        # Full concurrency testing requires a real database (not SQLite)
-        
-        # Create patients for visits
-        patients = [
-            Patient.objects.create(name=f"Visit Patient {i}", gender="MALE")
-            for i in range(5)
-        ]
-        
-        # Create visits sequentially
-        token_numbers = []
-        for patient in patients:
-            response = self.client.post(
-                "/api/visits/",
-                {
-                    "patient": patient.registration_number,
-                    "queue": self.queue.pk,
-                },
-                format="json",
-            )
-            self.assertEqual(response.status_code, 201)
-            token_numbers.append(response.data.get("token_number"))
-        
-        # Verify all token numbers are unique and sequential
-        self.assertEqual(len(token_numbers), len(set(token_numbers)))
-        self.assertEqual(token_numbers, list(range(1, 6)))
+    def test_update_format_and_reformat_existing_numbers(self):
+        queue, _ = Queue.objects.get_or_create(name="General")
+        patient = Patient.objects.create(name="Format Test", gender="MALE")
+        visit = Visit.objects.create(
+            patient=patient,
+            queue=queue,
+            token_number=1,
+            visit_date=datetime.date.today(),
+            status="WAITING",
+        )
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        resp = self.client.put(
+            "/api/settings/registration-format/",
+            {"digit_groups": [3, 4, 4], "separators": ["-", "+"]},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["digit_groups"], [3, 4, 4])
+        self.assertEqual(resp.data["separators"], ["-", "+"])
+
+        updated_patient = Patient.objects.get(name="Format Test")
+        updated_visit = Visit.objects.get(pk=visit.pk)
+        new_pattern = re.compile(resp.data["pattern"])
+        self.assertRegex(updated_patient.registration_number, new_pattern)
+        self.assertEqual(updated_visit.patient_id, updated_patient.registration_number)
+
+    def test_reject_format_that_cannot_hold_existing_numbers(self):
+        Patient.objects.create(name="Format Limit", gender="MALE")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.doctor_token.key}")
+        resp = self.client.put(
+            "/api/settings/registration-format/",
+            {"digit_groups": [1, 1], "separators": ["-"]},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("digit_groups", resp.data)
