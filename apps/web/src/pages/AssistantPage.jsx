@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api.js';
 import { firstFromListResponse } from '../utils/api.js';
-import useRegistrationFormat from '../hooks/useRegistrationFormat.js';
-import { buildExampleFromFormat } from '../utils/registrationFormat.js';
+import {
+  WorkspaceLayout,
+  TextField,
+  SelectField,
+  ProgressPulse,
+} from '../components/index.js';
 
 const AssistantPage = () => {
   const [registrationNumber, setRegistrationNumber] = useState('');
@@ -13,8 +17,7 @@ const AssistantPage = () => {
   const [generatedToken, setGeneratedToken] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { format } = useRegistrationFormat();
-  const formatExample = useMemo(() => buildExampleFromFormat(format), [format]);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     const fetchQueues = async () => {
@@ -114,7 +117,6 @@ const AssistantPage = () => {
       setRegistrationNumber('');
       setSelectedQueue('');
       setPatientInfo(null);
-      setIssuedCount((prev) => prev + 1);
     } catch (err) {
       console.error('Error creating visit:', err);
       if (err.response?.data) {
@@ -132,64 +134,16 @@ const AssistantPage = () => {
     }
   };
 
-  const queueLoadTone = useMemo(() => {
-    if (queues.length === 0) return 'caution';
-    if (queues.length > 4) return 'positive';
-    if (queues.length > 2) return 'info';
-    return 'caution';
-  }, [queues.length]);
-
-  const kpis = [
-    { label: 'Active queues', value: queues.length || '—', tone: queueLoadTone },
-    { label: 'Token issued now', value: generatedToken ?? '—', tone: generatedToken ? 'positive' : 'info' },
-    { label: 'Tokens today', value: issuedCount, tone: issuedCount > 5 ? 'positive' : 'info' },
-    {
-      label: 'Patient lookup',
-      value: isSearching ? 'Searching…' : patientInfo?.name ?? 'Awaiting input',
-      tone: patientInfo ? 'positive' : 'caution',
-    },
-  ];
-
-  const queueFilterOptions = useMemo(
-    () => [
-      { label: 'All queues', value: '' },
-      ...queues.slice(0, 4).map((queue) => ({ label: queue.name, value: String(queue.id) })),
-    ],
-    [queues],
-  );
-
   return (
-    <div className="container mx-auto p-6 max-w-md bg-white shadow-md rounded-lg mt-10">
-      <Link to="/" className="text-blue-500 hover:underline mb-4 block">
-        &larr; Back to Home
-      </Link>
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-700">
-        Assistant Portal
-      </h1>
-
-      <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        <div>
-          <label
-            htmlFor="registrationNumber"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Registration Number
-          </label>
-          <input
-            type="text"
-            id="registrationNumber"
-            value={registrationNumber}
-            onChange={(e) => setRegistrationNumber(e.target.value)}
-            placeholder={formatExample ? `e.g. ${formatExample}` : 'Registration number'}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-          {formatExample && (
-            <p className="mt-1 text-xs text-gray-500">
-              Expected format similar to <span className="font-mono">{formatExample}</span>
-            </p>
-          )}
-        </div>
-
+    <WorkspaceLayout
+      title="Assistant Portal"
+      subtitle="Generate tokens for patients to join clinic queues."
+      breadcrumbs={[
+        { label: 'Home', to: '/' },
+        { label: 'Assistant' },
+      ]}
+    >
+      <div className="mx-auto max-w-2xl">
         <form
           onSubmit={handleSubmit}
           noValidate
@@ -233,7 +187,7 @@ const AssistantPage = () => {
           )}
         </form>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <div className="rounded-3xl border border-indigo-100 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-800">Patient preview</h2>
