@@ -268,7 +268,7 @@ class VisitViewSet(viewsets.ModelViewSet):
         - Use database locking to prevent race conditions.
         """
         from django.db import transaction
-        
+
         today = datetime.date.today()
         queue_instance = serializer.validated_data["queue"]
 
@@ -409,6 +409,8 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
 class RegistrationNumberFormatView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -429,9 +431,7 @@ class RegistrationNumberFormatView(APIView):
 
     def patch(self, request):
         instance = RegistrationNumberFormat.load()
-        serializer = RegistrationNumberFormatSerializer(
-            instance, data=request.data, partial=True
-        )
+        serializer = RegistrationNumberFormatSerializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(get_registration_number_format(force_reload=True))

@@ -27,11 +27,7 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install -r requirements.txt
-        pip install -U -r requirements-dev.txt # -U to upgrade if needed
-
-    - name: Format with Black (Backend)
-      working-directory: ./apps/backend
-      run: black --line-length 100 .
+        pip install -r requirements-dev.txt # install pinned dev dependencies
 
     - name: Lint with Flake8 (Backend)
       working-directory: ./apps/backend

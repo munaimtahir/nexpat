@@ -17,7 +17,7 @@ const PatientsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [genderFilter, setGenderFilter] = useState('ALL');
+  const [genderFilter, _setGenderFilter] = useState('ALL');
   const navigate = useNavigate();
   const { format } = useRegistrationFormat();
   const formatExample = useMemo(() => buildExampleFromFormat(format), [format]);
@@ -82,13 +82,6 @@ const PatientsPage = () => {
         ).length,
       tone: 'positive',
     },
-  ];
-
-  const genderOptions = [
-    { label: 'All', value: 'ALL' },
-    { label: 'Female', value: 'FEMALE' },
-    { label: 'Male', value: 'MALE' },
-    { label: 'Other', value: 'OTHER' },
   ];
 
   return (
@@ -252,7 +245,6 @@ const PatientsPage = () => {
             </table>
           )}
         </div>
-      </div>
     </WorkspaceLayout>
   );
 };

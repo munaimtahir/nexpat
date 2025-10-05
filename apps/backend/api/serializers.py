@@ -140,11 +140,52 @@ class RegistrationNumberFormatSerializer(serializers.ModelSerializer):
     def get_formatted_length(self, obj):
         return obj.formatted_length
 
-    def get_pattern(self, obj):
-        return obj.build_pattern()
+    def validate(self, attrs):
+        digit_groups = attrs.get("digit_groups")
+        separators = attrs.get("separators")
 
-    def get_example(self, obj):
-        return obj.build_example()
+        if self.instance:
+            if digit_groups is None:
+                digit_groups = list(self.instance.digit_groups)
+            if separators is None:
+                separators = list(self.instance.separators)
+
+        if digit_groups is None:
+            digit_groups = []
+        if separators is None:
+            separators = []
+
+        if len(separators) != max(len(digit_groups) - 1, 0):
+            raise serializers.ValidationError(
+                {
+                    "separators": (
+                        "Separators count must be exactly one less "
+                        "than the number of digit groups."
+                    ),
+                }
+            )
+
+        invalid_separators = [sep for sep in separators if sep not in {"-", "+"}]
+        if invalid_separators:
+            raise serializers.ValidationError(
+                {"separators": "Only '-' and '+' separators are supported."}
+            )
+
+        total_digits = sum(digit_groups)
+        if total_digits > 15:
+            raise serializers.ValidationError({"digit_groups": "Total digits cannot exceed 15."})
+
+        formatted_length = total_digits + len(separators)
+        if formatted_length > 15:
+            raise serializers.ValidationError(
+                {
+                    "digit_groups": (
+                        "Formatted length (digits + separators) cannot exceed 15 characters."
+                    )
+                }
+            )
+
+        return attrs
 
     def update(self, instance, validated_data):
         for field in ("digit_groups", "separators"):

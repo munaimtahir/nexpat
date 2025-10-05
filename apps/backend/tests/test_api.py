@@ -162,7 +162,7 @@ class RegistrationNumberFormatTests(APITestCase):
             registration_number="99-99-9999", name="Test Patient 9", gender="OTHER"
         )
         self.assertEqual(patient.registration_number, "99-99-9999")
-        
+
         # Verify it can be retrieved
         retrieved = Patient.objects.get(registration_number="99-99-9999")
         self.assertEqual(retrieved.name, "Test Patient 9")

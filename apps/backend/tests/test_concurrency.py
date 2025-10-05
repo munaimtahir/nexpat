@@ -1,5 +1,4 @@
 import datetime
-import threading
 from django.test import TransactionTestCase
 from django.contrib.auth.models import Group, User
 from rest_framework.authtoken.models import Token
@@ -10,8 +9,8 @@ class ConcurrencyTests(TransactionTestCase):
     """
     Tests for race conditions in patient registration and visit token generation.
     These tests verify that database-level locking prevents duplicate IDs/tokens.
-    
-    NOTE: SQLite has limited support for concurrent writes and may cause 
+
+    NOTE: SQLite has limited support for concurrent writes and may cause
     "database is locked" errors in these tests. In production with PostgreSQL,
     the select_for_update() calls will properly prevent race conditions.
     """
@@ -29,7 +28,7 @@ class ConcurrencyTests(TransactionTestCase):
         """
         Test that concurrent patient creation doesn't generate duplicate registration numbers.
         This verifies that select_for_update() prevents race conditions.
-        
+
         NOTE: This is a simplified test due to SQLite limitations. With PostgreSQL,
         the locking would work perfectly for truly concurrent requests.
         """
@@ -46,7 +45,7 @@ class ConcurrencyTests(TransactionTestCase):
         # All should follow the new format (xxx-xx-xxx)
         for reg_num in patients:
             self.assertRegex(reg_num, r"^\d{3}-\d{2}-\d{3}$")
-        
+
         # Should be sequential
         self.assertEqual(patients[0], "001-00-001")
         self.assertEqual(patients[1], "001-00-002")
@@ -58,7 +57,7 @@ class ConcurrencyTests(TransactionTestCase):
         """
         Test that visit creation generates sequential token numbers.
         This verifies that the token generation logic works correctly.
-        
+
         NOTE: This is a simplified test due to SQLite limitations. With PostgreSQL,
         select_for_update() would handle truly concurrent requests properly.
         """
@@ -68,11 +67,11 @@ class ConcurrencyTests(TransactionTestCase):
         # Create 10 visits sequentially
         tokens = []
         today = datetime.date.today()
-        
+
         for i in range(10):
             # Simulate the API endpoint behavior
             from django.db import transaction
-            
+
             with transaction.atomic():
                 last_visit = (
                     Visit.objects.select_for_update()
@@ -80,11 +79,11 @@ class ConcurrencyTests(TransactionTestCase):
                     .order_by("-token_number")
                     .first()
                 )
-                
+
                 next_token = 1
                 if last_visit:
                     next_token = last_visit.token_number + 1
-                
+
                 visit = Visit.objects.create(
                     patient=patient,
                     queue=self.queue1,

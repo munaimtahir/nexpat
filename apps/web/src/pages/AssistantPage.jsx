@@ -130,7 +130,6 @@ const AssistantPage = () => {
       setRegistrationNumber('');
       setSelectedQueue('');
       setPatientInfo(null);
-      setIssuedCount((prev) => prev + 1);
     } catch (err) {
       console.error('Error creating visit:', err);
       if (err.response?.data) {
