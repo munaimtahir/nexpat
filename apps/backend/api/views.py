@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -13,13 +14,21 @@ import datetime  # Required for date operations
 import logging
 import re  # For registration number pattern matching
 
-from .models import Visit, Patient, Queue, PrescriptionImage
+from .models import (
+    Visit,
+    Patient,
+    Queue,
+    PrescriptionImage,
+    RegistrationNumberFormat,
+    get_registration_number_format,
+)
 from .serializers import (
     VisitSerializer,
     VisitStatusSerializer,
     PatientSerializer,
     QueueSerializer,
     PrescriptionImageSerializer,
+    RegistrationNumberFormatSerializer,
 )
 from .pagination import StandardResultsSetPagination
 from .google_drive import upload_prescription_image
@@ -96,6 +105,8 @@ class PatientViewSet(viewsets.ModelViewSet):
         registration numbers.
         """
         queryset = super().get_queryset()
+        format_config = get_registration_number_format()
+        pattern = re.compile(format_config["pattern"])
         reg_nums = self.request.query_params.get("registration_numbers")
         if reg_nums:
             raw_numbers = [num.strip() for num in reg_nums.split(",")]
@@ -107,17 +118,18 @@ class PatientViewSet(viewsets.ModelViewSet):
 
             numbers = []
             for num in raw_numbers:
-                # Accept formatted registration numbers (xxx-xx-xxx pattern)
-                if re.match(r"^\d{3}-\d{2}-\d{3}$", num):
+                # Accept formatted registration numbers based on configuration
+                if pattern.match(num):
                     numbers.append(num)
                 # Also accept old numeric format for backward compatibility
                 # during transition
                 elif num.isdigit():
-                    if len(num) > 10:
+                    if len(num) > format_config["total_digits"]:
                         raise ValidationError(
                             {
                                 "registration_numbers": (
-                                    "Registration numbers may not exceed 10 digits."
+                                    "Registration numbers may not exceed "
+                                    f"{format_config['total_digits']} digits."
                                 ),
                             }
                         )
@@ -138,7 +150,6 @@ class PatientViewSet(viewsets.ModelViewSet):
             f"Patient created: {patient.registration_number} ({patient.name}) "
             f"by user {self.request.user.username}"
         )
-        return super().perform_create(serializer)
 
     def perform_update(self, serializer):
         cache.clear()
@@ -155,7 +166,6 @@ class PatientViewSet(viewsets.ModelViewSet):
             f"New data: {{name: {patient.name}, phone: {patient.phone}, "
             f"gender: {patient.gender}}}"
         )
-        return super().perform_update(serializer)
 
     def perform_destroy(self, instance):
         cache.clear()
@@ -188,8 +198,11 @@ class PatientViewSet(viewsets.ModelViewSet):
 
         filters = Q(name__icontains=query) | Q(phone__icontains=query)
 
-        # Check if query matches registration number format (xxx-xx-xxx)
-        if re.match(r"^\d{3}-\d{2}-\d{3}$", query):
+        format_config = get_registration_number_format()
+        pattern = re.compile(format_config["pattern"])
+
+        # Check if query matches registration number format
+        if pattern.match(query):
             filters |= Q(registration_number=query)
         # Also check for old numeric format for backward compatibility
         elif query.isdigit():
@@ -266,48 +279,36 @@ class VisitViewSet(viewsets.ModelViewSet):
         - Use database locking to prevent race conditions.
         """
         from django.db import transaction
-        from django.db.utils import IntegrityError
         
         today = datetime.date.today()
         queue_instance = serializer.validated_data["queue"]
-        
-        # Retry logic to handle race conditions under concurrent load
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                with transaction.atomic():
-                    # Determine next token number for this specific queue and date
-                    # Use select_for_update() to lock the row and prevent race conditions
-                    last_visit_in_queue_today = (
-                        Visit.objects.select_for_update()
-                        .filter(queue=queue_instance, visit_date=today)
-                        .order_by("-token_number")
-                        .first()
-                    )
 
-                    next_token_number = 1
-                    if last_visit_in_queue_today:
-                        next_token_number = last_visit_in_queue_today.token_number + 1
+        # Use transaction with row-level locking to prevent race conditions
+        with transaction.atomic():
+            # Determine next token number for this specific queue and date with locking
+            last_visit_in_queue_today = (
+                Visit.objects.select_for_update()
+                .filter(queue=queue_instance, visit_date=today)
+                .order_by("-token_number")
+                .first()
+            )
 
-                    visit = serializer.save(
-                        token_number=next_token_number,
-                        visit_date=today,
-                        status="WAITING",
-                    )
+            next_token_number = 1
+            if last_visit_in_queue_today:
+                next_token_number = last_visit_in_queue_today.token_number + 1
 
-                    logger.info(
-                        f"Visit created: Token {visit.token_number} "
-                        f"for patient {visit.patient.registration_number} "
-                        f"in queue {visit.queue.name} "
-                        f"by user {self.request.user.username}"
-                    )
-                    return  # Success, exit retry loop
-            except IntegrityError:
-                if attempt == max_retries - 1:
-                    # Last attempt failed, re-raise the exception
-                    raise
-                # Token number collision due to race condition, retry
-                continue
+            visit = serializer.save(
+                token_number=next_token_number,
+                visit_date=today,
+                status="WAITING",
+            )
+
+            logger.info(
+                f"Visit created: Token {visit.token_number} "
+                f"for patient {visit.patient.registration_number} "
+                f"in queue {visit.queue.name} "
+                f"by user {self.request.user.username}"
+            )
 
     def _update_status(self, request, pk, new_status, expected_current_statuses):
         visit = self.get_object()
@@ -419,3 +420,39 @@ class PrescriptionImageViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+class RegistrationNumberFormatView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method in ("PUT", "PATCH"):
+            return [permissions.IsAuthenticated(), IsDoctor()]
+        return super().get_permissions()
+
+    def get(self, request):
+        instance = RegistrationNumberFormat.load()
+        serializer = RegistrationNumberFormatSerializer(instance)
+        payload = serializer.data
+        payload["pattern"] = get_registration_number_format()["pattern"]
+        return Response(payload)
+
+    def put(self, request):
+        instance = RegistrationNumberFormat.load()
+        serializer = RegistrationNumberFormatSerializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        cache.clear()
+        payload = serializer.data
+        payload["pattern"] = get_registration_number_format()["pattern"]
+        return Response(payload)
+
+    def patch(self, request):
+        instance = RegistrationNumberFormat.load()
+        serializer = RegistrationNumberFormatSerializer(
+            instance, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        cache.clear()
+        payload = serializer.data
+        payload["pattern"] = get_registration_number_format()["pattern"]
+        return Response(payload)

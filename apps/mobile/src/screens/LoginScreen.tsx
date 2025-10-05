@@ -47,6 +47,7 @@ export const LoginScreen: React.FC = () => {
             onChangeText={onChange}
             error={!!formState.errors.username}
             accessibilityLabel={t('login.username')}
+            accessibilityHint="Enter your username to log in"
           />
         )}
       />
@@ -62,11 +63,20 @@ export const LoginScreen: React.FC = () => {
             onChangeText={onChange}
             error={!!formState.errors.password}
             accessibilityLabel={t('login.password')}
+            accessibilityHint="Enter your password to log in"
           />
         )}
       />
 
-      <Button mode="contained" onPress={onSubmit} loading={isLoading} accessibilityRole="button" style={styles.button}>
+      <Button 
+        mode="contained" 
+        onPress={onSubmit} 
+        loading={isLoading} 
+        accessibilityRole="button"
+        accessibilityLabel={t('login.submit')}
+        accessibilityHint="Submit credentials to log in"
+        style={styles.button}
+      >
         {t('login.submit')}
       </Button>
 
