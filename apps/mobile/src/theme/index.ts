@@ -1,5 +1,8 @@
 import { DefaultTheme, MD3LightTheme } from 'react-native-paper';
 import { colors } from './colors';
+import { typography } from './typography';
+import { elevations } from './elevations';
+import { surfaces } from './surfaces';
 
 export const paperTheme = {
   ...MD3LightTheme,
@@ -9,6 +12,30 @@ export const paperTheme = {
     secondary: colors.secondary,
     surface: colors.surface,
     background: colors.background
+  },
+  typography: {
+    ...MD3LightTheme.typography,
+    displayLarge: {
+      ...MD3LightTheme.typography?.displayLarge,
+      fontSize: typography.display.fontSize,
+      fontWeight: typography.display.fontWeight,
+      lineHeight: typography.display.lineHeight,
+      letterSpacing: typography.display.letterSpacing
+    },
+    titleLarge: {
+      ...MD3LightTheme.typography?.titleLarge,
+      fontSize: typography.title.fontSize,
+      fontWeight: typography.title.fontWeight,
+      lineHeight: typography.title.lineHeight,
+      letterSpacing: typography.title.letterSpacing
+    },
+    bodyLarge: {
+      ...MD3LightTheme.typography?.bodyLarge,
+      fontSize: typography.body.fontSize,
+      fontWeight: typography.body.fontWeight,
+      lineHeight: typography.body.lineHeight,
+      letterSpacing: typography.body.letterSpacing
+    }
   }
 };
 
@@ -24,3 +51,12 @@ export const navigationTheme = {
     notification: colors.primary
   }
 };
+
+export const designSystem = {
+  colors,
+  typography,
+  elevations,
+  surfaces
+};
+
+export type DesignSystem = typeof designSystem;
