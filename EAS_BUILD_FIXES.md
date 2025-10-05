@@ -5,7 +5,7 @@
 ### Issue 1: NPX Command Failure ✅ FIXED
 **Error**: `npm error could not determine executable to run`
 
-**Root Cause**: The workflow was using `npx eas build` but the `expo/expo-github-action` installs eas-cli globally via yarn (at `/opt/hostedtoolcache/eas-cli/16.20.1/x64/node_modules/.bin/eas`). The `npx` command looks for executables in local `node_modules/.bin` first and couldn't find it.
+**Root Cause**: The workflow was using `npx eas build`, but the `expo/expo-github-action` installs `eas-cli` globally and makes the `eas` CLI available on the `PATH`. The `npx` command looks for executables in the local `node_modules/.bin` first and couldn't find it.
 
 **Fix Applied**: Changed `.github/workflows/mobile-eas-build.yml` line 49 from:
 ```yaml
