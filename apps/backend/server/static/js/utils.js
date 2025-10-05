@@ -120,35 +120,38 @@ const validation = {
   },
   
   registrationNumber(value) {
-    const pattern = (() => {
-      if (validation._cachedRegPattern) {
-        return validation._cachedRegPattern;
-      }
-      let rawPattern = null;
-      if (typeof window !== 'undefined') {
-        if (window.REGISTRATION_NUMBER_FORMAT?.pattern) {
-          rawPattern = window.REGISTRATION_NUMBER_FORMAT.pattern;
-        } else {
-          try {
-            const stored = window.localStorage.getItem('registration_number_format');
-            if (stored) {
-              const parsed = JSON.parse(stored);
-              rawPattern = parsed?.pattern || null;
-            }
-          } catch (error) {
-            console.warn('Failed to read registration format from storage', error);
+    // Track the source pattern string and rebuild the cached RegExp when it changes
+    let rawPattern = null;
+    if (typeof window !== 'undefined') {
+      if (window.REGISTRATION_NUMBER_FORMAT?.pattern) {
+        rawPattern = window.REGISTRATION_NUMBER_FORMAT.pattern;
+      } else {
+        try {
+          const stored = window.localStorage.getItem('registration_number_format');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            rawPattern = parsed?.pattern || null;
           }
+        } catch (error) {
+          console.warn('Failed to read registration format from storage', error);
         }
       }
+    }
+    // Only rebuild the RegExp if the pattern string has changed
+    if (
+      validation._cachedRegPattern === undefined ||
+      validation._cachedRegPatternSource !== rawPattern
+    ) {
       try {
         validation._cachedRegPattern = rawPattern ? new RegExp(rawPattern) : /^\d{2}-\d{2}-\d{3}$/;
+        validation._cachedRegPatternSource = rawPattern;
       } catch (error) {
         console.warn('Invalid registration format pattern. Falling back to default.', error);
         validation._cachedRegPattern = /^\d{2}-\d{2}-\d{3}$/;
+        validation._cachedRegPatternSource = null;
       }
-      return validation._cachedRegPattern;
-    })();
-    return pattern.test(value);
+    }
+    return validation._cachedRegPattern.test(value);
   }
 };
 

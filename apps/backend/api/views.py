@@ -424,7 +424,7 @@ class RegistrationNumberFormatView(APIView):
 
     def get_permissions(self):
         if self.request.method in ("PUT", "PATCH"):
-            return [IsDoctor()]
+            return [permissions.IsAuthenticated(), IsDoctor()]
         return super().get_permissions()
 
     def get(self, request):
@@ -439,7 +439,7 @@ class RegistrationNumberFormatView(APIView):
         serializer = RegistrationNumberFormatSerializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        cache.delete("registration_number_format")
+        cache.clear()
         payload = serializer.data
         payload["pattern"] = get_registration_number_format()["pattern"]
         return Response(payload)
@@ -451,7 +451,7 @@ class RegistrationNumberFormatView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        cache.delete("registration_number_format")
+        cache.clear()
         payload = serializer.data
         payload["pattern"] = get_registration_number_format()["pattern"]
         return Response(payload)
