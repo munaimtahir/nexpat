@@ -6,7 +6,7 @@
 - Ran linting and unit tests for both applications to verify the health of existing automation and inspect coverage reports.
 
 ## Repository Layout and Build Pipelines
-- Applications are grouped beneath `apps/` with dedicated READMEs describing build and runtime expectations for backend, web, and mobile targets.【F:apps/README.md†L1-L41】
+- Applications are grouped beneath `apps/` with dedicated README files describing build and runtime expectations for backend, web, and mobile targets.【F:apps/README.md†L1-L41】
 - The web client is a Vite 7 + React 19 SPA with Tailwind styling and Jest/Testing Library for tests, configured through `package.json` and `vite.config.js` (which proxies `/api` to the Django backend during local development).【F:apps/web/README.md†L1-L62】【F:apps/web/package.json†L1-L40】【F:apps/web/vite.config.js†L1-L17】
 - The mobile client is an Expo SDK 50 project using React Navigation, React Query, and secure storage. Build metadata and environment injection live in `app.config.ts` and `.env` variables consumed by `env.serverUrl`.【F:apps/mobile/package.json†L1-L80】【F:apps/mobile/app.config.ts†L1-L34】【F:apps/mobile/src/utils/environment.ts†L1-L13】
 
