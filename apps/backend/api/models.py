@@ -6,9 +6,9 @@ import re
 
 
 def validate_registration_number_format(value):
-    """Validate that registration number follows xx-xx-xxx format"""
-    if not re.match(r"^\d{2}-\d{2}-\d{3}$", value):
-        raise ValidationError("Registration number must be in format xx-xx-xxx (e.g., 01-23-456)")
+    """Validate that registration number follows xx-xx-xxx or xx-xx-xxxx format"""
+    if not re.match(r"^\d{2}-\d{2}-\d{3,4}$", value):
+        raise ValidationError("Registration number must be in format xx-xx-xxx or xx-xx-xxxx (e.g., 01-23-456 or 01-23-4567)")
 
 
 class Visit(models.Model):
@@ -59,10 +59,10 @@ class Visit(models.Model):
 
 
 class Patient(models.Model):
-    # Using CharField with custom format xx-xx-xxx for registration_number
+    # Using CharField with custom format xx-xx-xxx or xx-xx-xxxx for registration_number
     # to ensure proper formatting and uniqueness
     registration_number = models.CharField(
-        max_length=8,
+        max_length=10,
         primary_key=True,
         unique=True,
         validators=[validate_registration_number_format],
@@ -83,28 +83,41 @@ class Patient(models.Model):
 
     @classmethod
     def generate_next_registration_number(cls):
-        """Generate the next registration number in xx-xx-xxx format"""
-        # Get the highest existing registration number
-        last_patient = cls.objects.order_by("-registration_number").first()
+        """Generate the next registration number in xx-xx-xxx or xx-xx-xxxx format"""
+        from django.db import transaction
+        
+        # Use select_for_update to lock the row and prevent race conditions
+        with transaction.atomic():
+            # Get the highest existing registration number with row-level locking
+            last_patient = cls.objects.select_for_update().order_by("-registration_number").first()
 
-        if not last_patient:
-            # First patient gets 01-00-001
-            return "01-00-001"
+            if not last_patient:
+                # First patient gets 01-00-001
+                return "01-00-001"
 
-        # Extract numeric value from existing format (remove dashes)
-        last_number_str = last_patient.registration_number.replace("-", "")
-        last_number = int(last_number_str)
+            # Extract numeric value from existing format (remove dashes)
+            last_number_str = last_patient.registration_number.replace("-", "")
+            last_number = int(last_number_str)
 
-        # Increment and format as xx-xx-xxx
-        next_number = last_number + 1
-        formatted = f"{next_number:07d}"  # Zero-pad to 7 digits
-
-        return f"{formatted[:2]}-{formatted[2:4]}-{formatted[4:]}"
+            # Increment and format as xx-xx-xxx or xx-xx-xxxx
+            next_number = last_number + 1
+            
+            # Support up to 8 digits (99-99-9999)
+            if next_number < 10000000:  # 7 digits
+                formatted = f"{next_number:07d}"  # Zero-pad to 7 digits
+                return f"{formatted[:2]}-{formatted[2:4]}-{formatted[4:]}"
+            else:  # 8 digits
+                formatted = f"{next_number:08d}"  # Zero-pad to 8 digits
+                return f"{formatted[:2]}-{formatted[2:4]}-{formatted[4:]}"
 
     def save(self, *args, **kwargs):
+        from django.db import transaction
+        
         # Auto-generate registration number if not provided
         if not self.registration_number:
-            self.registration_number = self.generate_next_registration_number()
+            # Use transaction to ensure atomicity when generating registration number
+            with transaction.atomic():
+                self.registration_number = self.generate_next_registration_number()
         super().save(*args, **kwargs)
 
     def __str__(self):
