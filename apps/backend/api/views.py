@@ -113,6 +113,13 @@ class PatientViewSet(viewsets.ModelViewSet):
 
             numbers = []
             for num in raw_numbers:
+                # Validate length - reject numbers that are excessively long
+                # The valid format is XXXX-XX-XXXX (13 chars with dashes, 10 digits)
+                # Reject numeric strings > 10 digits (without dashes)
+                if num.isdigit() and len(num) > 10:
+                    raise ValidationError(
+                        {"registration_numbers": f"Invalid registration number format: '{num}'."}
+                    )
                 # Accept formatted registration numbers in mmyy-ct-0000 format
                 if pattern.match(num):
                     numbers.append(num)
