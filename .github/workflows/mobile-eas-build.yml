@@ -46,7 +46,7 @@ jobs:
           EAS_NO_VCS: 1
         run: |
           PROFILE="${{ github.event.inputs.profile || 'preview' }}"
-          npx eas build --platform android --profile "$PROFILE" --non-interactive
+          eas build --platform android --profile "$PROFILE" --non-interactive
 
       - name: Skip build (missing token)
         if: env.EXPO_TOKEN == ''
