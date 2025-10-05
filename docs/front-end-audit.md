@@ -21,7 +21,7 @@
 - Utilities like `unwrapListResponse` normalize paginated responses, supporting both array and `{results: []}` payloads from the backend.【F:apps/web/src/utils/api.js†L1-L16】
 
 ### UI Components and Accessibility Observations
-- Shared UI primitives (for example `StatusBadge` and `TimeStamp`) encapsulate status chips and timestamp formatting for reuse across dashboards.【F:apps/web/src/components/StatusBadge.jsx†L1-L70】【F:apps/web/src/components/TimeStamp.jsx†L1-L83】
+- Shared UI primitives (such as `StatusBadge` and `TimeStamp`) encapsulate status chips and timestamp formatting for reuse across dashboards.【F:apps/web/src/components/StatusBadge.jsx†L1-L70】【F:apps/web/src/components/TimeStamp.jsx†L1-L83】
 - **Issue:** `TimeStamp` calls `toLocaleDateString` even when time components are requested, which strips hours/minutes from "datetime"/"full" formats. Switching to `toLocaleString` (or `Intl.DateTimeFormat`) would render complete timestamps.【F:apps/web/src/components/TimeStamp.jsx†L21-L57】
 - Tailwind classes drive layout, and login inputs include `sr-only` labels for screen readers, aligning with accessibility best practices.【F:apps/web/src/pages/LoginPage.jsx†L1-L89】
 
