@@ -2,7 +2,6 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone

@@ -115,7 +115,7 @@ class RegistrationNumberFormatTests(APITestCase):
         # Verify both patients 1 and 3 are in category 01
         self.assertTrue("-01-" in patient1.registration_number)
         self.assertTrue("-01-" in patient3.registration_number)
-        
+
         # Verify patient 2 is in category 02
         self.assertTrue("-02-" in patient2.registration_number)
 
@@ -140,7 +140,7 @@ class RegistrationNumberFormatTests(APITestCase):
         import datetime
         now = datetime.datetime.now()
         mmyy = f"{now.month:02d}{now.year % 100:02d}"
-        
+
         # Valid registration number
         patient = Patient.objects.create(
             registration_number=f"{mmyy}-01-0001", name="Test Patient", gender="MALE", category="01"
