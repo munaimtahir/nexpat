@@ -1,9 +1,7 @@
 # Reviewed for final cleanup
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.core.cache import cache
 import datetime
-import json
 import re
 
 
@@ -102,16 +100,16 @@ class Patient(models.Model):
     @classmethod
     def generate_next_registration_number(cls, category):
         """Generate the next registration number in format mmyy-ct-0000.
-        
+
         Args:
             category: Patient category code (01-05)
-        
+
         Returns:
             Registration number in format mmyy-ct-0000
         """
         now = datetime.datetime.now()
         mmyy = f"{now.month:02d}{now.year % 100:02d}"
-        
+
         # Find the last patient with the same mmyy-ct prefix
         prefix = f"{mmyy}-{category}-"
         last_patient = (
@@ -120,20 +118,20 @@ class Patient(models.Model):
             .order_by("-registration_number")
             .first()
         )
-        
+
         if last_patient:
             # Extract the serial number from the last registration
             serial_str = last_patient.registration_number.split("-")[-1]
             next_serial = int(serial_str) + 1
         else:
             next_serial = 1
-        
+
         if next_serial > 9999:
             raise ValidationError(
                 f"No more registration numbers available for {mmyy}-{category} "
                 "(maximum 9999 patients per category per month)."
             )
-        
+
         return f"{mmyy}-{category}-{next_serial:04d}"
 
     def save(self, *args, **kwargs):
