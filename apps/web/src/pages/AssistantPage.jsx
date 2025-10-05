@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api.js';
 import { firstFromListResponse } from '../utils/api.js';
+import useRegistrationFormat from '../hooks/useRegistrationFormat.js';
+import { buildExampleFromFormat } from '../utils/registrationFormat.js';
 
 const AssistantPage = () => {
   const [registrationNumber, setRegistrationNumber] = useState('');
@@ -11,6 +13,8 @@ const AssistantPage = () => {
   const [generatedToken, setGeneratedToken] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { format } = useRegistrationFormat();
+  const formatExample = useMemo(() => buildExampleFromFormat(format), [format]);
 
   useEffect(() => {
     const fetchQueues = async () => {
@@ -133,8 +137,14 @@ const AssistantPage = () => {
             id="registrationNumber"
             value={registrationNumber}
             onChange={(e) => setRegistrationNumber(e.target.value)}
+            placeholder={formatExample ? `e.g. ${formatExample}` : 'Registration number'}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
+          {formatExample && (
+            <p className="mt-1 text-xs text-gray-500">
+              Expected format similar to <span className="font-mono">{formatExample}</span>
+            </p>
+          )}
         </div>
 
         <div>
