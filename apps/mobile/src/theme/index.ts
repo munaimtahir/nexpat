@@ -13,24 +13,20 @@ export const paperTheme = {
     surface: colors.surface,
     background: colors.background
   },
-  typography: {
-    ...MD3LightTheme.typography,
+  fonts: {
     displayLarge: {
-      ...MD3LightTheme.typography?.displayLarge,
       fontSize: typography.display.fontSize,
       fontWeight: typography.display.fontWeight,
       lineHeight: typography.display.lineHeight,
       letterSpacing: typography.display.letterSpacing
     },
     titleLarge: {
-      ...MD3LightTheme.typography?.titleLarge,
       fontSize: typography.title.fontSize,
       fontWeight: typography.title.fontWeight,
       lineHeight: typography.title.lineHeight,
       letterSpacing: typography.title.letterSpacing
     },
     bodyLarge: {
-      ...MD3LightTheme.typography?.bodyLarge,
       fontSize: typography.body.fontSize,
       fontWeight: typography.body.fontWeight,
       lineHeight: typography.body.lineHeight,

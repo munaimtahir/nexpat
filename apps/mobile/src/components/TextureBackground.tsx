@@ -35,7 +35,7 @@ export const TextureBackground: React.FC<Props> = ({ children, variant = 'aurora
     ]
   }));
 
-  const colors = variant === 'sunset' ? ['#312E81', '#F97316'] : ['#0F172A', '#4338CA'];
+  const colors: [string, string] = variant === 'sunset' ? ['#312E81', '#F97316'] : ['#0F172A', '#4338CA'];
   const secondary = variant === 'sunset' ? '#FBBF24' : '#22D3EE';
   const tertiary = variant === 'sunset' ? '#FB7185' : '#8B5CF6';
 

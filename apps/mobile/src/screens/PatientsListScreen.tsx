@@ -68,11 +68,8 @@ export const PatientsListScreen: React.FC = () => {
         placeholder="Search patients"
       />
       <Button 
-        mode="contained" 
         onPress={() => navigation.navigate('PatientForm', {})} 
         style={{ marginHorizontal: 16, marginBottom: 16 }}
-        accessibilityLabel="Add new patient"
-        accessibilityHint="Opens form to create a new patient record"
       >
         Add patient
       </Button>
@@ -80,7 +77,6 @@ export const PatientsListScreen: React.FC = () => {
         data={data}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
-        entering={FadeInUp.duration(320)}
         refreshControl={<RefreshControl refreshing={patientsQuery.isRefetching} onRefresh={() => patientsQuery.refetch()} tintColor="#fff" />}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={() => (

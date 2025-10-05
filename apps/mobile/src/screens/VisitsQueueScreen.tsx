@@ -85,18 +85,12 @@ export const VisitsQueueScreen: React.FC = () => {
             <VisitStatusTag status={item.status} />
             <Button 
               onPress={() => navigation.navigate('VisitDetail', { visitId: item.id })}
-              accessibilityLabel={`View details for visit ${item.id}`}
-              accessibilityHint="Opens visit detail page"
             >
               Open
             </Button>
             {nextStatus[item.status] ? (
               <Button 
-                mode="contained" 
                 onPress={() => onAdvance(item.id, item.status)} 
-                loading={update.isPending}
-                accessibilityLabel={`Advance visit ${item.id} to ${nextStatus[item.status]?.replace('_', ' ')}`}
-                accessibilityHint={`Changes status from ${item.status} to ${nextStatus[item.status]}`}
               >
                 Advance to {nextStatus[item.status]?.replace('_', ' ')}
               </Button>
