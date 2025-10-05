@@ -6,7 +6,6 @@ import type {
   Patient,
   PatientCreateRequest,
   PatientUpdateRequest,
-  TokenPair,
   UploadRequest,
   UserProfile,
   Visit,
@@ -115,7 +114,6 @@ export class GeneratedApiClient {
 
 export type {
   LoginRequest,
-  TokenPair,
   UserProfile,
   Patient,
   Visit,

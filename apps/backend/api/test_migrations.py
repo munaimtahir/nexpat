@@ -148,29 +148,29 @@ def test_0003_backfill_migrates_existing_visits(migrator):
         legacy_visit_count,
     )
 
-    migrator.apply_tested_migration(("api", "0003_backfill_visits_to_patients_queues"))
+    new_state = migrator.apply_tested_migration(("api", "0003_backfill_visits_to_patients_queues"))
 
-    # After migration, query using live runtime models
-    # from api.models import Queue as RuntimeQueue # Already imported
-    from api.models import Queue as RuntimeQueue
-    from api.models import Patient as RuntimePatient
-    from api.models import Visit as RuntimeVisit
+    # After migration, get the models from the migrated state, not runtime models
+    # This ensures we're using the schema that exists at migration 0003
+    MigratedQueue = new_state.apps.get_model("api", "Queue")
+    MigratedPatient = new_state.apps.get_model("api", "Patient")
+    MigratedVisit = new_state.apps.get_model("api", "Visit")
 
     # Debugging: check what queues exist
-    all_queues = list(RuntimeQueue.objects.all())
+    all_queues = list(MigratedQueue.objects.all())
     print(f"All queues after migration: {[q.name for q in all_queues]}")
 
-    general_queue = RuntimeQueue.objects.get(name="General")
+    general_queue = MigratedQueue.objects.get(name="General")
 
     # The migration should have created a patient record and linked it to the
     # visit.
-    anonymous_patient = RuntimePatient.objects.get(name="Old SQL Patient")
+    anonymous_patient = MigratedPatient.objects.get(name="Old SQL Patient")
     # As per data migration logic for new patients
     assert anonymous_patient.phone is None
 
     # Fetch the visit that was inserted via SQL and should have been updated
     # by the migration
-    migrated_sql_visit = RuntimeVisit.objects.get(token_number=101, visit_date="2023-01-01")
+    migrated_sql_visit = MigratedVisit.objects.get(token_number=101, visit_date="2023-01-01")
 
     assert migrated_sql_visit.patient_id == anonymous_patient.pk
     assert migrated_sql_visit.queue_id == general_queue.pk

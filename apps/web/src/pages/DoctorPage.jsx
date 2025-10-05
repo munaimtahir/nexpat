@@ -171,7 +171,7 @@ const DoctorPage = () => {
             onClick={() => handleUpdateVisitStatus(visit.id, 'start')}
             className="rounded-full bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500"
           >
-            Start consult
+            Start Consultation
           </button>
         );
       case 'START':
@@ -181,13 +181,13 @@ const DoctorPage = () => {
               onClick={() => handleUpdateVisitStatus(visit.id, 'in_room')}
               className="rounded-full bg-purple-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-purple-500"
             >
-              Move to room
+              Move to Room
             </button>
             <button
               onClick={() => handleUpdateVisitStatus(visit.id, 'send_back_to_waiting')}
               className="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-400"
             >
-              Send back
+              Send Back
             </button>
           </>
         );
@@ -198,13 +198,13 @@ const DoctorPage = () => {
               onClick={() => handleUpdateVisitStatus(visit.id, 'done')}
               className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-500"
             >
-              Mark done
+              Mark as Done
             </button>
             <button
               onClick={() => handleUpdateVisitStatus(visit.id, 'send_back_to_waiting')}
               className="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-400"
             >
-              Send back
+              Send Back
             </button>
           </>
         );
@@ -254,11 +254,11 @@ const DoctorPage = () => {
 
   return (
     <WorkspaceLayout
-      title="Doctor Control Room"
+      title="Doctor Dashboard"
       subtitle="Move patients through consults, update statuses, and capture prescriptions in one grid."
       breadcrumbs={[
         { label: 'Home', to: '/' },
-        { label: 'Doctor Control Room' },
+        { label: 'Doctor' },
       ]}
       kpis={kpis}
       actions={(

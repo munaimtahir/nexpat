@@ -138,6 +138,7 @@ class RegistrationNumberFormatTests(APITestCase):
     def test_registration_number_format_validation(self):
         """Test that the new mmyy-ct-0000 format is validated correctly"""
         import datetime
+
         now = datetime.datetime.now()
         mmyy = f"{now.month:02d}{now.year % 100:02d}"
 

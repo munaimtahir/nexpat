@@ -37,8 +37,12 @@ export const DashboardScreen: React.FC = () => {
 
   const nextVisit = waitingQuery.data?.results?.[0];
 
-  type StatCard = { label: string; value: number; detail: string; colors: [string, string] };
-  const stats: StatCard[] = [
+  const stats: Array<{
+    label: string;
+    value: number;
+    detail: string;
+    colors: [string, string];
+  }> = [
     {
       label: 'Waiting',
       value: waitingQuery.data?.count ?? 0,
@@ -163,7 +167,7 @@ export const DashboardScreen: React.FC = () => {
                   <Text style={styles.actionDescription}>{action.description}</Text>
                 </View>
                 <View style={styles.actionIcon}>
-                  <MaterialCommunityIcons name={action.icon} size={28} color="#F8FAFC" />
+                  <MaterialCommunityIcons name={action.icon as any} size={28} color="#F8FAFC" />
                 </View>
               </View>
             </Card>

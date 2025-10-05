@@ -113,8 +113,7 @@ class Patient(models.Model):
         # Find the last patient with the same mmyy-ct prefix
         prefix = f"{mmyy}-{category}-"
         last_patient = (
-            cls.objects
-            .filter(registration_number__startswith=prefix)
+            cls.objects.filter(registration_number__startswith=prefix)
             .order_by("-registration_number")
             .first()
         )

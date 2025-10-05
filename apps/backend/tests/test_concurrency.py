@@ -35,23 +35,28 @@ class ConcurrencyTests(TransactionTestCase):
         # Create patients sequentially to verify unique IDs
         patients = []
         for i in range(5):
-            patient = Patient.objects.create(name=f"Patient {i}", gender="MALE")
+            patient = Patient.objects.create(name=f"Patient {i}", gender="MALE", category="01")
             patients.append(patient.registration_number)
 
         # Should have 5 unique registration numbers
         self.assertEqual(len(patients), 5)
         self.assertEqual(len(set(patients)), 5, f"Duplicate registration numbers: {patients}")
 
-        # All should follow the new format (xxx-xx-xxx)
+        # All should follow the new format (mmyy-ct-0000)
         for reg_num in patients:
-            self.assertRegex(reg_num, r"^\d{3}-\d{2}-\d{3}$")
+            self.assertRegex(reg_num, r"^\d{4}-\d{2}-\d{4}$")
 
-        # Should be sequential
-        self.assertEqual(patients[0], "001-00-001")
-        self.assertEqual(patients[1], "001-00-002")
-        self.assertEqual(patients[2], "001-00-003")
-        self.assertEqual(patients[3], "001-00-004")
-        self.assertEqual(patients[4], "001-00-005")
+        # Get the current month-year prefix
+        now = datetime.datetime.now()
+        mmyy = f"{now.month:02d}{now.year % 100:02d}"
+        expected_prefix = f"{mmyy}-01-"
+
+        # Should be sequential within the month/category
+        self.assertEqual(patients[0], f"{expected_prefix}0001")
+        self.assertEqual(patients[1], f"{expected_prefix}0002")
+        self.assertEqual(patients[2], f"{expected_prefix}0003")
+        self.assertEqual(patients[3], f"{expected_prefix}0004")
+        self.assertEqual(patients[4], f"{expected_prefix}0005")
 
     def test_concurrent_visit_creation_no_duplicate_tokens(self):
         """
@@ -62,7 +67,7 @@ class ConcurrencyTests(TransactionTestCase):
         select_for_update() would handle truly concurrent requests properly.
         """
         # Create a patient first
-        patient = Patient.objects.create(name="Test Patient", gender="MALE")
+        patient = Patient.objects.create(name="Test Patient", gender="MALE", category="01")
 
         # Create 10 visits sequentially
         tokens = []
@@ -105,13 +110,18 @@ class ConcurrencyTests(TransactionTestCase):
         Test that the retry logic works when there's an IntegrityError.
         This is a more direct test of the retry mechanism.
         """
+        # Get the current month-year prefix
+        now = datetime.datetime.now()
+        mmyy = f"{now.month:02d}{now.year % 100:02d}"
+        expected_prefix = f"{mmyy}-01-"
+
         # Create first patient normally
-        patient1 = Patient.objects.create(name="Patient 1", gender="MALE")
-        self.assertEqual(patient1.registration_number, "001-00-001")
+        patient1 = Patient.objects.create(name="Patient 1", gender="MALE", category="01")
+        self.assertEqual(patient1.registration_number, f"{expected_prefix}0001")
 
         # Create second patient which should get next number
-        patient2 = Patient.objects.create(name="Patient 2", gender="FEMALE")
-        self.assertEqual(patient2.registration_number, "001-00-002")
+        patient2 = Patient.objects.create(name="Patient 2", gender="FEMALE", category="01")
+        self.assertEqual(patient2.registration_number, f"{expected_prefix}0002")
 
         # Verify the numbers are unique
         self.assertNotEqual(patient1.registration_number, patient2.registration_number)
