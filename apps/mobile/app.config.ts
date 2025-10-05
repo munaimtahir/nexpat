@@ -28,7 +28,7 @@ const config: ExpoConfig = {
     serverUrl: process.env.SERVER_URL,
     sentryDsn: process.env.SENTRY_DSN
   },
-  plugins: ['sentry-expo']
+  plugins: ['sentry-expo', 'expo-font']
 };
 
 export default config;
