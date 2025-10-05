@@ -7,7 +7,6 @@ import PatientsPage from './pages/PatientsPage.jsx';
 import PatientFormPage from './pages/PatientFormPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import UnauthorizedPage from './pages/UnauthorizedPage.jsx';
-import RegistrationFormatSettingsPage from './pages/RegistrationFormatSettingsPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { useAuth } from './AuthContext.jsx';
 import { KPIChip } from './components/index.js';
@@ -27,7 +26,6 @@ const HomePage = () => {
     { to: '/doctor', label: 'Doctor Dashboard', role: 'doctor' },
     { to: '/display', label: 'Public Queue Display', role: 'display' },
     { to: '/patients', label: 'Manage Patients', role: ['assistant', 'doctor'] },
-    { to: '/settings/registration-format', label: 'Registration Format Settings', role: 'doctor' },
   ];
 
   const linkIsVisible = (requiredRole) => {
@@ -256,14 +254,6 @@ const App = () => (
       />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/settings/registration-format"
-        element={(
-          <ProtectedRoute requiredRoles={['doctor']}>
-            <RegistrationFormatSettingsPage />
-          </ProtectedRoute>
-        )}
-      />
     </Routes>
   </div>
 );
