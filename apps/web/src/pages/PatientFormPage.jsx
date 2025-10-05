@@ -1,7 +1,14 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api.js';
 import { unwrapListResponse } from '../utils/api.js';
+import {
+  WorkspaceLayout,
+  TextField,
+  SelectField,
+  ProgressPulse,
+  EmptyState,
+} from '../components/index.js';
 
 const genders = [
   { value: 'MALE', label: 'Male' },
@@ -23,6 +30,8 @@ const PatientFormPage = () => {
   const [formData, setFormData] = useState(defaultFormState);
   const [error, setError] = useState('');
   const [images, setImages] = useState([]);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const fetchPatient = async () => {
@@ -45,17 +54,21 @@ const PatientFormPage = () => {
     } else {
       setFormData(defaultFormState);
       setImages([]);
+      setFieldErrors({});
     }
   }, [isEdit, registrationNumberParam]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
+    setFieldErrors({});
+    setIsSaving(true);
     try {
       if (isEdit) {
         await api.put(`/patients/${registrationNumberParam}/`, formData);
@@ -66,6 +79,7 @@ const PatientFormPage = () => {
     } catch (err) {
       console.error('Save failed', err);
       if (err.response?.data) {
+        setFieldErrors(err.response.data);
         const messages = Object.entries(err.response.data)
           .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
           .join('; ');
@@ -73,79 +87,136 @@ const PatientFormPage = () => {
       } else {
         setError('Failed to save patient');
       }
+    } finally {
+      setIsSaving(false);
     }
   };
 
+  const kpis = useMemo(
+    () => [
+      { label: 'Mode', value: isEdit ? 'Editing record' : 'Creating record', tone: isEdit ? 'info' : 'positive' },
+      { label: 'Attachments', value: images.length, tone: images.length > 0 ? 'positive' : 'info' },
+      { label: 'Validation', value: error ? 'Errors detected' : 'All clear', tone: error ? 'critical' : 'positive' },
+    ],
+    [error, images.length, isEdit],
+  );
+
+  const resolveFieldError = (field) => {
+    const value = fieldErrors[field];
+    if (!value) return '';
+    if (Array.isArray(value)) return value[0];
+    return String(value);
+  };
+
   return (
-    <div className="container mx-auto p-6 max-w-md">
-      <Link to="/patients" className="text-blue-500 hover:underline">&larr; Back to Patients</Link>
-      <h1 className="text-2xl font-bold mt-4 mb-6">{isEdit ? 'Edit Patient' : 'Add Patient'}</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-          />
-        </div>
-        <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone</label>
-          <input
-            type="tel"
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-          />
-        </div>
-        <div>
-          <label htmlFor="gender" className="block text-sm font-medium text-gray-700">Gender</label>
-          <select
-            id="gender"
-            name="gender"
-            value={formData.gender}
-            onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-          >
-            {genders.map((gender) => (
-              <option key={gender.value} value={gender.value}>{gender.label}</option>
-            ))}
-          </select>
-        </div>
-        {error && <p className="text-red-600 text-sm" role="alert">{error}</p>}
+    <WorkspaceLayout
+      title={isEdit ? 'Update patient record' : 'Register new patient'}
+      subtitle="Maintain clean patient data with inline validation and quick attachment previews."
+      breadcrumbs={[
+        { label: 'Home', to: '/' },
+        { label: 'Patient Registry', to: '/patients' },
+        { label: isEdit ? 'Edit patient' : 'New patient' },
+      ]}
+      kpis={kpis}
+      actions={(
+        <button
+          type="button"
+          onClick={() => navigate('/patients')}
+          className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-slate-700"
+        >
+          ← Back to list
+        </button>
+      )}
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-5 rounded-3xl border border-indigo-100 bg-white p-6 shadow-inner"
+        noValidate
+      >
+        <ProgressPulse active={isSaving} />
+        <TextField
+          label="Patient name"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          required
+          error={resolveFieldError('name')}
+          description="Use the patient’s full legal name."
+        />
+        <TextField
+          label="Phone number"
+          name="phone"
+          type="tel"
+          value={formData.phone}
+          onChange={handleChange}
+          error={resolveFieldError('phone')}
+          description="Optional but recommended for SMS updates."
+        />
+        <SelectField
+          label="Gender"
+          name="gender"
+          value={formData.gender}
+          onChange={handleChange}
+          error={resolveFieldError('gender')}
+          description="Choose the option recorded during registration."
+        >
+          {genders.map((gender) => (
+            <option key={gender.value} value={gender.value}>
+              {gender.label}
+            </option>
+          ))}
+        </SelectField>
+
+        {error && (
+          <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600" role="alert">
+            {error}
+          </p>
+        )}
+
         <button
           type="submit"
-          className="w-full py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+          disabled={isSaving}
+          className="w-full rounded-full bg-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
-          {isEdit ? 'Update' : 'Create'}
+          {isSaving ? 'Saving…' : isEdit ? 'Update patient' : 'Create patient'}
         </button>
       </form>
-      {isEdit && images.length > 0 && (
-        <div className="mt-4 flex space-x-2 overflow-x-auto">
-          {images.map((image) => (
-            <a
-              key={image.id}
-              href={image.image_url}
-              className="inline-block"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <img
-                src={image.image_url}
-                alt="Prescription"
-                className="h-20 w-20 object-cover rounded"
+
+      {isEdit && (
+        <div className="mt-6 rounded-3xl border border-indigo-100 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-800">Prescription attachments</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Review past prescriptions linked to this patient record.
+          </p>
+          {images.length > 0 ? (
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              {images.map((image) => (
+                <a
+                  key={image.id}
+                  href={image.image_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group relative overflow-hidden rounded-2xl border border-indigo-100 bg-slate-50 shadow-sm"
+                >
+                  <img
+                    src={image.image_url}
+                    alt="Prescription"
+                    className="h-32 w-full object-cover transition duration-200 group-hover:scale-105"
+                  />
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4">
+              <EmptyState
+                title="No prescriptions yet"
+                description="Uploads from the doctor workspace will appear here automatically."
               />
-            </a>
-          ))}
+            </div>
+          )}
         </div>
       )}
-    </div>
+    </WorkspaceLayout>
   );
 };
 
