@@ -112,6 +112,10 @@ build/
 secrets/*.json
 !secrets/*.example
 !secrets/.gitkeep
+infra/secrets/*.json
+!infra/secrets/gdrive_service.json
+!infra/secrets/*.example
+!infra/secrets/.gitkeep
 deploy/*.json
 !deploy/*.example
 

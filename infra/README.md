@@ -66,11 +66,10 @@ See `docs/ops/DEPLOYMENT_GUIDE.md` for complete production deployment instructio
 
 ### Secrets Management
 
-1. Copy example files:
-   ```bash
-   cp secrets/gdrive_service_account.json.example secrets/gdrive_service.json
-   ```
+1. A placeholder `infra/secrets/gdrive_service.json` is committed so Docker secrets resolve during development.
 
-2. Fill in actual credentials (never commit these!)
+2. Before deploying, replace the placeholder with real credentials supplied by your secret manager **outside of version control** (e.g., copy the managed secret into place on the server but do **not** commit the change).
 
-3. Reference in docker-compose using secrets configuration
+3. `.gitignore` is configured to ignore other JSON files in this directory. Keep any additional secret material out of Git and manage it through your secret management process.
+
+4. Reference the JSON file in docker-compose using the secrets configuration as usual.
