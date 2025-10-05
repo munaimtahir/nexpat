@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api.js';
 import { unwrapListResponse } from '../utils/api.js';
 import { TimeStamp } from '../components/index.js';
+import useRegistrationFormat from '../hooks/useRegistrationFormat.js';
+import { buildExampleFromFormat } from '../utils/registrationFormat.js';
 
 const PatientsPage = () => {
   const [patients, setPatients] = useState([]);
@@ -10,6 +12,8 @@ const PatientsPage = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+  const { format } = useRegistrationFormat();
+  const formatExample = useMemo(() => buildExampleFromFormat(format), [format]);
 
   const fetchPatients = async (term = '') => {
     setLoading(true);
@@ -65,7 +69,11 @@ const PatientsPage = () => {
       <form onSubmit={handleSearch} className="mt-4 flex flex-wrap gap-2">
         <input
           type="text"
-          placeholder="Search by name, phone, or ID"
+          placeholder={
+            formatExample
+              ? `Search by name, phone, or ID (e.g. ${formatExample})`
+              : 'Search by name, phone, or ID'
+          }
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-grow border border-gray-300 rounded px-3 py-2"
