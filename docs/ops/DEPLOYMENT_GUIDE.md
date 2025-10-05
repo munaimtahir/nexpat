@@ -24,7 +24,7 @@ Edit `.env` with your production values:
 ```bash
 # Required for production
 SECRET_KEY=your_strong_random_secret_key_here
-DEBUG=false
+DJANGO_DEBUG=false
 DJANGO_ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
 DATABASE_URL=postgresql://username:password@host:5432/dbname
 CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
@@ -138,7 +138,7 @@ If refreshing frontend routes returns 404:
 
 Before going to production:
 
-- [ ] Set `DEBUG=false`
+- [ ] Set `DJANGO_DEBUG=false`
 - [ ] Use a strong, random `SECRET_KEY`
 - [ ] Configure `DJANGO_ALLOWED_HOSTS` properly
 - [ ] Set all security headers appropriately

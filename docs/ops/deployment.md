@@ -16,7 +16,7 @@ This guide outlines how to deploy the ClinicQ project in a traditional server en
 Create a `.env` file (an example is provided at `deploy/.env.example`) with values for:
 
 * `SECRET_KEY` – Django secret key
-* `DEBUG` – set to `False` in production
+* `DJANGO_DEBUG` – set to `False` in production
 * `DJANGO_ALLOWED_HOSTS` – comma‑separated list of allowed hostnames
 * `DATABASE_URL` – connection string for PostgreSQL
 * Optional superuser variables: `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD`
@@ -85,7 +85,7 @@ Install the following software on the host machine:
 Create a `.env` file based on [`deploy/.env.example`](../deploy/.env.example) and adjust the values for your environment. Important variables include:
 
 - `SECRET_KEY` – Django secret key
-- `DEBUG` – set to `False` in production
+- `DJANGO_DEBUG` – set to `False` in production
 - `DJANGO_ALLOWED_HOSTS` – comma-separated hostnames that can serve the app
 - `DATABASE_URL` – PostgreSQL connection string
 - `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` – optional initial superuser
