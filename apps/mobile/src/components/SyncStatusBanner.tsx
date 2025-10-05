@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Banner, Button, Dialog, List, Portal, Text, useTheme } from 'react-native-paper';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useOutboxStatus } from '@/api/outbox/useOutboxStatus';
@@ -14,10 +15,27 @@ export const SyncStatusBanner: React.FC = () => {
   const [detailsVisible, setDetailsVisible] = React.useState(false);
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const translateY = useSharedValue(-120);
+  const opacity = useSharedValue(0);
 
   React.useEffect(() => {
     setVisible(show);
   }, [show]);
+
+  React.useEffect(() => {
+    if (show) {
+      translateY.value = withSpring(0, { damping: 12, stiffness: 180 });
+      opacity.value = withTiming(1, { duration: 220 });
+    } else {
+      translateY.value = withTiming(-120, { duration: 220 });
+      opacity.value = withTiming(0, { duration: 180 });
+    }
+  }, [opacity, show, translateY]);
+
+  const containerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: opacity.value
+  }));
 
   if (!show) {
     return null;
@@ -49,7 +67,8 @@ export const SyncStatusBanner: React.FC = () => {
   return (
     <Portal>
       <View pointerEvents="box-none" style={[styles.wrapper, { paddingTop: insets.top + 8 }]}> 
-        <Banner
+        <Animated.View style={[styles.animated, containerStyle]}>
+          <Banner
           visible={visible}
           style={[styles.banner, { backgroundColor }]}
           icon={icon}
@@ -69,7 +88,8 @@ export const SyncStatusBanner: React.FC = () => {
               </Text>
             ) : null}
           </View>
-        </Banner>
+          </Banner>
+        </Animated.View>
       </View>
       <Dialog visible={detailsVisible} onDismiss={() => setDetailsVisible(false)}>
         <Dialog.Title>Queued updates</Dialog.Title>
@@ -105,8 +125,10 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10
   },
+  animated: {
+    paddingHorizontal: 16
+  },
   banner: {
-    marginHorizontal: 16,
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 2
