@@ -276,6 +276,7 @@ class VisitViewSet(viewsets.ModelViewSet):
         - Auto-assign token_number (per queue, per day).
         - Set visit_date to today.
         - Set status to 'WAITING'.
+        - Use database locking to prevent race conditions.
         """
         from django.db import transaction
         

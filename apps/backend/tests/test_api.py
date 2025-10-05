@@ -62,8 +62,8 @@ class RegistrationNumberFormatTests(APITestCase):
         self.assertRegex(patient2.registration_number, pattern)
 
         # Verify sequential generation
-        self.assertEqual(patient1.registration_number, "01-00-001")
-        self.assertEqual(patient2.registration_number, "01-00-002")
+        self.assertEqual(patient1.registration_number, "001-00-001")
+        self.assertEqual(patient2.registration_number, "001-00-002")
 
     def test_registration_number_validation(self):
         """Test that invalid registration number formats are rejected"""
@@ -72,7 +72,7 @@ class RegistrationNumberFormatTests(APITestCase):
         current_pattern = re.compile(get_registration_number_format()["pattern"])
 
         # Valid formats
-        valid_formats = ["01-23-456", "99-99-999", "00-00-001"]
+        valid_formats = ["001-23-456", "999-99-999", "000-00-001"]
         for valid_format in valid_formats:
             self.assertIsNotNone(
                 current_pattern.match(valid_format),
@@ -104,13 +104,13 @@ class RegistrationNumberFormatTests(APITestCase):
     def test_patient_creation_with_explicit_registration_number(self):
         """Test that patients can be created with explicit registration numbers"""
         patient = Patient.objects.create(
-            registration_number="05-67-890", name="Test Patient", gender="OTHER"
+            registration_number="005-67-890", name="Test Patient", gender="OTHER"
         )
-        self.assertEqual(patient.registration_number, "05-67-890")
+        self.assertEqual(patient.registration_number, "005-67-890")
 
         # Next auto-generated patient should continue from this number
         next_patient = Patient.objects.create(name="Next Patient", gender="MALE")
-        self.assertEqual(next_patient.registration_number, "05-67-891")
+        self.assertEqual(next_patient.registration_number, "005-67-891")
 
     def test_registration_number_9_character_format(self):
         """Test that 9-character registration numbers (xx-xx-xxxx) are accepted"""
@@ -313,7 +313,7 @@ class PatientSearchTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
 
         self.patient1 = Patient.objects.create(
-            registration_number="01-23-456",
+            registration_number="001-23-456",
             name="John Doe",
             phone="1234567890",
             gender="MALE",
