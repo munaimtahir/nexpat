@@ -11,6 +11,7 @@ const PatientsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [genderFilter, setGenderFilter] = useState('ALL');
   const navigate = useNavigate();
   const { format } = useRegistrationFormat();
   const formatExample = useMemo(() => buildExampleFromFormat(format), [format]);
@@ -53,16 +54,54 @@ const PatientsPage = () => {
     fetchPatients(searchTerm);
   };
 
+  const filteredPatients = useMemo(() => {
+    if (genderFilter === 'ALL') return patients;
+    return patients.filter((patient) => patient.gender === genderFilter);
+  }, [patients, genderFilter]);
+
+  const kpis = [
+    { label: 'Records found', value: patients.length, tone: 'info' },
+    { label: 'Filter', value: genderFilter === 'ALL' ? 'All genders' : genderFilter, tone: 'caution' },
+    {
+      label: 'Search term',
+      value: searchTerm ? searchTerm : '—',
+      tone: searchTerm ? 'positive' : 'info',
+    },
+    {
+      label: 'Recent arrivals',
+      value: patients
+        .slice(0, 5)
+        .filter(
+          (patient) => Array.isArray(patient.last_5_visit_dates) && patient.last_5_visit_dates.length > 0,
+        ).length,
+      tone: 'positive',
+    },
+  ];
+
+  const genderOptions = [
+    { label: 'All', value: 'ALL' },
+    { label: 'Female', value: 'FEMALE' },
+    { label: 'Male', value: 'MALE' },
+    { label: 'Other', value: 'OTHER' },
+  ];
+
   return (
-    <div className="container mx-auto p-6">
-      <Link to="/" className="text-blue-500 hover:underline">&larr; Back to Home</Link>
-      <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
-        <h1 className="text-2xl font-bold">Patients</h1>
+    <WorkspaceLayout
+      title="Patient Registry"
+      subtitle="Search, filter, and maintain longitudinal patient records with confidence."
+      breadcrumbs={[
+        { label: 'Home', to: '/' },
+        { label: 'Patient Registry' },
+      ]}
+      kpis={kpis}
+      actions={(
         <button
+          type="button"
           onClick={() => navigate('/patients/new')}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-400"
         >
-          Add Patient
+          <span aria-hidden="true">＋</span>
+          Add patient
         </button>
       </div>
 
@@ -81,74 +120,119 @@ const PatientsPage = () => {
         <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Search</button>
       </form>
 
-      {loading ? (
-        <p className="mt-4">Loading...</p>
-      ) : error ? (
-        <p className="mt-4 text-red-600" role="alert">{error}</p>
-      ) : (
-        <div className="mt-6 overflow-x-auto">
-          <table className="min-w-full bg-white shadow-md rounded">
-            <thead>
-              <tr className="bg-gray-100 text-left">
-                <th className="p-2">Reg. No.</th>
-                <th className="p-2">Name</th>
-                <th className="p-2">Gender</th>
-                <th className="p-2">Phone</th>
-                <th className="p-2">Last Visits</th>
-                <th className="p-2">Created</th>
-                <th className="p-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {patients.map((patient) => (
-                <tr key={patient.registration_number} className="border-t hover:bg-gray-50">
-                  <td className="p-2 font-mono text-sm">{patient.registration_number}</td>
-                  <td className="p-2 font-medium">{patient.name}</td>
-                  <td className="p-2">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      patient.gender === 'MALE' ? 'bg-blue-100 text-blue-800' :
-                      patient.gender === 'FEMALE' ? 'bg-pink-100 text-pink-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {patient.gender}
-                    </span>
-                  </td>
-                  <td className="p-2 text-sm">{patient.phone || '—'}</td>
-                  <td className="p-2 text-xs text-gray-600">
-                    {patient.last_5_visit_dates && patient.last_5_visit_dates.length > 0 
-                      ? patient.last_5_visit_dates.slice(0, 3).join(', ')
-                      : 'None'
-                    }
-                    {patient.last_5_visit_dates && patient.last_5_visit_dates.length > 3 && '...'}
-                  </td>
-                  <td className="p-2">
-                    <TimeStamp 
-                      date={patient.created_at} 
-                      format="date" 
-                      className="text-xs"
-                    />
-                  </td>
-                  <td className="p-2 space-x-2">
+        <div className="rounded-3xl border border-indigo-100 bg-white shadow-xl">
+          <div className="border-b border-indigo-50 px-6 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold text-slate-800">Patient directory</h2>
+              <ProgressPulse active={loading} className="w-40" />
+            </div>
+            {error && (
+              <p className="mt-3 rounded-2xl bg-rose-50 px-4 py-2 text-sm font-medium text-rose-600" role="alert">
+                {error}
+              </p>
+            )}
+          </div>
+          <div className="relative max-h-[520px] overflow-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinner label="Loading patient records…" />
+              </div>
+            ) : filteredPatients.length === 0 ? (
+              <div className="p-8">
+                <EmptyState
+                  title="No patients match your filters"
+                  description="Adjust the search criteria or add a new patient record to get started."
+                  action={
                     <button
-                      onClick={() => navigate(`/patients/${patient.registration_number}/edit`)}
-                      className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-xs"
+                      type="button"
+                      onClick={() => navigate('/patients/new')}
+                      className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500"
                     >
-                      Edit
+                      Create patient
                     </button>
-                    <button
-                      onClick={() => handleDelete(patient.registration_number)}
-                      className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                  }
+                />
+              </div>
+            ) : (
+              <table className="min-w-full border-separate border-spacing-y-2 text-sm">
+                <thead className="sticky top-0 z-10 bg-white/95 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 backdrop-blur">
+                  <tr>
+                    <th className="px-6 py-3">Reg. No.</th>
+                    <th className="px-6 py-3">Patient</th>
+                    <th className="px-6 py-3">Gender</th>
+                    <th className="px-6 py-3">Contact</th>
+                    <th className="px-6 py-3">Recent visits</th>
+                    <th className="px-6 py-3">Created</th>
+                    <th className="px-6 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPatients.map((patient, index) => (
+                    <tr
+                      key={patient.registration_number}
+                      className={`rounded-3xl ${index % 2 === 0 ? 'bg-slate-50/90' : 'bg-white'} shadow-sm transition hover:bg-indigo-50`}
                     >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <td className="rounded-l-3xl px-6 py-4 font-mono text-xs text-slate-500">{patient.registration_number}</td>
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-slate-800">{patient.name}</p>
+                        <p className="text-xs text-slate-400">{patient.phone ? 'Registered contact' : 'Missing phone number'}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                            patient.gender === 'MALE'
+                              ? 'bg-blue-100 text-blue-700'
+                              : patient.gender === 'FEMALE'
+                                ? 'bg-pink-100 text-pink-700'
+                                : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {patient.gender}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-500">{patient.phone || '—'}</td>
+                      <td className="px-6 py-4 text-xs text-slate-500">
+                        {patient.last_5_visit_dates && patient.last_5_visit_dates.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {patient.last_5_visit_dates.slice(0, 3).map((date) => (
+                              <span key={date} className="inline-flex items-center rounded-full bg-white px-3 py-1 shadow">
+                                {date}
+                              </span>
+                            ))}
+                            {patient.last_5_visit_dates.length > 3 && <span className="text-slate-400">…</span>}
+                          </div>
+                        ) : (
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-400">No visits</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-500">
+                        <TimeStamp date={patient.created_at} format="date" />
+                      </td>
+                      <td className="rounded-r-3xl px-6 py-4 text-right">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <button
+                            onClick={() => navigate(`/patients/${patient.registration_number}/edit`)}
+                            className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-300"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(patient.registration_number)}
+                            className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-rose-400"
+                          >
+                            🗑 Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    </WorkspaceLayout>
   );
 };
 

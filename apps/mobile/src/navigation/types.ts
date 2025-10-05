@@ -7,6 +7,7 @@ export type AppStackParamList = {
 };
 
 export type AssistantTabParamList = {
+  Dashboard: undefined;
   Queue: undefined;
   Patients: undefined;
   Uploads: undefined;
@@ -14,6 +15,7 @@ export type AssistantTabParamList = {
 };
 
 export type DoctorTabParamList = {
+  Dashboard: undefined;
   Queue: undefined;
   Patients: undefined;
   Diagnostics: undefined;

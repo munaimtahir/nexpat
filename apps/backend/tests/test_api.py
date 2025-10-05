@@ -88,7 +88,7 @@ class RegistrationNumberFormatTests(APITestCase):
             "1-23-456",  # Missing leading zero
             "01-2-456",  # Missing digit in middle
             "01-23-45",  # Missing digit at end
-            "01-23-4567",  # Too many digits at end
+            "01-23-45678",  # Too many digits at end
             "01-23456",  # Missing dash
             "0123456",  # No dashes
             "ab-cd-efg",  # Non-numeric
@@ -111,6 +111,29 @@ class RegistrationNumberFormatTests(APITestCase):
         # Next auto-generated patient should continue from this number
         next_patient = Patient.objects.create(name="Next Patient", gender="MALE")
         self.assertEqual(next_patient.registration_number, "05-67-891")
+
+    def test_registration_number_9_character_format(self):
+        """Test that 9-character registration numbers (xx-xx-xxxx) are accepted"""
+        patient = Patient.objects.create(
+            registration_number="99-99-9999", name="Test Patient 9", gender="OTHER"
+        )
+        self.assertEqual(patient.registration_number, "99-99-9999")
+        
+        # Verify it can be retrieved
+        retrieved = Patient.objects.get(registration_number="99-99-9999")
+        self.assertEqual(retrieved.name, "Test Patient 9")
+
+    def test_registration_number_auto_generation_8_digit(self):
+        """Test that registration numbers auto-generate 8-digit format when needed"""
+        # Create a patient with registration number at the edge (9999999)
+        patient = Patient.objects.create(
+            registration_number="99-99-999", name="Test Patient Edge", gender="OTHER"
+        )
+        self.assertEqual(patient.registration_number, "99-99-999")
+        
+        # Next patient should get 10-00-0000 (8 digits)
+        next_patient = Patient.objects.create(name="Test Patient Next", gender="MALE")
+        self.assertEqual(next_patient.registration_number, "10-00-0000")
 
 
 class PatientFilterTests(APITestCase):

@@ -277,32 +277,37 @@ class VisitViewSet(viewsets.ModelViewSet):
         - Set visit_date to today.
         - Set status to 'WAITING'.
         """
+        from django.db import transaction
+        
         today = datetime.date.today()
         queue_instance = serializer.validated_data["queue"]
 
-        # Determine next token number for this specific queue and date
-        last_visit_in_queue_today = (
-            Visit.objects.filter(queue=queue_instance, visit_date=today)
-            .order_by("-token_number")
-            .first()
-        )
+        # Use transaction with row-level locking to prevent race conditions
+        with transaction.atomic():
+            # Determine next token number for this specific queue and date with locking
+            last_visit_in_queue_today = (
+                Visit.objects.select_for_update()
+                .filter(queue=queue_instance, visit_date=today)
+                .order_by("-token_number")
+                .first()
+            )
 
-        next_token_number = 1
-        if last_visit_in_queue_today:
-            next_token_number = last_visit_in_queue_today.token_number + 1
+            next_token_number = 1
+            if last_visit_in_queue_today:
+                next_token_number = last_visit_in_queue_today.token_number + 1
 
-        visit = serializer.save(
-            token_number=next_token_number,
-            visit_date=today,
-            status="WAITING",
-        )
+            visit = serializer.save(
+                token_number=next_token_number,
+                visit_date=today,
+                status="WAITING",
+            )
 
-        logger.info(
-            f"Visit created: Token {visit.token_number} "
-            f"for patient {visit.patient.registration_number} "
-            f"in queue {visit.queue.name} "
-            f"by user {self.request.user.username}"
-        )
+            logger.info(
+                f"Visit created: Token {visit.token_number} "
+                f"for patient {visit.patient.registration_number} "
+                f"in queue {visit.queue.name} "
+                f"by user {self.request.user.username}"
+            )
 
     def _update_status(self, request, pk, new_status, expected_current_statuses):
         visit = self.get_object()
