@@ -1,23 +1,20 @@
 {
-  "cli": {
-    "version": ">= 3.17.0"
-  },
+  "cli": { "version": ">= 11.0.0" },
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal"
-    },
     "preview": {
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
+      "developmentClient": false,
+      "android": { "buildType": "apk" },     // easy install for testers
+      "ios": { "simulator": true }           // simulator .app for Macs
     },
-    "production": {
-      "autoIncrement": true
+    "release": {
+      "autoIncrement": true,
+      "node": "20.19.0",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://localhost:8000"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "release": {}
   }
 }

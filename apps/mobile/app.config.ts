@@ -7,30 +7,43 @@ const config: ExpoConfig = {
   version: '0.1.0',
   scheme: 'clinicq',
   owner: process.env.EXPO_OWNER ?? 'munaim',
-  // projectId is required for EAS builds. Run `eas build:configure` to generate one.
-  // projectId: 'your-project-id-here',
+
   orientation: 'portrait',
   userInterfaceStyle: 'light',
+
   updates: {
-    fallbackToCacheTimeout: 0
+    fallbackToCacheTimeout: 0,
   },
+
   assetBundlePatterns: ['**/*'],
+
   ios: {
     supportsTablet: true,
-    bundleIdentifier: 'com.clinicq.mobile'
+    bundleIdentifier: 'com.clinicq.mobile',
   },
+
   android: {
-    package: 'com.clinicq.mobile'
+    package: 'com.clinicq.mobile',
   },
+
   web: {
     bundler: 'metro',
-    output: 'static'
+    output: 'static',
   },
+
   extra: {
     serverUrl: process.env.SERVER_URL,
-    sentryDsn: process.env.SENTRY_DSN
+    sentryDsn: process.env.SENTRY_DSN,
+
+    eas: {
+      projectId: '3aa13166-f395-49fd-af86-b4d32e9155da', // ✅ Required for EAS builds
+    },
   },
-  plugins: ['sentry-expo', 'expo-font']
+
+  plugins: [
+    'sentry-expo',
+    'expo-font',
+  ],
 };
 
 export default config;
