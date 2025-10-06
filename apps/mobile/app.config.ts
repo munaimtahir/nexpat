@@ -7,6 +7,8 @@ const config: ExpoConfig = {
   version: '0.1.0',
   scheme: 'clinicq',
   owner: process.env.EXPO_OWNER ?? 'munaim',
+  // projectId is required for EAS builds. Run `eas build:configure` to generate one.
+  // projectId: 'your-project-id-here',
   orientation: 'portrait',
   userInterfaceStyle: 'light',
   updates: {
@@ -28,7 +30,7 @@ const config: ExpoConfig = {
     serverUrl: process.env.SERVER_URL,
     sentryDsn: process.env.SENTRY_DSN
   },
-  plugins: ['sentry-expo']
+  plugins: ['sentry-expo', 'expo-font']
 };
 
 export default config;

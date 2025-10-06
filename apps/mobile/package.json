@@ -17,6 +17,7 @@
     "eas:build:preview": "eas build --platform android --profile preview --non-interactive"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.2",
     "@hookform/resolvers": "^3.3.4",
     "@react-native-async-storage/async-storage": "^1.21.0",
     "@react-native-community/netinfo": "^11.1.0",
@@ -29,7 +30,7 @@
     "@tanstack/react-query-persist-client": "^5.29.5",
     "axios": "^1.6.7",
     "date-fns": "^3.3.1",
-    "expo": "^54.0.12",
+    "expo": "^50.0.0",
     "expo-application": "~5.8.3",
     "expo-constants": "~15.4.6",
     "expo-file-system": "~16.0.9",

@@ -46,6 +46,8 @@ jobs:
           EAS_NO_VCS: 1
         run: |
           PROFILE="${{ github.event.inputs.profile || 'preview' }}"
+          echo "Starting EAS build for Android with profile: $PROFILE"
+          echo "Note: If this fails with 'projectId is required', run 'eas build:configure' locally and commit the changes."
           eas build --platform android --profile "$PROFILE" --non-interactive
 
       - name: Skip build (missing token)
