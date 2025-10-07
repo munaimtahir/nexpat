@@ -43,6 +43,8 @@ const config: ExpoConfig = {
   plugins: [
     'sentry-expo',
     'expo-font',
+    'expo-localization',
+    'expo-secure-store',
   ],
 };
 
