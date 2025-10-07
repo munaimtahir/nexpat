@@ -33,7 +33,7 @@ services:
     # Command is now executed by entrypoint.sh, which handles migrations.
     # The default CMD in Dockerfile is gunicorn, but for dev we want runserver.
     # The entrypoint script will receive this as "$@"
-    command: python manage.py runserver 0.0.0.0:8000
+    command: python manage.py runserver 172.235.33.181:8000
     volumes:
       - ../apps/backend:/app/backend # Mount code for hot-reloading
     ports:
@@ -41,7 +41,7 @@ services:
     environment:
       - SECRET_KEY=django_insecure_local_dev_secret_key_!@#%^&*()
       - DJANGO_DEBUG=True
-      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,backend
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,backend,172.235.33.181
       - DATABASE_URL=postgresql://clinicq_dev_user:clinicq_dev_password@db:5432/clinicq_dev_db
       - DJANGO_SUPERUSER_USERNAME=admin
       - DJANGO_SUPERUSER_EMAIL=admin@example.com
