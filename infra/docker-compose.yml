@@ -33,7 +33,7 @@ services:
     # Command is now executed by entrypoint.sh, which handles migrations.
     # The default CMD in Dockerfile is gunicorn, but for dev we want runserver.
     # The entrypoint script will receive this as "$@"
-    command: python manage.py runserver 172.235.33.181:8000
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ../apps/backend:/app/backend # Mount code for hot-reloading
     ports:
