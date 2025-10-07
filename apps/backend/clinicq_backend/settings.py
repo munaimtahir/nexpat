@@ -16,6 +16,8 @@ import os
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 
+# === Basics ==================================================================
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -30,9 +32,7 @@ except ImportError:
     # python-dotenv not installed, environment variables must be set externally
     pass
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# === Security / Debug =========================================================
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv(
@@ -42,11 +42,12 @@ SECRET_KEY = os.getenv(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes", "on")
 
-_raw_allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost")
-ALLOWED_HOSTS: list[str] = [host.strip() for host in _raw_allowed_hosts.split(",") if host.strip()]
+# Your server IP (set here as a sensible default; can be overridden by env)
+_DEFAULT_ALLOWED_HOSTS = "localhost,127.0.0.1,172.235.33.181"
+_raw_allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", _DEFAULT_ALLOWED_HOSTS)
+ALLOWED_HOSTS: list[str] = [h.strip() for h in _raw_allowed_hosts.split(",") if h.strip()]
 
-
-# Application definition
+# === Applications =============================================================
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -57,7 +58,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
-    "api.apps.ApiConfig",  # Or just 'api'
+    "api.apps.ApiConfig",
     "corsheaders",
 ]
 
@@ -66,14 +67,13 @@ MIDDLEWARE = [
     # WhiteNoise middleware for serving static files in production
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # keep CORS early
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
-MIDDLEWARE.insert(0, "corsheaders.middleware.CorsMiddleware")
 
 ROOT_URLCONF = "clinicq_backend.urls"
 
@@ -94,12 +94,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "clinicq_backend.wsgi.application"
 
+# === Database =================================================================
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# DATABASE_URL expected in Docker; falls back to SQLite for local dev
 _database_url = os.environ.get("DATABASE_URL")
-
 if _database_url is None:
     DATABASES = {
         "default": {
@@ -110,8 +108,7 @@ if _database_url is None:
 else:
     sanitized_database_url = _database_url.strip()
     if not sanitized_database_url:
-        raise ImproperlyConfigured()
-
+        raise ImproperlyConfigured("DATABASE_URL is set but empty.")
     try:
         DATABASES = {
             "default": dj_database_url.parse(
@@ -120,42 +117,27 @@ else:
             )
         }
     except ValueError as exc:
-        raise ImproperlyConfigured(f"DATABASE_URL is set but could not be parsed: {exc}.") from exc
+        raise ImproperlyConfigured(
+            f"DATABASE_URL is set but could not be parsed: {exc}."
+        ) from exc
 
-
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+# === Password validation ======================================================
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": ("django.contrib.auth.password_validation." "UserAttributeSimilarityValidator"),
-    },
-    {
-        "NAME": ("django.contrib.auth.password_validation." "MinimumLengthValidator"),
-    },
-    {
-        "NAME": ("django.contrib.auth.password_validation." "CommonPasswordValidator"),
-    },
-    {
-        "NAME": ("django.contrib.auth.password_validation." "NumericPasswordValidator"),
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
+# === Internationalization =====================================================
 
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "UTC"
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+# === Static files =============================================================
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
@@ -164,22 +146,20 @@ STATICFILES_DIRS: list[Path] = [
     BASE_DIR / "server" / "static",  # Common static files
 ]
 
+# Optionally serve built frontend (if present) as static
 _frontend_dist = BASE_DIR.parent / "clinicq_frontend" / "dist"
 if _frontend_dist.exists():
     STATICFILES_DIRS.append(_frontend_dist)
 
-# Use WhiteNoise to serve static files in production. This storage class
-# will compress and version static files for efficient caching. Ensure
-# whitenoise is installed in requirements.txt.
+# Use WhiteNoise to serve static files in production (gzip + manifest)
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+# === Defaults ================================================================
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# === Cache (simple in-memory) ================================================
 
-# Simple in-memory cache backend
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -187,7 +167,8 @@ CACHES = {
     }
 }
 
-# Logging configuration
+# === Logging =================================================================
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -198,16 +179,12 @@ LOGGING = {
         },
     },
     "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "json",
-        },
+        "console": {"class": "logging.StreamHandler", "formatter": "json"},
     },
-    "root": {
-        "handlers": ["console"],
-        "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
-    },
+    "root": {"handlers": ["console"], "level": os.getenv("DJANGO_LOG_LEVEL", "INFO")},
 }
+
+# === DRF =====================================================================
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -218,23 +195,16 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
 }
-# CORS configuration
-# Allow both development (frontend on different port) and production origins
-_cors_allowed_origins = os.getenv(
-    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
-)
-CORS_ALLOWED_ORIGINS = [
-    origin.strip() for origin in _cors_allowed_origins.split(",") if origin.strip()
-]
-# For quick local smoke tests only (remove in prod):
-# CORS_ALLOW_ALL_ORIGINS = True
 
-# Allow environment variable override for production
-_cors_allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS")
-if _cors_allowed_origins:
-    CORS_ALLOWED_ORIGINS = [
-        origin.strip() for origin in _cors_allowed_origins.split(",") if origin.strip()
-    ]
+# === CORS / CSRF =============================================================
+
+# CORS: defaults include localhost (Vite) + your VPS IP (HTTP)
+_default_cors = "http://localhost:5173,http://127.0.0.1:5173,http://172.235.33.181"
+_cors_allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS", _default_cors)
+CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_allowed_origins.split(",") if o.strip()]
+
+# Allow credentials (cookies, authorization headers) in CORS requests
+CORS_ALLOW_CREDENTIALS = True
 
 # Allow common headers used by the frontend
 CORS_ALLOW_HEADERS = [
@@ -249,18 +219,13 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-# Allow credentials (cookies, authorization headers) in CORS requests
-CORS_ALLOW_CREDENTIALS = True
+# CSRF trusted origins must include scheme; defaults include your VPS IP
+_default_csrf = "http://172.235.33.181,https://172.235.33.181"
+_csrf_origins = os.getenv("CSRF_TRUSTED_ORIGINS", _default_csrf)
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins.split(",") if o.strip()]
 
-# Production Security Settings
-# Configure these based on environment variables for production deployment
+# === Security headers (toggle via env for production) ========================
 
-# CSRF trusted origins (for production domains)
-_csrf_origins = os.getenv("CSRF_TRUSTED_ORIGINS", "")
-if _csrf_origins:
-    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in _csrf_origins.split(",") if origin.strip()]
-
-# Security middleware settings (enabled in production)
 SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "false").lower() in (
     "true",
     "1",
@@ -274,27 +239,4 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv("SECURE_HSTS_INCLUDE_SUBDOMAINS", "fa
     "yes",
     "on",
 )
-SECURE_HSTS_PRELOAD = os.getenv("SECURE_HSTS_PRELOAD", "false").lower() in (
-    "true",
-    "1",
-    "yes",
-    "on",
-)
-SECURE_CONTENT_TYPE_NOSNIFF = os.getenv("SECURE_CONTENT_TYPE_NOSNIFF", "true").lower() in (
-    "true",
-    "1",
-    "yes",
-    "on",
-)
-SECURE_BROWSER_XSS_FILTER = os.getenv("SECURE_BROWSER_XSS_FILTER", "true").lower() in (
-    "true",
-    "1",
-    "yes",
-    "on",
-)
-X_FRAME_OPTIONS = os.getenv("X_FRAME_OPTIONS", "SAMEORIGIN")
-SECURE_REFERRER_POLICY = os.getenv("SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin")
-
-# Session security
-SESSION_COOKIE_SECURE = SECURE_SSL_REDIRECT
-CSRF_COOKIE_SECURE = SECURE_SSL_REDIRECT
+SECURE_HSTS_
