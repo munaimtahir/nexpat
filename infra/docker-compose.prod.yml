@@ -22,9 +22,10 @@ services:
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - DJANGO_DEBUG=false
-      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-172.235.33.181}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-clinicq_prod_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-clinicq_prod_db}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://172.235.33.181:5173}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-http://172.235.33.181,https://172.235.33.181}
       - GOOGLE_SERVICE_ACCOUNT_FILE=/run/secrets/gdrive_service.json
       - DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL:-INFO}
       - SENTRY_DSN=${SENTRY_DSN}
@@ -34,7 +35,7 @@ services:
 
   frontend:
     environment:
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-172.235.33.181:5173}
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://172.235.33.181:8000}
       - VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
     # Use production build
     command: nginx -g "daemon off;"

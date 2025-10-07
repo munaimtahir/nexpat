@@ -43,6 +43,8 @@ services:
       - DJANGO_DEBUG=True
       - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,backend,172.235.33.181
       - DATABASE_URL=postgresql://clinicq_dev_user:clinicq_dev_password@db:5432/clinicq_dev_db
+      - CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://172.235.33.181:5173
+      - CSRF_TRUSTED_ORIGINS=http://172.235.33.181,https://172.235.33.181
       - DJANGO_SUPERUSER_USERNAME=admin
       - DJANGO_SUPERUSER_EMAIL=admin@example.com
       - DJANGO_SUPERUSER_PASSWORD=adminpass
@@ -60,7 +62,7 @@ services:
       context: ../apps/web
       dockerfile: Dockerfile # This Dockerfile is for production; for dev, we override command
     container_name: clinicq_frontend
-    command: npm run dev -- --host # Runs Vite dev server, accessible externally
+    command: npm run dev -- --host 0.0.0.0 # Runs Vite dev server, accessible externally
     volumes:
       - ../apps/web:/app/frontend # Mount code for hot-reloading
       - /app/frontend/node_modules # Don't mount over node_modules from host
@@ -71,6 +73,7 @@ services:
       - WDS_SOCKET_PORT=5173 # For Vite HMR proxying if needed
       # Vite specific env vars can be prefixed with VITE_
       - VITE_API_BASE_URL=http://backend:8000 # Base host; api helper appends /api path
+      - VITE_BACKEND_PROXY=http://backend:8000 # For vite.config.js proxy
     depends_on:
       - backend
 
