@@ -188,7 +188,7 @@ REST_FRAMEWORK = {
 # === CORS / CSRF =============================================================
 
 # CORS: defaults include localhost (Vite) + your VPS IP (HTTP)
-_default_cors = "http://localhost:5173,http://127.0.0.1:5173,http://172.235.33.181"
+_default_cors = "http://localhost:5173,http://127.0.0.1:5173,http://172.235.33.181:5173"
 _cors_allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS", _default_cors)
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_allowed_origins.split(",") if o.strip()]
 
