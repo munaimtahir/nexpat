@@ -47,4 +47,11 @@ export default defineConfig([
       },
     },
   },
+  {
+    // Vite config files run in Node environment
+    files: ['vite.config.js', '*.config.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])
