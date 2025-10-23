@@ -127,3 +127,14 @@ deploy/*.json
 !clinicq_backend/.env
 !clinicq_frontend/.env
 !clinicq_frontend/.env.development
+
+# macOS files
+.DS_Store
+
+# Patch files
+*.patch
+
+# Temporary files
+*.swp
+*.swo
+*~
