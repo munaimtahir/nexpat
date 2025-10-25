@@ -60,12 +60,12 @@ services:
   frontend:
     build:
       context: ../apps/web
-      dockerfile: Dockerfile # This Dockerfile is for production; for dev, we override command
+      dockerfile: Dockerfile.dev # Use development Dockerfile for hot-reloading
     container_name: clinicq_frontend
     command: npm run dev -- --host 0.0.0.0 --port 3000 # Runs Vite dev server, accessible externally
     volumes:
       - ../apps/web:/app/frontend # Mount code for hot-reloading
-      - /app/frontend/node_modules # Don't mount over node_modules from host
+      - frontend_node_modules:/app/frontend/node_modules # Use named volume for node_modules
     ports:
       - "3000:3000" # Frontend port as per requirements
     environment:
@@ -79,6 +79,7 @@ services:
 
 volumes:
   clinicq_postgres_data:
+  frontend_node_modules:
 
 secrets:
   gdrive_service.json:
