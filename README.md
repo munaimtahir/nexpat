@@ -19,25 +19,35 @@ See `docs/decisions/development_plan.md` and `docs/decisions/task_graph.md` for 
 
 ## Local Quickstart
 
-The fastest way to get the full NEXPAT stack running is with Docker Compose:
+The fastest way to get the NEXPAT backend running is with Docker Compose:
 
 ```bash
 docker compose -f infra/docker-compose.yml build
-docker compose -f infra/docker-compose.yml up
+docker compose -f infra/docker-compose.yml up backend db
 ```
 
-This single command will:
+This will:
 - Start PostgreSQL database
 - Run Django migrations automatically
 - Create a superuser (admin / admin123)
 - Start the Django backend on port 8000
-- Start the React frontend on port 3000
 
-Once running, open your browser to:
+Once the backend is running, open your browser to:
 - **Backend Admin**: [http://localhost:8000/admin](http://localhost:8000/admin) (login: `admin` / `admin123`)
-- **Frontend App**: [http://localhost:3000](http://localhost:3000)
+- **Backend Health**: [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
 
-The backend health check is available at: [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
+### Running the Frontend
+
+**Note**: There is currently a known npm installation issue in Docker (see `apps/web/DOCKER_ISSUE.md`). The recommended approach is to run the frontend locally:
+
+```bash
+# In a separate terminal
+cd apps/web
+npm install
+npm run dev
+```
+
+The frontend will be available at [http://localhost:3000](http://localhost:3000)
 
 ### Alternative: Running from infra directory
 
@@ -45,7 +55,7 @@ You can also run from the `infra/` directory (paths are optimized for this):
 
 ```bash
 cd infra
-docker compose up
+docker compose up backend db  # Start backend only
 ```
 
 ### Manual Setup

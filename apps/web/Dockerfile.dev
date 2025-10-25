@@ -5,22 +5,22 @@ FROM node:20-alpine
 
 WORKDIR /app/frontend
 
-# Copy package file
-COPY package.json ./
+# Copy package files
+COPY package.json package-lock.json ./
 
-# Install dependencies without lockfile to avoid npm ci issues
-RUN npm install
-
-# Copy package-lock.json after install if it exists
-COPY package-lock.json* ./
+# Copy entrypoint script
+COPY docker-entrypoint-dev.sh /docker-entrypoint-dev.sh
+RUN chmod +x /docker-entrypoint-dev.sh
 
 # Copy the rest of the application code
 # Note: In docker-compose, we'll mount the source code as a volume for hot-reloading
-# but keep node_modules from the container to avoid issues with different platforms
 COPY . .
 
 # Expose Vite dev server port
 EXPOSE 3000
+
+# Use entrypoint to install deps at runtime
+ENTRYPOINT ["/docker-entrypoint-dev.sh"]
 
 # Default command (can be overridden in docker-compose.yml)
 CMD ["npm", "run", "dev"]
