@@ -17,36 +17,52 @@ See `docs/decisions/development_plan.md` and `docs/decisions/task_graph.md` for 
 - Review the proposed re-organization plan in [`docs/references/REPO_STRUCTURE_IMPROVEMENTS.md`](docs/references/REPO_STRUCTURE_IMPROVEMENTS.md) for guidance on consolidating apps, documentation, and infrastructure assets into a cleaner monorepo layout.
 
 
-## Local Development Quick Start
+## Local Quickstart
 
-### Prerequisites
-- Python 3.12+
-- Node.js 20+
-- pip and npm
+The fastest way to get the NEXPAT backend running is with Docker Compose:
 
-### Docker Setup (Recommended)
+```bash
+docker compose -f infra/docker-compose.yml build
+docker compose -f infra/docker-compose.yml up backend db
+```
 
-The easiest way to run the full stack locally is using Docker Compose:
+This will:
+- Start PostgreSQL database
+- Run Django migrations automatically
+- Create a superuser (admin / admin123)
+- Start the Django backend on port 8000
+
+Once the backend is running, open your browser to:
+- **Backend Admin**: [http://localhost:8000/admin](http://localhost:8000/admin) (login: `admin` / `admin123`)
+- **Backend Health**: [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
+
+### Running the Frontend
+
+**Note**: There is currently a known npm installation issue in Docker (see `apps/web/DOCKER_ISSUE.md`). The recommended approach is to run the frontend locally:
+
+```bash
+# In a separate terminal
+cd apps/web
+npm install
+npm run dev
+```
+
+The frontend will be available at [http://localhost:3000](http://localhost:3000)
+
+### Alternative: Running from infra directory
+
+You can also run from the `infra/` directory (paths are optimized for this):
 
 ```bash
 cd infra
-docker-compose up
-```
-
-This will start all services (PostgreSQL, Django backend, React frontend) with a single command.
-
-**⚠️ Important:** The docker-compose files use relative paths and must be run from the `infra/` directory. See [infra/README.md](infra/README.md) for details.
-
-Alternatively, from the repository root:
-```bash
-docker-compose -f infra/docker-compose.yml up
+docker compose up backend db  # Start backend only
 ```
 
 ### Manual Setup
 
 If you prefer to run services individually without Docker:
 
-### Backend Setup
+#### Backend Setup
 
 1. Navigate to the backend directory:
    ```bash
@@ -107,12 +123,12 @@ If you prefer to run services individually without Docker:
    npm run dev
    ```
 
-   The frontend will be available at `http://localhost:5173`
+   The frontend will be available at `http://localhost:3000`
 
 ### Testing the Login
 
 1. Ensure both backend and frontend servers are running
-2. Open your browser and navigate to `http://localhost:5173`
+2. Open your browser and navigate to `http://localhost:3000`
 3. Click "Login" and use one of the test credentials:
    - **Admin**: username `admin`, password `admin123`
    - **Doctor**: username `doctor`, password `doctor123`
@@ -140,10 +156,10 @@ The API responds with `{ "token": "..." }`. Include that value in subsequent req
 
 | Issue | Solution |
 |-------|----------|
-| **CORS errors** | Ensure both `localhost` and `127.0.0.1` are in `CORS_ALLOWED_ORIGINS` in backend `.env` |
+| **CORS errors** | Ensure both `localhost` and `127.0.0.1` are in `CORS_ALLOWED_ORIGINS` in backend `.env` with port 3000 |
 | **404 to `/api/auth/login/`** | Check that `VITE_API_BASE_URL` is set correctly in frontend `.env` |
 | **401 Unauthorized** | Verify username/password are correct. Run migrations if database is fresh. |
-| **Connection refused** | Ensure backend is running on port 8000 and frontend on 5173 |
+| **Connection refused** | Ensure backend is running on port 8000 and frontend on 3000 |
 | **"DisallowedHost" error** | Add `127.0.0.1` to `DJANGO_ALLOWED_HOSTS` in backend `.env` |
 
 **Note**: Browsers treat `localhost` and `127.0.0.1` as different origins. Both must be configured in CORS settings during development.
@@ -157,7 +173,7 @@ endpoint—when the server responds with `401 Unauthorized`, the frontend clears
 any cached token state and redirects users back to the login screen so they can
 authenticate again.
 
-## Deployment
+## Production Deployment
 
 This application is production-ready with the following features:
 
@@ -168,6 +184,29 @@ This application is production-ready with the following features:
 - **Docker containerization** for both development and production
 - **Environment-based configuration** with comprehensive `.env` variables
 - **Security hardening** with configurable HTTPS, HSTS, and security headers
+
+### Production Setup Steps
+
+1. **Copy and configure environment files**:
+   ```bash
+   # Backend
+   cp apps/backend/.env.example apps/backend/.env
+   # Frontend
+   cp apps/web/.env.example apps/web/.env
+   ```
+
+2. **Update environment variables**:
+   - Set `DEBUG=False` in backend `.env`
+   - Update `SECRET_KEY` with a strong random value
+   - Configure production database credentials
+   - Update `ALLOWED_HOSTS` with your domain
+   - Set `CORS_ALLOWED_ORIGINS` and `CSRF_TRUSTED_ORIGINS` to your frontend URL
+   - Configure `VITE_API_BASE_URL` in frontend `.env` to your backend URL
+
+3. **Deploy with Docker Compose**:
+   ```bash
+   docker compose -f infra/docker-compose.prod.yml up -d
+   ```
 
 See `docs/ops/DEPLOYMENT_GUIDE.md` for detailed deployment instructions.
 

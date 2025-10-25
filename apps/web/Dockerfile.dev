@@ -1,0 +1,26 @@
+# Development Dockerfile for frontend
+# This is used by docker-compose.yml for local development with hot-reloading
+
+FROM node:20-alpine
+
+WORKDIR /app/frontend
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Copy entrypoint script
+COPY docker-entrypoint-dev.sh /docker-entrypoint-dev.sh
+RUN chmod +x /docker-entrypoint-dev.sh
+
+# Copy the rest of the application code
+# Note: In docker-compose, we'll mount the source code as a volume for hot-reloading
+COPY . .
+
+# Expose Vite dev server port
+EXPOSE 3000
+
+# Use entrypoint to install deps at runtime
+ENTRYPOINT ["/docker-entrypoint-dev.sh"]
+
+# Default command (can be overridden in docker-compose.yml)
+CMD ["npm", "run", "dev"]
